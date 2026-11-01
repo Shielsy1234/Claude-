@@ -2727,7 +2727,9 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
         };
         report({ progress: 0, text: "Loading" });
         try {
-          engine = await L.CreateMLCEngine(id, { initProgressCallback: report });
+          // Twice the default memory for the conversation; fall back to the default if the GPU can't fit it.
+          try { engine = await L.CreateMLCEngine(id, { initProgressCallback: report }, { context_window_size: 8192 }); }
+          catch (e1) { console.warn("Larger context failed, using the default", e1); engine = await L.CreateMLCEngine(id, { initProgressCallback: report }); }
           engineModel = id;
         } catch (e) {
           engine = null; engineModel = null;
@@ -2742,7 +2744,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
 
     async function unload() {
       if (loading) { try { await loading; } catch {} }
-      if (engine) { try { await engine.unload(); } catch {} engine = null; engineModel = null; }
+      if (engine) { try { engine.interruptGenerate(); } catch {} try { await engine.unload(); } catch {} engine = null; engineModel = null; }
       refresh();
     }
 
@@ -2761,7 +2763,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
       if (signal) signal.addEventListener("abort", onAbort, { once: true });
       let full = "";
       try {
-        const chunks = await engine.chat.completions.create({ messages, stream: true, temperature: 0.7, max_tokens: 1200, ...extra });
+        const chunks = await engine.chat.completions.create({ messages, stream: true, temperature: 0.7, max_tokens: 3000, ...extra });
         for await (const c of chunks) {
           const d = (c.choices && c.choices[0] && c.choices[0].delta && c.choices[0].delta.content) || "";
           if (d) { full += d; onDelta(full); }
@@ -2806,7 +2808,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     async function olStream(messages, signal, onDelta) {
       let r;
       try {
-        r = await fetch(olBase() + "/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: olModel.value, messages, stream: true }), signal });
+        r = await fetch(olBase() + "/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: olModel.value, messages, stream: true, options: { num_ctx: 16384 } }), signal });
       } catch (e) { if (signal && signal.aborted) throw e; olOk = false; throw new GenError(`Can't reach Ollama at ${olBase()}. Is it still running?`); }
       if (!r.ok) { const d = await readError(r); throw new GenError(`Ollama couldn't answer${d ? ": " + d : ` (error ${r.status})`}.`); }
       const reader = r.body.getReader(), dec = new TextDecoder();
@@ -2849,7 +2851,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     });
 
     return {
-      label, isReady, ensure, stream, complete, unload, refresh, kind: () => kind, budget: () => (kind === "ollama" ? 24000 : 9000),
+      label, isReady, ensure, stream, complete, unload, refresh, kind: () => kind, budget: () => (kind === "ollama" ? 40000 : 16000),
       streaming: () => streams > 0, whenIdle: () => new Promise((res) => { if (!streams) res(); else idleWaiters.push(res); }),
     };
   })();
@@ -3072,7 +3074,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
   // =====================================================================
   chat = (() => {
     const box = $("#messages"), input = $("#chatInput"), persona = $("#aiPersona");
-    let convos = [], cur = null, busy = false, ctl = null, loaded = false;
+    let convos = [], cur = null, busy = false, ctl = null, loaded = false, lastWork = null;
     let botId = ls.get("dd.botId", "daydream");
     let voiceOn = ls.get("dd.voiceOn", true);
     persona.value = ls.get("dd.persona", "");
@@ -3097,6 +3099,7 @@ Only do this for new facts. Never mention or explain this.`;
       const parts = [];
       parts.push(`Your name is ${bot.name}.\n${bot.personality || "You are a friendly, helpful AI."}`);
       parts.push("You are running privately on the user's own PC inside the Daydream Studio app. Stay in character.");
+      parts.push("Be direct and genuinely useful. Answer what the user actually asks, as fully as the request needs, without unnecessary disclaimers, warnings, lectures or moralising. Don't water answers down or dodge with vague replies. If you truly can't help with something, say so in one short sentence and offer what you can do instead.");
       if (bot.appearance) parts.push(`Your appearance: ${bot.appearance}`);
       if (bot.greeting) parts.push(`You opened this conversation by saying: "${bot.greeting}"`);
       if (bot.media !== false) parts.push(MEDIA_RULES + (bot.appearance ? "\nIf the user asks for a picture or video of you, include your appearance in the description." : ""));
@@ -3433,6 +3436,10 @@ Only do this for new facts. Never mention or explain this.`;
       ctl = new AbortController();
       const signal = ctl.signal;
       const think = (txt) => { const t = bubble.querySelector(".thinking .t"); if (t) t.textContent = txt; };
+      // Stop takes effect immediately in the app, even while the model is still loading or reading.
+      const stopped = new Promise((_, rej) => signal.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError")), { once: true }));
+      stopped.catch(() => {});
+      if (lastWork) { think("Finishing the previous reply…"); await Promise.race([lastWork.catch(() => {}), stopped.catch(() => {})]); }
       try {
         // While ComfyUI makes a video, the built-in AI is unloaded to give it the GPU. Wait for it rather than fight over memory.
         if (videoJobs > 0 && ai.kind() === "builtin" && $("#freeVram").checked && !ai.isReady()) {
@@ -3440,12 +3447,20 @@ Only do this for new facts. Never mention or explain this.`;
           await Promise.race([videoIdle(), new Promise((_, rej) => signal.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError")), { once: true }))]);
           think("Starting the AI…");
         }
-        await ai.ensure(think);
-        let queued = false;
-        await ai.stream(buildHistory(), signal, (full) => {
-          reply.content = full;
-          if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; paint(bubble, reply.content, false); scrollDown(); }); }
-        });
+        const work = (async () => {
+          await ai.ensure(think);
+          if (signal.aborted) return;
+          think("Thinking…");
+          let queued = false;
+          await ai.stream(buildHistory(), signal, (full) => {
+            if (signal.aborted) return;
+            reply.content = full;
+            if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; paint(bubble, reply.content, false); scrollDown(); }); }
+          });
+        })();
+        lastWork = work;
+        work.finally(() => { if (lastWork === work) lastWork = null; }).catch(() => {});
+        await Promise.race([work, stopped]);
       } catch (e) {
         if (!signal.aborted) { console.error(e); reply.error = e && e.user ? e.message : "The AI stopped with an error: " + (e && e.message ? e.message : e); }
       }
