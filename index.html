@@ -897,6 +897,10 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
 
     async function checkGpu() {
       if (gpuOk !== null) return gpuOk;
+      if (/Firefox\//.test(navigator.userAgent)) {
+        gpuOk = false; gpuInfo = "Firefox can't run these AI models yet. Open this page in Microsoft Edge (already on your PC) or Google Chrome instead.";
+        return gpuOk;
+      }
       if (!window.isSecureContext || !navigator.gpu) {
         gpuOk = false; gpuInfo = "This browser can't use your graphics card here. Open the page in Chrome or Edge on your PC, from its web address (not a file you double-clicked).";
         return gpuOk;
