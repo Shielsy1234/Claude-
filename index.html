@@ -536,6 +536,13 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
         <div class="field" id="vqField" hidden>
           <span class="label" id="vqLabel">Video quality</span>
           <div class="chips" id="vquality" role="radiogroup" aria-labelledby="vqLabel"></div>
+          <p class="hint">Draft is about twice as fast as Quick: good for trying out prompts.</p>
+        </div>
+
+        <div class="field" id="vspeedField" hidden>
+          <span class="label" id="vspeedLabel">Speed</span>
+          <div class="chips" id="vspeeds" role="radiogroup" aria-labelledby="vspeedLabel"></div>
+          <p class="hint">Faster and Fastest use fewer steps and reuse work between steps, for roughly 2 to 3 times the speed with a small loss of detail.</p>
         </div>
 
         <div class="field" id="countField">
@@ -809,6 +816,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
   };
   // Wan 2.2 5B: sizes are multiples of 32, length is 4n+1 frames at 24 fps.
   const VQ = {
+    draft: { label: "Draft", sizes: { square: [480, 480], wide: [640, 352], tall: [352, 640] }, steps: 20 },
     quick: { label: "Quick", sizes: { square: [640, 640], wide: [832, 480], tall: [480, 832] }, steps: 20 },
     full:  { label: "Full 720p", sizes: { square: [960, 960], wide: [1280, 704], tall: [704, 1280] }, steps: 20 },
   };
@@ -821,10 +829,16 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
   // Video models. Rough minutes per 5-second clip on a mid/upper-range GPU, for the time estimate.
   const VIDEO_MODELS = {
     "5b": { label: "Wan 2.2 5B · faster setup", short: "Wan 2.2 5B", fps: 24, steps: 20,
-      sizes: { quick: VQ.quick.sizes, full: VQ.full.sizes }, minutes: { quick: [3, 8], full: [12, 25] } },
+      sizes: { draft: VQ.draft.sizes, quick: VQ.quick.sizes, full: VQ.full.sizes }, minutes: { draft: [1.5, 4], quick: [3, 8], full: [12, 25] } },
     "14b": { label: "Wan 2.2 14B · best quality (4-step)", short: "Wan 2.2 14B", fps: 16, steps: 4,
-      sizes: { quick: { square: [640, 640], wide: [832, 480], tall: [480, 832] }, full: { square: [960, 960], wide: [1280, 720], tall: [720, 1280] } },
-      minutes: { quick: [3, 10], full: [20, 60] } },
+      sizes: { draft: { square: [512, 512], wide: [640, 368], tall: [368, 640] }, quick: { square: [640, 640], wide: [832, 480], tall: [480, 832] }, full: { square: [960, 960], wide: [1280, 720], tall: [720, 1280] } },
+      minutes: { draft: [1.5, 5], quick: [3, 10], full: [20, 60] } },
+  };
+  // Speed settings for the 5B (the 14B already runs in 4-step mode). cache = EasyCache reuse threshold.
+  const VSPEEDS = {
+    best: { label: "Best quality", steps: 20, cache: 0, factor: 1 },
+    fast: { label: "Faster", steps: 14, cache: 0.2, factor: 0.5 },
+    fastest: { label: "Fastest", steps: 10, cache: 0.3, factor: 0.35 },
   };
   const vmodelOf = (id) => VIDEO_MODELS[id] || VIDEO_MODELS["5b"];
   const videoSize = (vq, shape, vm) => vmodelOf(vm || st.vmodel).sizes[vq][shape];
@@ -873,6 +887,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     vq: ls.get("dd.vq", "quick"),
     vmode: ls.get("dd.vmode", "single"),
     vmodel: ls.get("dd.vmodel", "5b"),
+    vspeed: ls.get("dd.vspeed", "fast"),
     vtotal: String(ls.get("dd.vtotal", "60")),
     vmethod: ls.get("dd.vmethod", "storyboard"),
     startImage: null, // Blob for image-to-video
@@ -886,6 +901,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
   if (!VQ[st.vq]) st.vq = "quick";
   if (!VMODES[st.vmode]) st.vmode = "single";
   if (!VIDEO_MODELS[st.vmodel]) st.vmodel = "5b";
+  if (!VSPEEDS[st.vspeed]) st.vspeed = "fast";
   if (!VTOTALS[st.vtotal]) st.vtotal = "60";
   if (!VMETHODS[st.vmethod]) st.vmethod = "storyboard";
   if (!["local", "comfy", "free", "pollinations", "openai"].includes(st.engine)) st.engine = "free";
@@ -909,6 +925,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
   radios($("#lengths"), "vlen", LENGTHS, st.vlen, (k) => { st.vlen = k; ls.set("dd.vlen", k); });
   radios($("#vquality"), "vq", VQ, st.vq, (k) => { st.vq = k; ls.set("dd.vq", k); updateVideoFields(); });
   radios($("#vmodes"), "vmode", VMODES, st.vmode, (k) => { st.vmode = k; ls.set("dd.vmode", k); updateVideoFields(); updateGo(); });
+  radios($("#vspeeds"), "vspeed", VSPEEDS, st.vspeed, (k) => { st.vspeed = k; ls.set("dd.vspeed", k); updateVideoFields(); });
   radios($("#vtotals"), "vtotal", VTOTALS, st.vtotal, (k) => { st.vtotal = k; ls.set("dd.vtotal", k); updateVideoFields(); });
   radios($("#vmethods"), "vmethod", VMETHODS, st.vmethod, (k) => { st.vmethod = k; ls.set("dd.vmethod", k); updateVideoFields(); });
   $("#picFirst").checked = ls.get("dd.picFirst", true);
@@ -917,12 +934,14 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     const isVid = st.mode === "video", long = isVid && st.vmode === "long";
     $("#vmodeField").hidden = !isVid;
     $("#vmodelField").hidden = !isVid;
+    $("#vspeedField").hidden = !isVid || st.vmodel === "14b";
     $("#longField").hidden = !long;
     $("#lengthField").hidden = !isVid || long;
     $("#picFirstField").hidden = !long || st.vmethod !== "storyboard";
     $("#startField").hidden = !isVid || (long && st.vmethod === "storyboard");
     if (long) {
-      const n = Math.round(Number(st.vtotal) / CLIP_SECONDS), [a, b] = vmodelOf(st.vmodel).minutes[st.vq];
+      const sf = st.vmodel === "14b" ? 1 : VSPEEDS[st.vspeed].factor;
+      const n = Math.round(Number(st.vtotal) / CLIP_SECONDS), [a, b] = vmodelOf(st.vmodel).minutes[st.vq].map((x) => x * sf);
       const fmt = (m) => (m >= 90 ? `${Math.round(m / 60)} h` : `${Math.round(m)} min`);
       $("#longHint").textContent = `${n} clips of ${CLIP_SECONDS} seconds. Rough time on your PC: ${fmt(n * a)} to ${fmt(n * b)}. You can stop and resume later, even after closing the app.`;
     }
@@ -1674,6 +1693,8 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
       if (!nodesOk) { const li = document.createElement("li"); li.className = "bad"; li.textContent = "Your ComfyUI is too old for this model. Update ComfyUI."; list.append(li); missing.push("update"); }
       const webm = await comfyJson("/object_info/SaveWEBM").catch(() => ({}));
       comfyState.saver = webm.SaveWEBM ? "SaveWEBM" : "SaveAnimatedWEBP";
+      const ec = await comfyJson("/object_info/EasyCache").catch(() => ({}));
+      comfyState.easycache = !!ec.EasyCache;
       let ms;
       if (vmId === "14b") {
         const has = (keys) => keys.every((k) => files[k]);
@@ -1713,7 +1734,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     sel.value = st.vmodel;
     const hint = () => {
       $("#vmodelHint").textContent = st.vmodel === "14b"
-        ? "The biggest open video model that fits your card: better motion and prompt following. Uses 4-step speed-up add-ons and makes 16 frames per second. About 62 GB of files, so it needs plenty of disk space and RAM."
+        ? "The biggest open video model that fits your card: better motion and prompt following. Already runs in its fast 4-step mode at 16 frames per second; for more speed pick Draft or Quick and a shorter length. About 62 GB of files, so it needs plenty of disk space and RAM."
         : "Smaller and quicker to set up (about 18 GB). Good results at 720p, 24 frames per second.";
     };
     sel.addEventListener("change", () => {
@@ -1768,7 +1789,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     };
   }
 
-  function wanWorkflow({ prompt, width, height, frames, steps, seed, startImage, lastFrame }) {
+  function wanWorkflow({ prompt, width, height, frames, steps, seed, startImage, lastFrame, cache = 0 }) {
     const wf = {
       "37": { class_type: "UNETLoader", inputs: { unet_name: comfyState.models["5b"].files.unet, weight_dtype: "default" } },
       "38": { class_type: "CLIPLoader", inputs: { clip_name: comfyState.models["5b"].files.clip, type: "wan", device: "default" } },
@@ -1781,6 +1802,11 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
       "8": { class_type: "VAEDecode", inputs: { samples: ["3", 0], vae: ["39", 0] } },
     };
     if (startImage) { wf["56"] = { class_type: "LoadImage", inputs: { image: startImage } }; wf["55"].inputs.start_image = ["56", 0]; }
+    if (cache > 0 && comfyState.easycache) {
+      // Reuse work between similar steps (built into ComfyUI).
+      wf["49"] = { class_type: "EasyCache", inputs: { model: ["48", 0], reuse_threshold: cache, start_percent: 0.15, end_percent: 0.95, verbose: false } };
+      wf["3"].inputs.model = ["49", 0];
+    }
     videoOutputs(wf, 24, lastFrame);
     return wf;
   }
@@ -1946,8 +1972,10 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     try { return await genVideoInner(opts); }
     finally { videoJobs--; if (!videoJobs) videoWaiters.splice(0).forEach((f) => f()); }
   }
-  async function genVideoInner({ prompt, shape, seed, signal, onStatus, startImage = st.startImage, vq = st.vq, vlen = st.vlen, wantLastFrame = false, vmodel = st.vmodel }) {
-    const vmId = VIDEO_MODELS[vmodel] ? vmodel : "5b", vm = vmodelOf(vmId);
+  async function genVideoInner({ prompt, shape, seed, signal, onStatus, startImage = st.startImage, vq = st.vq, vlen = st.vlen, wantLastFrame = false, vmodel = st.vmodel, vspeed = st.vspeed }) {
+    const vmId = VIDEO_MODELS[vmodel] ? vmodel : "5b", base = vmodelOf(vmId);
+    const sp = VSPEEDS[vspeed] || VSPEEDS.best;
+    const vm = vmId === "14b" ? base : { ...base, steps: sp.steps };
     let ms = comfyState.models[vmId];
     if (!ms || !ms.ok) { await comfyCheck(false, vmId); ms = comfyState.models[vmId]; }
     if (!ms || !ms.ok) throw new GenError(`ComfyUI isn't ready for ${vm.short} yet. Open the Video tab, then Video engine, and follow the setup steps.`);
@@ -1973,7 +2001,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     const job = vmId === "14b"
       ? { wf: wan14Workflow({ prompt, width, height, frames, seed, startImage: startName, lastFrame: wantLastFrame }), stepNodes: { "81": 0, "78": 2 },
           nodeText: { "71": loading, "73": loading, "75": loading, "76": loading, "89": ["Reading your prompt…"], "98": ["Preparing the start frame…"], "78": ["Switching to the detail model…"], "8": ["Decoding frames…", 0.97], "60": ["Saving the video…", 0.99] } }
-      : { wf: wanWorkflow({ prompt, width, height, frames, steps: vm.steps, seed, startImage: startName, lastFrame: wantLastFrame }), stepNodes: { "3": 0 },
+      : { wf: wanWorkflow({ prompt, width, height, frames, steps: vm.steps, seed, startImage: startName, lastFrame: wantLastFrame, cache: sp.cache }), stepNodes: { "3": 0 },
           nodeText: { "37": loading, "38": loading, "39": loading, "6": ["Reading your prompt…"], "55": ["Preparing the start frame…"], "8": ["Decoding frames…", 0.97], "60": ["Saving the video…", 0.99] } };
     const { blob, lastFrameFile } = await runComfyJob(job.wf, {
       signal, onStatus, steps: vm.steps, stepText: "Making frames", what: "video", want: /\.(webm|mp4|webp|gif|mkv)$/i,
@@ -2472,7 +2500,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
           const base = p.picFirst ? 0.15 : 0, span = 0.83 - base;
           const left = times.length ? fmtLeft((times.reduce((a, b) => a + b, 0) / times.length) * (p.n - done())) : "";
           const r = await genVideo({
-            prompt: p.prompts[i], shape: p.shape, seed: Math.floor(Math.random() * 2 ** 48), signal, startImage: start, vq: p.vq, vlen: String(CLIP_SECONDS), vmodel: p.vmodel || "5b",
+            prompt: p.prompts[i], shape: p.shape, seed: Math.floor(Math.random() * 2 ** 48), signal, startImage: start, vq: p.vq, vlen: String(CLIP_SECONDS), vmodel: p.vmodel || "5b", vspeed: p.vspeed || "best",
             wantLastFrame: p.method === "extend",
             onStatus: (t, f) => ui.status(`Clip ${i + 1} of ${p.n}: ${t}${left ? ` · ${left}` : ""}`, base + span * ((done() + (typeof f === "number" ? f : 0)) / p.n)),
           });
@@ -2499,7 +2527,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
 
     async function start(text, signal) {
       const p = {
-        id: "p" + Date.now().toString(36), kind: "long", prompt: text, method: st.vmethod, total: st.vtotal, vq: st.vq, shape: st.shape, vmodel: st.vmodel,
+        id: "p" + Date.now().toString(36), kind: "long", prompt: text, method: st.vmethod, total: st.vtotal, vq: st.vq, shape: st.shape, vmodel: st.vmodel, vspeed: st.vspeed,
         picFirst: st.vmethod === "storyboard" && $("#picFirst").checked, engine: st.engine, ts: Date.now(),
         n: Math.round(Number(st.vtotal) / CLIP_SECONDS), prompts: [],
       };
