@@ -1642,10 +1642,16 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     for (const [k, f] of Object.entries(fileSet)) {
       const info = await comfyJson("/object_info/" + f.node);
       const opts = comboOptions(info[f.node] && info[f.node].input && info[f.node].input.required && info[f.node].input.required[f.input]);
-      const found = opts.find((o) => String(o).split(/[\\/]/).pop() === f.want);
+      const base = (o) => String(o).split(/[\\/]/).pop();
+      const found = opts.find((o) => base(o) === f.want);
       filesOut[k] = found || null;
+      // A browser may save a re-download as "name (1).safetensors" or "name(1).safetensors".
+      const stem = f.want.replace(/\.safetensors$/i, "").toLowerCase();
+      const near = !found && opts.find((o) => { const b = base(o).toLowerCase(); return b !== f.want.toLowerCase() && b.endsWith(".safetensors") && b.startsWith(stem) && /^\s*\(\d+\)$/.test(b.slice(stem.length, -12)); });
       const li = document.createElement("li"); li.className = found ? "ok" : "bad";
-      li.textContent = found ? f.want : `${f.want} is missing. Put it in ${f.folder}, then press Check again.`;
+      li.textContent = found ? f.want
+        : near ? `Found "${base(near)}" in ${f.folder}, but the name must be exactly "${f.want}". Rename it (remove the number in brackets), then press Check again.`
+        : `${f.want} is missing. Put it in ${f.folder}, then press Check again.`;
       listEl.append(li);
       if (!found) missing.push(f.want);
     }
