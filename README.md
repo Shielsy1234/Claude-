@@ -17,6 +17,12 @@ The **Chat** tab talks to an AI running on your PC. Ask it to make a picture or 
 | **Built in** (default) | Runs in the app on your GPU with [WebLLM](https://github.com/mlc-ai/web-llm). Models: Qwen 3.5 9B (6.4 GB), Qwen 3.5 4B (3.9 GB), Hermes 3 8B (4.9 GB), Llama 3.1 8B (5 GB). One-time download. |
 | **Ollama** | Uses any model installed with [Ollama](https://ollama.com). Run `ollama pull <model>`, then `setx OLLAMA_ORIGINS "*"` and restart Ollama so the app can connect. |
 
+**Characters**: chat with different AI personalities, like companions. Each has a name, an avatar (upload one or generate it from their appearance), a personality, a greeting and an optional voice that reads replies aloud. They can send pictures of themselves. Four starters are included (Daydream, Nova, Sage, Rook); create as many as you like with **+ New**.
+
+**Memory**: when you mention something lasting (your name, likes, projects), the AI saves it under **Memory** and uses it in future chats with every character. You can add, remove or clear memories, or turn automatic memory off.
+
+**Voice**: the speaker button reads replies aloud using a voice picked per character; the microphone button lets you talk instead of typing (uses the browser's online speech service).
+
 Conversations are saved on your PC. **Custom instructions** let you set how the AI behaves. With **Free graphics memory for videos** on, the chat and image models are unloaded while ComfyUI makes a video so it gets the whole GPU.
 
 When a local AI is loaded, **Ideas** and **Improve prompt** use it too instead of the online text service.
@@ -57,9 +63,21 @@ One-time setup:
 
 Video settings: **Quick** (832×480) or **Full 720p** (1280×704), 2, 3 or 5 seconds at 24 fps.
 
+### Long videos
+
+Choose **Video type → Long video** for 30 seconds up to 5 minutes. Video models make about 5 seconds at a time, so the app makes many 5-second clips and joins them into one file (with [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm)):
+
+- **Storyboard**: the AI plans a shot list from your idea, with characters and setting described the same way in every shot. With **Make a picture for each shot first**, each shot is drawn with your Image engine and then animated, for sharper, more consistent results.
+- **Extend**: one continuous shot; each clip starts from the last frame of the previous one. Details slowly drift over long lengths.
+
+Progress is saved after every step: press **Stop** any time, close the app, and **Resume** later from the Video tab. A 2-minute video is 24 clips, so expect hours on a home GPU; it suits an overnight run.
+
+You can also ask a character in Chat for a long video ("make me a 2 minute video about…"); it sets it up in the Video tab for you.
+
 ## Other features
 
 - **Look presets** and an **Extra realism** switch for photographic results
 - **Improve prompt** rewrites a short idea into a detailed prompt (free Pollinations text service)
 - **Ideas** mode brainstorms 6 ideas with a **Picture this** button on each
 - Everything you make is saved in the browser's gallery, with full-size viewing and download
+- **Favourites**: star your best images, filter the gallery, and **Export favourites** as a zip of images with matching `.txt` prompt captions, the layout LoRA training tools expect

@@ -260,6 +260,66 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
 .chat-foot { margin: 0; padding: 0 14px 10px; font-size: 12px; color: var(--muted); background: var(--surface); }
 .note-card { border: 1px solid var(--line); background: var(--paper); border-radius: 12px; padding: 12px 14px; font-size: 14px; display: flex; flex-direction: column; gap: 8px; max-width: min(560px, 100%); }
 
+/* Characters */
+.avatar { width: 36px; height: 36px; border-radius: 50%; flex: none; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font: 700 15px var(--f-display); overflow: hidden; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar.lg { width: 84px; height: 84px; font-size: 32px; }
+.avatar.sm { width: 24px; height: 24px; font-size: 11px; }
+.bots { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.bots li { display: flex; align-items: center; gap: 4px; border-radius: 10px; }
+.bots li.active { background: var(--accent-soft); }
+.bots button.pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; border: 0; background: transparent; padding: 6px 8px; border-radius: 10px; cursor: pointer; text-align: left; }
+.bots button.pick:hover { background: var(--sunken); }
+.bots button.pick span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 14px; }
+.chat-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); min-width: 0; }
+.chat-head .t { flex: 1; min-width: 0; }
+.chat-head b { display: block; font-family: var(--f-display); font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-head small { display: block; color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icon-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: grid; place-items: center; flex: none; color: var(--ink); }
+.icon-btn:hover { border-color: var(--accent); }
+.icon-btn svg { width: 17px; height: 17px; }
+.icon-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.icon-btn.rec { background: var(--danger); border-color: var(--danger); color: #fff; }
+.who-row { display: flex; align-items: center; gap: 8px; }
+dialog.sheet-dialog { border: 1px solid var(--line); border-radius: 16px; padding: 0; background: var(--surface); color: var(--ink); width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
+.dlg { display: flex; flex-direction: column; gap: 16px; padding: 20px; }
+.dlg h2 { margin: 0; font-family: var(--f-display); font-size: 20px; }
+.dlg .row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.dlg textarea.input { resize: vertical; }
+
+/* Memory */
+.memlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow: auto; }
+.memlist li { display: flex; gap: 6px; align-items: flex-start; font-size: 13.5px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 6px 6px 6px 10px; overflow-wrap: anywhere; }
+.memlist li span { flex: 1; min-width: 0; }
+.memlist li button { border: 0; background: transparent; cursor: pointer; color: var(--muted); width: 22px; height: 22px; border-radius: 6px; flex: none; }
+.memlist li button:hover { background: var(--sunken); color: var(--ink); }
+.mem-note { font-size: 12.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+
+/* Favourites */
+.thumb .fav { position: absolute; top: 6px; left: 6px; width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: grid; place-items: center; opacity: 0; color: var(--muted); }
+.thumb .fav.on { opacity: 1; color: var(--spark); }
+.thumb:hover .fav, .thumb .fav:focus-visible { opacity: 1; }
+@media (hover: none) { .thumb .fav { opacity: 1; } }
+.thumb .fav svg { width: 15px; height: 15px; }
+.gallery-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.gfilter button { border: 1px solid var(--line); background: var(--surface); padding: 5px 11px; border-radius: 999px; font-size: 13px; cursor: pointer; }
+.gfilter button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+/* Long video */
+.long-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.long-card .top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+.long-card .top b { font-family: var(--f-display); font-size: 16px; }
+.long-card .top span { font: 400 12px var(--f-mono); color: var(--muted); }
+.shots { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 8px; max-height: 420px; overflow: auto; }
+.shots li { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); font-size: 12px; display: flex; flex-direction: column; min-width: 0; }
+.shots li .pv { aspect-ratio: 16 / 9; background: var(--sunken); display: grid; place-items: center; color: var(--muted); font: 600 13px var(--f-mono); overflow: hidden; }
+.shots li .pv img, .shots li .pv video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.shots li .cap { padding: 6px 8px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; color: var(--muted); }
+.shots li.now { border-color: var(--accent); }
+.shots li.done .pv { color: var(--good); }
+.resume { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition: none !important; } }
 </style>
 </head>
@@ -297,10 +357,26 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
       <button type="button" class="btn accent" id="newChat">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New chat</button>
       <div class="field">
+        <div class="label-row"><span class="label">Characters</span><button type="button" class="btn small ghost" id="newBot">+ New</button></div>
+        <ul class="bots" id="bots"></ul>
+      </div>
+      <div class="field">
         <span class="label">Conversations</span>
         <ul class="convos" id="convos"></ul>
         <p class="hint" id="convosEmpty">Your chats are saved on this PC.</p>
       </div>
+      <details class="more" id="memDetails">
+        <summary>Memory <span class="sum" id="memSummary"></span></summary>
+        <div class="inner">
+          <label class="toggle"><input type="checkbox" id="memAuto" checked>
+            <span>Remember things from chats<small>When you mention something lasting (your name, likes, projects, pets), the AI saves it here and uses it in future chats with every character.</small></span>
+          </label>
+          <ul class="memlist" id="memList"></ul>
+          <p class="hint" id="memEmpty">Nothing remembered yet. Tell the AI about yourself, or add something below.</p>
+          <div class="keyrow"><input class="input" id="memInput" type="text" maxlength="300" placeholder="Add something to remember…"><button type="button" class="btn small" id="memAdd">Add</button></div>
+          <button type="button" class="btn small ghost danger" id="memClear" hidden>Forget everything</button>
+        </div>
+      </details>
       <details class="more" id="aiDetails">
         <summary>AI model <span class="sum" id="aiSummary"></span></summary>
         <div class="inner">
@@ -359,8 +435,18 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
       </details>
     </aside>
     <div class="panel chat-main">
+      <div class="chat-head">
+        <div class="avatar" id="headAvatar"></div>
+        <div class="t"><b id="headName">Daydream</b><small id="headSub"></small></div>
+        <button type="button" class="icon-btn" id="voiceToggle" aria-pressed="true" title="Read replies aloud">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></button>
+        <button type="button" class="icon-btn" id="editBot" title="Edit this character">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+      </div>
       <div class="messages" id="messages" aria-live="polite"></div>
       <form class="composer" id="chatForm">
+        <button type="button" class="icon-btn" id="micBtn" hidden title="Talk instead of typing (uses your browser's online speech service)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg></button>
         <textarea id="chatInput" rows="1" placeholder="Message Daydream…"></textarea>
         <button type="submit" class="btn accent" id="chatSend" aria-label="Send">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
@@ -396,6 +482,22 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
             </div>
             <input type="file" id="startFile" accept="image/*" hidden>
           </div>
+        </div>
+
+        <div class="field" id="vmodeField" hidden>
+          <span class="label" id="vmodeLabel">Video type</span>
+          <div class="chips" id="vmodes" role="radiogroup" aria-labelledby="vmodeLabel"></div>
+        </div>
+
+        <div class="field" id="longField" hidden>
+          <span class="label" id="vtotalLabel">Total length</span>
+          <div class="chips" id="vtotals" role="radiogroup" aria-labelledby="vtotalLabel"></div>
+          <span class="label" id="vmethodLabel" style="margin-top:8px">How to build it</span>
+          <div class="chips" id="vmethods" role="radiogroup" aria-labelledby="vmethodLabel"></div>
+          <label class="toggle" id="picFirstField" style="margin-top:6px"><input type="checkbox" id="picFirst" checked>
+            <span>Make a picture for each shot first<small>Sharper, more consistent shots. Uses your Image engine, then animates each picture.</small></span>
+          </label>
+          <p class="hint" id="longHint"></p>
         </div>
 
         <div class="field" id="lookField">
@@ -593,7 +695,11 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   <section class="gallery" aria-labelledby="galleryTitle">
     <div class="gallery-head">
       <h2 id="galleryTitle">Saved<span class="count" id="galleryCount"></span></h2>
-      <div id="clearArea"></div>
+      <div class="gallery-tools">
+        <div class="chips gfilter" id="gFilter" role="group" aria-label="Show"></div>
+        <button type="button" class="btn small" id="exportFav" hidden title="Download your favourite images with their prompts, ready for training a LoRA">Export favourites</button>
+        <div id="clearArea"></div>
+      </div>
     </div>
     <ul class="thumbs" id="thumbs"></ul>
     <p class="fineprint" id="galleryNote"></p>
@@ -607,12 +713,48 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     <div class="actions">
       <a class="btn" id="lbDownload" download>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Download</a>
+      <button type="button" class="btn" id="lbFav">☆ Favourite</button>
       <button type="button" class="btn" id="lbAnimate">Animate</button>
       <button type="button" class="btn" id="lbReuse">Use prompt</button>
       <button type="button" class="btn" id="lbClose">Close</button>
     </div>
   </div>
 </div>
+
+<dialog class="sheet-dialog" id="botDialog" aria-labelledby="botDlgTitle">
+  <form class="dlg" id="botForm" method="dialog">
+    <h2 id="botDlgTitle">New character</h2>
+    <div class="row">
+      <div class="avatar lg" id="botAvatarPreview"></div>
+      <div class="field" style="flex:1;min-width:200px">
+        <div class="actions">
+          <label class="btn small" for="botAvatarFile">Upload photo</label>
+          <button type="button" class="btn small" id="botAvatarGen">Generate from appearance</button>
+          <button type="button" class="btn small ghost" id="botAvatarClear" hidden>Remove</button>
+        </div>
+        <p class="hint" id="botAvatarHint">Generating uses your Image engine setting.</p>
+        <input type="file" id="botAvatarFile" accept="image/*" hidden>
+      </div>
+    </div>
+    <label class="field"><span class="label">Name</span><input class="input" id="botName" maxlength="40" required placeholder="For example: Nova"></label>
+    <label class="field"><span class="label">Appearance</span><textarea class="input" id="botAppearance" rows="2" maxlength="600" placeholder="What they look like. Used for their avatar and when you ask for a picture of them."></textarea></label>
+    <label class="field"><span class="label">Personality and instructions</span><textarea class="input" id="botPersonality" rows="5" maxlength="4000" placeholder="Who they are, how they talk, what they care about. Write it as: You are…"></textarea></label>
+    <label class="field"><span class="label">Greeting</span><textarea class="input" id="botGreeting" rows="2" maxlength="600" placeholder="The first thing they say in a new chat (optional)"></textarea></label>
+    <div class="field">
+      <label class="label" for="botVoice">Voice</label>
+      <div class="keyrow"><select id="botVoice"></select><button type="button" class="btn small" id="botVoiceTest">Test</button></div>
+      <p class="hint">Voices come from Windows and your browser. Ones marked "Online" sound more natural but are processed by Microsoft or Google.</p>
+    </div>
+    <label class="toggle"><input type="checkbox" id="botMedia" checked><span>Can make pictures and videos<small>Lets this character create images and videos in the chat, including pictures of themselves.</small></span></label>
+    <div class="actions" style="justify-content:space-between">
+      <button type="button" class="btn ghost danger" id="botDelete">Delete character</button>
+      <div class="actions">
+        <button type="button" class="btn" id="botCancel">Cancel</button>
+        <button type="submit" class="btn accent" id="botSave">Save</button>
+      </div>
+    </div>
+  </form>
+</dialog>
 
 <script>
 (() => {
@@ -657,6 +799,12 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     full:  { label: "Full 720p", sizes: { square: [960, 960], wide: [1280, 704], tall: [704, 1280] }, steps: 20 },
   };
   const LENGTHS = { 2: { label: "2 sec", frames: 49 }, 3: { label: "3 sec", frames: 73 }, 5: { label: "5 sec", frames: 121 } };
+  const VMODES = { single: { label: "Single clip" }, long: { label: "Long video" } };
+  const VTOTALS = { 30: { label: "30 sec" }, 60: { label: "1 min" }, 120: { label: "2 min" }, 300: { label: "5 min" } };
+  const VMETHODS = { storyboard: { label: "Storyboard (shots)" }, extend: { label: "Extend (one shot)" } };
+  const CLIP_SECONDS = 5; // each clip of a long video
+  // Rough minutes per 5-second clip on a mid/upper-range GPU, for the time estimate.
+  const CLIP_MINUTES = { quick: [3, 8], full: [12, 25] };
   const COUNTS = { 1: { label: "1" }, 2: { label: "2" }, 4: { label: "4" } };
   const SUGGEST = {
     image: [
@@ -699,6 +847,9 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     engine: ls.get("dd.engine", "free"),
     vlen: String(ls.get("dd.vlen", "3")),
     vq: ls.get("dd.vq", "quick"),
+    vmode: ls.get("dd.vmode", "single"),
+    vtotal: String(ls.get("dd.vtotal", "60")),
+    vmethod: ls.get("dd.vmethod", "storyboard"),
     startImage: null, // Blob for image-to-video
     busy: false,
     ctl: null,
@@ -708,6 +859,9 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   if (!COUNTS[st.count]) st.count = "1";
   if (!LENGTHS[st.vlen]) st.vlen = "3";
   if (!VQ[st.vq]) st.vq = "quick";
+  if (!VMODES[st.vmode]) st.vmode = "single";
+  if (!VTOTALS[st.vtotal]) st.vtotal = "60";
+  if (!VMETHODS[st.vmethod]) st.vmethod = "storyboard";
   if (!["local", "comfy", "free", "pollinations", "openai"].includes(st.engine)) st.engine = "free";
   // Chat modules are created further down; declared here so earlier code can check them safely.
   let ai = null, chat = null, galleryReady = Promise.resolve();
@@ -727,7 +881,25 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   radios($("#shapes"), "shape", SHAPES, st.shape, (k) => { st.shape = k; ls.set("dd.shape", k); });
   radios($("#counts"), "count", COUNTS, st.count, (k) => { st.count = k; ls.set("dd.count", k); });
   radios($("#lengths"), "vlen", LENGTHS, st.vlen, (k) => { st.vlen = k; ls.set("dd.vlen", k); });
-  radios($("#vquality"), "vq", VQ, st.vq, (k) => { st.vq = k; ls.set("dd.vq", k); });
+  radios($("#vquality"), "vq", VQ, st.vq, (k) => { st.vq = k; ls.set("dd.vq", k); updateVideoFields(); });
+  radios($("#vmodes"), "vmode", VMODES, st.vmode, (k) => { st.vmode = k; ls.set("dd.vmode", k); updateVideoFields(); updateGo(); });
+  radios($("#vtotals"), "vtotal", VTOTALS, st.vtotal, (k) => { st.vtotal = k; ls.set("dd.vtotal", k); updateVideoFields(); });
+  radios($("#vmethods"), "vmethod", VMETHODS, st.vmethod, (k) => { st.vmethod = k; ls.set("dd.vmethod", k); updateVideoFields(); });
+  $("#picFirst").checked = ls.get("dd.picFirst", true);
+  $("#picFirst").addEventListener("change", () => ls.set("dd.picFirst", $("#picFirst").checked));
+  function updateVideoFields() {
+    const isVid = st.mode === "video", long = isVid && st.vmode === "long";
+    $("#vmodeField").hidden = !isVid;
+    $("#longField").hidden = !long;
+    $("#lengthField").hidden = !isVid || long;
+    $("#picFirstField").hidden = !long || st.vmethod !== "storyboard";
+    $("#startField").hidden = !isVid || (long && st.vmethod === "storyboard");
+    if (long) {
+      const n = Math.round(Number(st.vtotal) / CLIP_SECONDS), [a, b] = CLIP_MINUTES[st.vq] || CLIP_MINUTES.quick;
+      const fmt = (m) => (m >= 90 ? `${Math.round(m / 60)} h` : `${Math.round(m)} min`);
+      $("#longHint").textContent = `${n} clips of ${CLIP_SECONDS} seconds. Rough time on your PC: ${fmt(n * a)} to ${fmt(n * b)}. You can stop and resume later, even after closing the app.`;
+    }
+  }
 
   const realEl = $("#realism");
   realEl.checked = ls.get("dd.real", true);
@@ -766,9 +938,8 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     $("#countField").hidden = !isImg;
     $("#shapeField").hidden = !(isImg || isVid);
     $("#enhance").hidden = m === "ideas";
-    $("#startField").hidden = !isVid;
-    $("#lengthField").hidden = !isVid;
     $("#vqField").hidden = !isVid;
+    updateVideoFields();
     $("#engineDetails").hidden = !isImg;
     $("#videoDetails").hidden = !isVid;
     $("#imageView").hidden = m === "ideas";
@@ -777,6 +948,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     promptEl.placeholder = MODE_TEXT[m].ph;
     updateGo(); renderSuggest(); hideMsg(); updateBadge();
     if (isVid && !comfyState.checked) comfyCheck(true);
+    if (isVid) longVideo.refreshResume();
   }
   $("#modeChat").addEventListener("click", () => setMode("chat"));
   $("#modeImage").addEventListener("click", () => setMode("image"));
@@ -785,7 +957,8 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
 
   function updateGo() {
     if (!MODE_TEXT[st.mode]) return;
-    $("#go").textContent = st.busy ? MODE_TEXT[st.mode].busy : MODE_TEXT[st.mode].go;
+    const longVid = st.mode === "video" && st.vmode === "long";
+    $("#go").textContent = st.busy ? MODE_TEXT[st.mode].busy : longVid ? "Make long video" : MODE_TEXT[st.mode].go;
     $("#go").disabled = st.busy;
     $("#enhance").disabled = st.busy;
     $("#stop").hidden = !st.busy;
@@ -1476,7 +1649,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     };
   }
 
-  function wanWorkflow({ prompt, width, height, frames, steps, seed, startImage }) {
+  function wanWorkflow({ prompt, width, height, frames, steps, seed, startImage, lastFrame }) {
     const wf = {
       "37": { class_type: "UNETLoader", inputs: { unet_name: comfyState.files.unet, weight_dtype: "default" } },
       "38": { class_type: "CLIPLoader", inputs: { clip_name: comfyState.files.clip, type: "wan", device: "default" } },
@@ -1491,6 +1664,11 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     if (comfyState.saver === "SaveWEBM") wf["60"] = { class_type: "SaveWEBM", inputs: { images: ["8", 0], filename_prefix: "daydream/video", codec: "vp9", fps: 24, crf: 20 } };
     else wf["60"] = { class_type: "SaveAnimatedWEBP", inputs: { images: ["8", 0], filename_prefix: "daydream/video", fps: 24, lossless: false, quality: 90, method: "default" } };
     if (startImage) { wf["56"] = { class_type: "LoadImage", inputs: { image: startImage } }; wf["55"].inputs.start_image = ["56", 0]; }
+    if (lastFrame) {
+      // Also save the final frame, so the next clip of a long video can continue from it.
+      wf["61"] = { class_type: "ImageFromBatch", inputs: { image: ["8", 0], batch_index: -1, length: 1 } };
+      wf["62"] = { class_type: "SaveImage", inputs: { images: ["61", 0], filename_prefix: "daydream/lastframe" } };
+    }
     return wf;
   }
 
@@ -1506,6 +1684,17 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   }
 
   // Queues a workflow in ComfyUI, reports progress, waits for it, and downloads the output file.
+  async function comfyDownload(out, signal, what) {
+    const url = `${comfyBase()}/view?filename=${encodeURIComponent(out.filename)}&subfolder=${encodeURIComponent(out.subfolder || "")}&type=${encodeURIComponent(out.type || "output")}`;
+    const r = await fetch(url, { signal });
+    if (!r.ok) throw new GenError(`Couldn't download the finished ${what} from ComfyUI (error ${r.status}).`);
+    let blob = await r.blob();
+    const ext = out.filename.split(".").pop().toLowerCase();
+    const mime = { webm: "video/webm", mp4: "video/mp4", webp: "image/webp", gif: "image/gif", mkv: "video/x-matroska", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg" }[ext];
+    if (mime && blob.type !== mime) blob = new Blob([blob], { type: mime });
+    return blob;
+  }
+
   async function runComfyJob(wf, { signal, onStatus, steps, stepText, nodeText, want, what }) {
     const clientId = "daydream-" + Math.random().toString(36).slice(2);
     let queued;
@@ -1564,17 +1753,12 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
         if (!stt.completed && stt.status_str !== "success") continue;
         const files = [];
         for (const o of Object.values(job.outputs || {})) for (const key of ["images", "gifs", "videos"]) for (const f of o[key] || []) if (f && f.filename) files.push(f);
-        const out = files.find((f) => want.test(f.filename)) || files[0];
+        const out = files.find((f) => want.test(f.filename) && !/lastframe/i.test(f.filename)) || files.find((f) => !/lastframe/i.test(f.filename));
         if (!out) throw new GenError(`ComfyUI finished but didn't return the ${what}.`);
         onStatus(`Downloading the ${what} from ComfyUI…`, 1);
-        const url = `${comfyBase()}/view?filename=${encodeURIComponent(out.filename)}&subfolder=${encodeURIComponent(out.subfolder || "")}&type=${encodeURIComponent(out.type || "output")}`;
-        const r = await fetch(url, { signal });
-        if (!r.ok) throw new GenError(`Couldn't download the finished ${what} from ComfyUI (error ${r.status}).`);
-        let blob = await r.blob();
-        const ext = out.filename.split(".").pop().toLowerCase();
-        const mime = { webm: "video/webm", mp4: "video/mp4", webp: "image/webp", gif: "image/gif", mkv: "video/x-matroska", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg" }[ext];
-        if (mime && blob.type !== mime) blob = new Blob([blob], { type: mime });
-        return blob;
+        const blob = await comfyDownload(out, signal, what);
+        const last = files.find((f) => /lastframe/i.test(f.filename));
+        return { blob, lastFrameFile: last || null };
       }
     } finally {
       if (signal) signal.removeEventListener("abort", stopJob);
@@ -1587,13 +1771,13 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     const q = LOCAL_Q[localQuality.value] || LOCAL_Q.standard;
     const [width, height] = q.sizes[shape];
     const wf = zImageWorkflow({ prompt, width, height, steps: q.steps, seed });
-    return runComfyJob(wf, {
+    return (await runComfyJob(wf, {
       signal, onStatus, steps: q.steps, stepText: "Developing", what: "image", want: /\.(png|jpe?g|webp)$/i,
       nodeText: { "28": ["Loading the image model (slow the first time)…"], "30": ["Loading the image model (slow the first time)…"], "27": ["Reading your prompt…"], "8": ["Finishing the picture…", 0.97], "9": ["Saving…", 0.99] },
-    });
+    })).blob;
   }
 
-  async function genVideo({ prompt, shape, seed, signal, onStatus, startImage = st.startImage, vq = st.vq, vlen = st.vlen }) {
+  async function genVideo({ prompt, shape, seed, signal, onStatus, startImage = st.startImage, vq = st.vq, vlen = st.vlen, wantLastFrame = false }) {
     if (!comfyState.ok && !(await comfyCheck(false))) throw new GenError("ComfyUI isn't ready yet. Open the Video tab, then Video engine, and follow the setup steps.");
     const q = VQ[vq], [width, height] = q.sizes[shape], frames = LENGTHS[vlen].frames;
     if ($("#freeVram").checked) {
@@ -1610,12 +1794,13 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
       const up = await comfyJson("/upload/image", { method: "POST", body: fd, signal });
       startName = up.subfolder ? `${up.subfolder}/${up.name}` : up.name;
     }
-    const wf = wanWorkflow({ prompt, width, height, frames, steps: q.steps, seed, startImage: startName });
-    const blob = await runComfyJob(wf, {
+    const wf = wanWorkflow({ prompt, width, height, frames, steps: q.steps, seed, startImage: startName, lastFrame: wantLastFrame });
+    const { blob, lastFrameFile } = await runComfyJob(wf, {
       signal, onStatus, steps: q.steps, stepText: "Making frames", what: "video", want: /\.(webm|mp4|webp|gif|mkv)$/i,
       nodeText: { "37": ["Loading the video model (slow the first time)…"], "38": ["Loading the video model (slow the first time)…"], "39": ["Loading the video model (slow the first time)…"], "6": ["Reading your prompt…"], "55": ["Preparing the start frame…"], "8": ["Decoding frames…", 0.97], "60": ["Saving the video…", 0.99] },
     });
-    return { blob, width, height };
+    const lastFrame = wantLastFrame && lastFrameFile ? await comfyDownload(lastFrameFile, signal, "last frame") : null;
+    return { blob, width, height, lastFrame };
   }
 
   // ---------- start image for video ----------
@@ -1666,11 +1851,10 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     if (idbOpen) return idbOpen;
     idbOpen = new Promise((res, rej) => {
       try {
-        const req = indexedDB.open("daydream-studio", 2);
+        const req = indexedDB.open("daydream-studio", 3);
         req.onupgradeneeded = () => {
           const db = req.result;
-          if (!db.objectStoreNames.contains("images")) db.createObjectStore("images", { keyPath: "id" });
-          if (!db.objectStoreNames.contains("chats")) db.createObjectStore("chats", { keyPath: "id" });
+          for (const name of ["images", "chats", "bots", "projects"]) if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: "id" });
         };
         req.onsuccess = () => res(req.result);
         req.onerror = () => rej(req.error);
@@ -1689,6 +1873,8 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   }
   const DB = makeStore("images");
   const ChatDB = makeStore("chats");
+  const BotDB = makeStore("bots");
+  const ProjectDB = makeStore("projects");
 
   let saved = [];
   const urls = new Map();
@@ -1713,17 +1899,35 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   }
 
   async function loadGallery() { saved = await DB.all(); renderGallery(); }
+  const GFILTERS = { all: "All", fav: "Favourites", image: "Images", video: "Videos" };
+  let gfilter = "all";
+  const STAR = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 2.8 2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9Z"/></svg>';
+  async function toggleFav(it) { it.fav = !it.fav; await DB.put(it); renderGallery(); }
   function renderGallery() {
     const ul = $("#thumbs"); ul.innerHTML = "";
-    const nImg = saved.filter((x) => x.kind !== "video").length, nVid = saved.length - nImg;
+    const nImg = saved.filter((x) => x.kind !== "video").length, nVid = saved.length - nImg, nFav = saved.filter((x) => x.fav).length;
     const parts = []; if (nImg) parts.push(`${nImg} image${nImg === 1 ? "" : "s"}`); if (nVid) parts.push(`${nVid} video${nVid === 1 ? "" : "s"}`);
     $("#galleryCount").textContent = parts.join(" · ");
-    $("#galleryNote").textContent = saved.length ? "Saved in this browser only. Use Download to keep a copy." : "Nothing saved yet. Everything you make will collect here.";
-    for (const it of saved) {
+    $("#galleryNote").textContent = saved.length ? "Saved in this browser only. Use Download to keep a copy. Star your best images to find them later or export them for training." : "Nothing saved yet. Everything you make will collect here.";
+    const gf = $("#gFilter"); gf.innerHTML = ""; gf.hidden = !saved.length;
+    for (const [k, label] of Object.entries(GFILTERS)) {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = label + (k === "fav" && nFav ? ` (${nFav})` : "");
+      b.setAttribute("aria-pressed", String(gfilter === k));
+      b.addEventListener("click", () => { gfilter = k; renderGallery(); });
+      gf.append(b);
+    }
+    $("#exportFav").hidden = !saved.some((x) => x.fav && x.kind !== "video");
+    const shown = saved.filter((x) => gfilter === "all" || (gfilter === "fav" && x.fav) || (gfilter === "image" && x.kind !== "video") || (gfilter === "video" && x.kind === "video"));
+    if (saved.length && !shown.length) $("#galleryNote").textContent = gfilter === "fav" ? "No favourites yet. Hover over an image and click its star." : "Nothing here yet.";
+    for (const it of shown) {
       const li = document.createElement("li"); li.className = "thumb";
       const b = document.createElement("button"); b.type = "button"; b.className = "open"; b.setAttribute("aria-label", "View " + it.prompt);
       b.append(mediaEl(it, { thumb: true })); b.addEventListener("click", () => openLightbox(it));
       li.append(b);
+      const fav = document.createElement("button"); fav.type = "button"; fav.className = "fav" + (it.fav ? " on" : "");
+      fav.setAttribute("aria-label", (it.fav ? "Remove from favourites: " : "Add to favourites: ") + it.prompt); fav.setAttribute("aria-pressed", String(!!it.fav));
+      fav.innerHTML = STAR; fav.addEventListener("click", () => toggleFav(it));
+      li.append(fav);
       if (it.kind === "video") { const p = document.createElement("span"); p.className = "play"; p.textContent = "▶ Video"; li.append(p); }
       const del = document.createElement("button"); del.type = "button"; del.className = "del"; del.setAttribute("aria-label", "Delete " + it.prompt);
       del.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
@@ -1732,6 +1936,38 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     }
     renderClear(false);
   }
+  // Export favourite images with matching .txt captions (the usual layout for LoRA training tools).
+  let zipLib = null;
+  function loadJSZip() {
+    if (window.JSZip) return Promise.resolve(window.JSZip);
+    if (zipLib) return zipLib;
+    zipLib = new Promise((res, rej) => {
+      const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+      s.onload = () => res(window.JSZip); s.onerror = () => { zipLib = null; rej(new GenError("Couldn't load the zip tool. Check your internet connection.")); };
+      document.head.append(s);
+    });
+    return zipLib;
+  }
+  $("#exportFav").addEventListener("click", async () => {
+    const btn = $("#exportFav"), favs = saved.filter((x) => x.fav && x.kind !== "video");
+    if (!favs.length) return;
+    btn.disabled = true; btn.textContent = "Preparing…";
+    try {
+      const JSZip = await loadJSZip();
+      const zip = new JSZip();
+      favs.forEach((it, i) => {
+        const base = `daydream_${String(i + 1).padStart(3, "0")}`;
+        zip.file(`${base}.${extFor(it.blob)}`, it.blob);
+        zip.file(`${base}.txt`, (it.prompt || "").trim());
+      });
+      zip.file("README.txt", `${favs.length} favourite images from Daydream Studio. Each image has a .txt file with the same name containing its prompt (caption).\nThis is the folder layout most LoRA training tools expect (e.g. AI Toolkit, OneTrainer, kohya). Edit captions to describe what you want the LoRA to learn.\n`);
+      const blob = await zip.generateAsync({ type: "blob" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `daydream-favourites-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    } catch (e) { showMsg(e && e.user ? e.message : "Couldn't create the zip file.", true); }
+    finally { btn.disabled = false; btn.textContent = "Export favourites"; }
+  });
   function renderClear(confirming) {
     const area = $("#clearArea"); area.innerHTML = "";
     if (!saved.length) return;
@@ -1757,6 +1993,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     $("#lbText").textContent = it.prompt + (it.engine ? `  ·  ${it.engine}` : "");
     $("#lbDownload").href = urlFor(it); $("#lbDownload").download = fileName(it);
     $("#lbAnimate").hidden = it.kind === "video";
+    $("#lbFav").textContent = it.fav ? "★ Favourite" : "☆ Favourite";
     $("#lightbox").hidden = false; $("#lbClose").focus();
     document.body.style.overflow = "hidden";
   }
@@ -1766,6 +2003,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#lightbox").hidden) closeLightbox(); });
   $("#lbReuse").addEventListener("click", () => { if (lbItem) { setMode(lbItem.kind === "video" ? "video" : "image"); setPrompt(lbItem.prompt); closeLightbox(); promptEl.focus(); } });
   $("#lbAnimate").addEventListener("click", () => { if (lbItem) { const it = lbItem; closeLightbox(); animate(it); } });
+  $("#lbFav").addEventListener("click", async () => { if (lbItem) { await toggleFav(lbItem); $("#lbFav").textContent = lbItem.fav ? "★ Favourite" : "☆ Favourite"; } });
 
   // ---------- results sheet ----------
   function makeCard(w, h) {
@@ -1892,6 +2130,250 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     } finally { st.busy = false; st.ctl = null; updateGo(); }
   }
 
+  // =====================================================================
+  //  Long video: many 5-second clips made one after another, then joined.
+  //  Progress is saved after every step so a job can be resumed later.
+  // =====================================================================
+  const longVideo = (() => {
+    const FF_CORE = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm/";
+    let ff = null;
+
+    // ----- storage: one record for the project, one per shot (so big clips are written once) -----
+    const shotKey = (pid, i) => `${pid}/${i}`;
+    async function saveMeta(p) { await ProjectDB.put(p); }
+    async function saveShot(pid, i, data) { await ProjectDB.put({ id: shotKey(pid, i), ts: Date.now(), ...data }); }
+    async function unfinished() { return (await ProjectDB.all()).filter((r) => r.kind === "long"); }
+    async function loadShots(pid) {
+      const out = {};
+      for (const r of await ProjectDB.all()) if (typeof r.id === "string" && r.id.startsWith(pid + "/")) out[r.id.slice(pid.length + 1)] = r;
+      return out;
+    }
+    async function discard(pid) {
+      for (const r of await ProjectDB.all()) if (r.id === pid || (typeof r.id === "string" && r.id.startsWith(pid + "/"))) await ProjectDB.del(r.id);
+    }
+
+    // ----- joining clips with ffmpeg.wasm -----
+    async function joiner() {
+      if (ff) return ff;
+      let mod;
+      try { mod = await import("./vendor/ffmpeg/index.js"); }
+      catch { throw new GenError("Couldn't load the video joiner. Check your internet connection (it's needed the first time)."); }
+      const blobURL = async (u, type) => URL.createObjectURL(new Blob([await (await fetch(u)).arrayBuffer()], { type }));
+      const inst = new mod.FFmpeg();
+      await inst.load({ coreURL: await blobURL(FF_CORE + "ffmpeg-core.js", "text/javascript"), wasmURL: await blobURL(FF_CORE + "ffmpeg-core.wasm", "application/wasm") });
+      ff = inst;
+      return ff;
+    }
+    async function join(blobs) {
+      const f = await joiner();
+      const ext = blobs[0].type.includes("mp4") ? "mp4" : "webm";
+      const names = [];
+      let list = "";
+      for (let i = 0; i < blobs.length; i++) {
+        const name = `clip${String(i).padStart(3, "0")}.${ext}`;
+        await f.writeFile(name, new Uint8Array(await blobs[i].arrayBuffer()));
+        names.push(name); list += `file '${name}'\n`;
+      }
+      await f.writeFile("list.txt", new TextEncoder().encode(list));
+      const code = await f.exec(["-f", "concat", "-safe", "0", "-i", "list.txt", "-c", "copy", `joined.${ext}`]);
+      let out = null;
+      if (code === 0) out = await f.readFile(`joined.${ext}`);
+      for (const n of [...names, "list.txt", `joined.${ext}`]) { try { await f.deleteFile(n); } catch {} }
+      if (!out || !out.length) throw new GenError("Couldn't join the clips into one file. The finished clips are kept, so press Resume to try joining again.");
+      return new Blob([out], { type: ext === "mp4" ? "video/mp4" : "video/webm" });
+    }
+
+    // ----- planning -----
+    async function planShots(idea, n, signal) {
+      const ask = `You are planning a video of ${n} shots, each one continuous ${CLIP_SECONDS}-second clip, based on this idea: "${idea}".
+Write exactly ${n} shot descriptions that tell it in order, with a clear beginning, middle and end. Each shot has one clear action and one camera movement.
+For consistency, describe the main characters and the setting in full, with the same wording, in EVERY shot (appearance, clothing, colours, place, time of day, lighting).
+Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
+      const out = await askText(ask, signal);
+      let arr = parseJsonArray(out);
+      if (!arr || !arr.length) throw new GenError("The AI didn't return a usable shot list. Press Make long video to try again.");
+      arr = arr.map((x) => (typeof x === "string" ? x : x && (x.description || x.prompt || x.shot || x.text))).filter(Boolean).map((x) => String(x).trim());
+      while (arr.length < n) arr.push(arr[arr.length - 1]);
+      return arr.slice(0, n);
+    }
+
+    // ----- progress card -----
+    function buildCard(p) {
+      const el = document.createElement("div"); el.className = "long-card";
+      el.innerHTML = `<div class="top"><b></b><span></span></div><div class="bar-track"><div class="bar-fill"></div></div><p class="hint st"></p><ul class="shots"></ul>`;
+      el.querySelector(".top b").textContent = p.prompt;
+      el.querySelector(".top span").textContent = `${VMETHODS[p.method].label.split(" ")[0]} · ${VTOTALS[p.total].label} · ${p.n} clips · ${VQ[p.vq].label}`;
+      const ul = el.querySelector(".shots");
+      const urls = [];
+      const lis = p.prompts.map((txt, i) => {
+        const li = document.createElement("li");
+        li.innerHTML = `<div class="pv">${i + 1}</div><div class="cap"></div>`;
+        li.querySelector(".cap").textContent = txt;
+        ul.append(li);
+        return li;
+      });
+      return {
+        el,
+        status(text, frac) {
+          el.querySelector(".st").textContent = text;
+          if (typeof frac === "number") el.querySelector(".bar-fill").style.width = (Math.max(0, Math.min(1, frac)) * 100).toFixed(1) + "%";
+        },
+        shot(i, { image, clip, now } = {}) {
+          const li = lis[i]; if (!li) return;
+          lis.forEach((x) => x.classList.remove("now"));
+          if (now) { li.classList.add("now"); li.scrollIntoView({ block: "nearest" }); }
+          const pv = li.querySelector(".pv");
+          if (clip) {
+            const u = URL.createObjectURL(clip); urls.push(u);
+            pv.innerHTML = ""; const v = document.createElement("video"); v.src = u; v.muted = true; v.loop = true; v.playsInline = true; v.preload = "metadata";
+            v.addEventListener("mouseenter", () => v.play().catch(() => {})); v.addEventListener("mouseleave", () => v.pause());
+            pv.append(v); li.classList.add("done");
+          } else if (image) {
+            const u = URL.createObjectURL(image); urls.push(u);
+            pv.innerHTML = ""; const im = document.createElement("img"); im.src = u; im.alt = ""; pv.append(im);
+          }
+        },
+        dispose() { urls.forEach((u) => URL.revokeObjectURL(u)); },
+      };
+    }
+
+    function fmtLeft(ms) {
+      const m = Math.round(ms / 60000);
+      if (m < 2) return "about a minute left";
+      if (m < 90) return `about ${m} min left`;
+      return `about ${(m / 60).toFixed(m < 600 ? 1 : 0)} h left`;
+    }
+
+    // ----- running a project (new or resumed) -----
+    async function run(p, signal) {
+      const sheet = $("#sheet"); sheet.className = "sheet one"; sheet.innerHTML = "";
+      $("#batchTitle").textContent = p.prompt;
+      $("#batchMeta").textContent = `Long video · ${VTOTALS[p.total].label}`;
+      $("#finalPrompt").hidden = true;
+      const ui = buildCard(p); sheet.append(ui.el);
+      const shots = await loadShots(p.id);
+      for (let i = 0; i < p.n; i++) if (shots[i]) ui.shot(i, shots[i]);
+      let wake = null;
+      try { wake = await navigator.wakeLock.request("screen"); } catch {}
+      try {
+        // 1) Pictures first (storyboard), while the image model stays loaded.
+        if (p.method === "storyboard" && p.picFirst) {
+          for (let i = 0; i < p.n; i++) {
+            if (shots[i] && (shots[i].image || shots[i].clip)) continue;
+            if (signal.aborted) throw new DOMException("aborted", "AbortError");
+            ui.shot(i, { now: true });
+            const engine = ENGINES[p.engine] ? p.engine : st.engine;
+            const image = await ENGINES[engine]({
+              prompt: p.prompts[i], shape: p.shape, seed: randSeed(), signal,
+              onWait: (l) => ui.status(`Picture ${i + 1} of ${p.n}: waiting ${l}s for the free engine…`),
+              onStatus: (t) => ui.status(`Picture ${i + 1} of ${p.n}: ${t}`, (i / p.n) * 0.15),
+            });
+            shots[i] = { ...(shots[i] || {}), image };
+            await saveShot(p.id, i, shots[i]);
+            ui.shot(i, { image });
+          }
+        }
+        // 2) Clips.
+        const times = [];
+        const done = () => Object.keys(shots).filter((k) => /^\d+$/.test(k) && shots[k].clip).length;
+        for (let i = 0; i < p.n; i++) {
+          if (shots[i] && shots[i].clip) continue;
+          if (signal.aborted) throw new DOMException("aborted", "AbortError");
+          ui.shot(i, { now: true });
+          const start = p.method === "storyboard" ? (shots[i] && shots[i].image) || null
+            : i === 0 ? (shots.start && shots.start.image) || null
+            : (shots[i - 1] && shots[i - 1].lastFrame) || null;
+          const t0 = Date.now();
+          const base = p.picFirst ? 0.15 : 0, span = 0.83 - base;
+          const left = times.length ? fmtLeft((times.reduce((a, b) => a + b, 0) / times.length) * (p.n - done())) : "";
+          const r = await genVideo({
+            prompt: p.prompts[i], shape: p.shape, seed: Math.floor(Math.random() * 2 ** 48), signal, startImage: start, vq: p.vq, vlen: String(CLIP_SECONDS),
+            wantLastFrame: p.method === "extend",
+            onStatus: (t, f) => ui.status(`Clip ${i + 1} of ${p.n}: ${t}${left ? ` · ${left}` : ""}`, base + span * ((done() + (typeof f === "number" ? f : 0)) / p.n)),
+          });
+          times.push(Date.now() - t0);
+          shots[i] = { ...(shots[i] || {}), clip: r.blob, ...(r.lastFrame ? { lastFrame: r.lastFrame } : {}) };
+          await saveShot(p.id, i, shots[i]);
+          ui.shot(i, { clip: r.blob });
+        }
+        // 3) Join.
+        ui.status("Joining the clips into one video…", 0.97);
+        const joined = await join(Array.from({ length: p.n }, (_, i) => shots[i].clip));
+        const item = { id: newId(), kind: "video", prompt: p.prompt, engine: `Wan 2.2 · long video · ${VTOTALS[p.total].label}`, shape: p.shape, seed: 0, blob: joined, ts: Date.now() };
+        await DB.put(item); saved.unshift(item); renderGallery();
+        await discard(p.id);
+        ui.status(`Finished: ${p.n} clips joined into one video. It's saved in your gallery.`, 1);
+        const [w, h] = VQ[p.vq].sizes[p.shape];
+        const card = makeCard(w, h); card.done(item);
+        sheet.prepend(card.el);
+        return item;
+      } finally {
+        try { wake && (await wake.release()); } catch {}
+      }
+    }
+
+    async function start(text, signal) {
+      const p = {
+        id: "p" + Date.now().toString(36), kind: "long", prompt: text, method: st.vmethod, total: st.vtotal, vq: st.vq, shape: st.shape,
+        picFirst: st.vmethod === "storyboard" && $("#picFirst").checked, engine: st.engine, ts: Date.now(),
+        n: Math.round(Number(st.vtotal) / CLIP_SECONDS), prompts: [],
+      };
+      const sheet = $("#sheet"); sheet.className = "sheet one"; sheet.innerHTML = "";
+      const card = makeCard(...VQ[p.vq].sizes[p.shape]); sheet.append(card.el);
+      card.status("Checking ComfyUI…");
+      if (!comfyState.ok && !(await comfyCheck(false))) throw new GenError("ComfyUI isn't ready yet. Open Video engine below the form and follow the setup steps.");
+      if (p.method === "storyboard") {
+        card.status(`Planning ${p.n} shots with the AI…`);
+        p.prompts = await planShots(text, p.n, signal);
+      } else p.prompts = Array(p.n).fill(text);
+      await saveMeta(p);
+      if (p.method === "extend" && st.startImage) await saveShot(p.id, "start", { image: st.startImage });
+      return run(p, signal);
+    }
+
+    // ----- resume banner -----
+    async function refreshResume() {
+      let box = $("#resumeBox");
+      if (!box) { box = document.createElement("div"); box.id = "resumeBox"; box.className = "long-card"; $("#sheet").before(box); }
+      const list = st.busy ? [] : await unfinished();
+      box.hidden = !list.length || st.mode !== "video";
+      box.innerHTML = "";
+      for (const p of list.slice(0, 3)) {
+        const shots = await loadShots(p.id);
+        const n = Object.keys(shots).filter((k) => /^\d+$/.test(k) && shots[k].clip).length;
+        const row = document.createElement("div"); row.className = "resume";
+        const t = document.createElement("div"); t.style.minWidth = "0";
+        t.innerHTML = "<b>Unfinished long video</b><p class=\"hint\" style=\"margin:2px 0 0\"></p>";
+        t.querySelector("p").textContent = `“${p.prompt.slice(0, 80)}” · ${n} of ${p.n} clips done`;
+        const a = document.createElement("div"); a.className = "actions";
+        const go = document.createElement("button"); go.type = "button"; go.className = "btn small accent"; go.textContent = "Resume";
+        go.addEventListener("click", () => resume(p));
+        const del = document.createElement("button"); del.type = "button"; del.className = "btn small ghost danger"; del.textContent = "Discard";
+        del.addEventListener("click", async () => {
+          if (del.dataset.confirm !== "1") { del.dataset.confirm = "1"; del.textContent = "Press again to discard"; return; }
+          await discard(p.id); refreshResume();
+        });
+        a.append(go, del); row.append(t, a); box.append(row);
+      }
+    }
+
+    async function guarded(fn) {
+      if (st.busy) return;
+      st.ctl = new AbortController(); const signal = st.ctl.signal;
+      st.busy = true; updateGo(); hideMsg();
+      const box = $("#resumeBox"); if (box) box.hidden = true;
+      try { await fn(signal); }
+      catch (e) {
+        if (signal.aborted) showMsg("Paused. Everything made so far is saved. Press Resume above to carry on, even after closing the app.");
+        else { console.error(e); showMsg(e && e.user ? e.message : `Something went wrong: ${e && e.message ? e.message : e}. Everything made so far is saved; press Resume to carry on.`, true); }
+      } finally { st.busy = false; st.ctl = null; updateGo(); refreshResume(); }
+    }
+    function resume(p) { guarded((signal) => run(p, signal)); }
+    function make(text) { guarded((signal) => start(text, signal)); }
+
+    return { make, refreshResume };
+  })();
+
   // ---------- text helpers (Pollinations text API) ----------
   async function askText(prompt, signal, onWait) {
     // Prefer the AI running on this PC when it's already loaded.
@@ -1981,7 +2463,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     const text = promptEl.value.trim();
     if (!text) { showMsg(st.mode === "ideas" ? "Type what you need ideas for first." : "Type what you'd like to see first."); promptEl.focus(); return; }
     if (st.mode === "image") makeImages(text);
-    else if (st.mode === "video") makeVideo(text);
+    else if (st.mode === "video") { if (st.vmode === "long") longVideo.make(text); else makeVideo(text); }
     else makeIdeas(text);
   }
   $("#form").addEventListener("submit", (e) => { e.preventDefault(); submit(); });
@@ -2179,22 +2661,254 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   // =====================================================================
   //  Chat: conversations with the AI, which can also make images/videos
   // =====================================================================
+  // ---------- Memory: facts about the user, shared by every character ----------
+  const memory = (() => {
+    let items = ls.get("dd.memory", []);
+    if (!Array.isArray(items)) items = [];
+    const autoEl = $("#memAuto");
+    autoEl.checked = ls.get("dd.memAuto", true);
+    autoEl.addEventListener("change", () => ls.set("dd.memAuto", autoEl.checked));
+    const persist = () => ls.set("dd.memory", items);
+    const norm = (t) => String(t).toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+    function render() {
+      const ul = $("#memList"); ul.innerHTML = "";
+      for (const m of items) {
+        const li = document.createElement("li");
+        const sp = document.createElement("span"); sp.textContent = m.text;
+        const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.setAttribute("aria-label", "Forget: " + m.text);
+        x.addEventListener("click", () => { items = items.filter((v) => v.id !== m.id); persist(); render(); });
+        li.append(sp, x); ul.append(li);
+      }
+      $("#memEmpty").hidden = items.length > 0;
+      $("#memClear").hidden = !items.length;
+      $("#memSummary").textContent = items.length ? `${items.length} thing${items.length === 1 ? "" : "s"}` : "empty";
+    }
+    function add(text) {
+      text = String(text || "").replace(/\s+/g, " ").trim().slice(0, 300);
+      if (!text || items.some((m) => norm(m.text) === norm(text))) return false;
+      items.push({ id: "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), text, ts: Date.now() });
+      if (items.length > 150) items.shift();
+      persist(); render();
+      return true;
+    }
+    function block() {
+      if (!items.length) return "";
+      const lines = []; let used = 0;
+      for (let i = items.length - 1; i >= 0; i--) { used += items[i].text.length; if (used > 1800) break; lines.unshift("- " + items[i].text); }
+      return "What you remember about the user from earlier chats (use it naturally, don't recite it):\n" + lines.join("\n");
+    }
+    const addFromInput = () => { const inp = $("#memInput"); if (add(inp.value)) inp.value = ""; };
+    $("#memAdd").addEventListener("click", addFromInput);
+    $("#memInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addFromInput(); } });
+    $("#memClear").addEventListener("click", (e) => {
+      const b = e.currentTarget;
+      if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "Press again to forget everything"; setTimeout(() => { b.dataset.confirm = ""; b.textContent = "Forget everything"; }, 4000); return; }
+      b.dataset.confirm = ""; b.textContent = "Forget everything"; items = []; persist(); render();
+    });
+    render();
+    return { add, block, auto: () => autoEl.checked };
+  })();
+
+  // ---------- Voice: read replies aloud with the system's voices ----------
+  const voice = (() => {
+    const synth = window.speechSynthesis || null;
+    let voices = [];
+    const listeners = [];
+    const load = () => { voices = synth ? synth.getVoices().slice().sort((a, b) => (a.lang || "").localeCompare(b.lang || "") || a.name.localeCompare(b.name)) : []; listeners.forEach((f) => f()); };
+    if (synth) { load(); synth.onvoiceschanged = load; }
+    function plain(text) {
+      return String(text || "").replace(/```[\s\S]*?```/g, " ").replace(/`([^`]*)`/g, "$1").replace(/[*_#>]+/g, "").replace(/\[\[[\s\S]*?\]\]/g, "").replace(/\s+/g, " ").trim();
+    }
+    function speak(text, voiceName) {
+      if (!synth || !voiceName) return;
+      const v = voices.find((x) => x.name === voiceName);
+      if (!v) return;
+      synth.cancel();
+      const t = plain(text).slice(0, 2500);
+      for (const chunk of t.match(/[^.!?]+[.!?]*\s*/g) || [t]) {
+        if (!chunk.trim()) continue;
+        const u = new SpeechSynthesisUtterance(chunk.trim()); u.voice = v; u.lang = v.lang; synth.speak(u);
+      }
+    }
+    return { list: () => voices, speak, stop: () => { if (synth) synth.cancel(); }, supported: !!synth, onChange: (f) => listeners.push(f) };
+  })();
+
+  // ---------- Characters ----------
+  const PRESET_BOTS = [
+    { id: "daydream", builtin: true, order: 0, name: "Daydream", appearance: "",
+      personality: "You are a friendly, capable AI assistant. You answer directly and helpfully, and you're happy to make pictures and videos when asked.",
+      greeting: "", voice: "", media: true },
+    { id: "nova", order: 1, name: "Nova",
+      appearance: "a woman in her late twenties with short silver-dyed hair, bright hazel eyes and a warm smile, wearing a mustard-yellow jacket, in a sunlit creative studio",
+      personality: "You are Nova, an upbeat creative director. You love turning ideas into pictures and videos. You're enthusiastic, visual and practical: you suggest bold ideas, ask what mood the user is after, and you often make images and videos to show what you mean. Keep replies short and lively.",
+      greeting: "Hey! I'm Nova. Got an idea you want to see? Describe it and I'll make it happen.", voice: "", media: true },
+    { id: "sage", order: 2, name: "Sage",
+      appearance: "a calm man in his sixties with a neat grey beard, kind eyes and round glasses, wearing a soft green knitted sweater, in a cosy library with warm lamplight",
+      personality: "You are Sage, a calm, thoughtful mentor. You help with learning, decisions and life questions. You listen carefully, ask a good question when it helps, explain things simply with examples, and give honest, balanced advice. You never lecture.",
+      greeting: "Hello, I'm Sage. What's on your mind today?", voice: "", media: true },
+    { id: "rook", order: 3, name: "Rook",
+      appearance: "a scruffy grey cartoon raccoon wearing a tiny black leather jacket and sunglasses, leaning on a neon-lit arcade machine",
+      personality: "You are Rook, a sarcastic, quick-witted raccoon and the user's cheeky best mate. You banter and tease good-naturedly and crack jokes, but you're genuinely helpful underneath and you've got the user's back. Keep it short and punchy.",
+      greeting: "Oh look who it is. What do you need, boss?", voice: "", media: true },
+  ];
+
+  const bots = (() => {
+    let list = [];
+    const urls = new Map();
+    const listeners = [];
+    const changed = (x) => listeners.forEach((f) => f(x));
+    async function load() {
+      list = await BotDB.all();
+      if (!ls.get("dd.botsSeeded", false)) {
+        for (const b of PRESET_BOTS) if (!list.some((x) => x.id === b.id)) { const v = { ...b, avatar: null, ts: Date.now() }; await BotDB.put(v); list.push(v); }
+        ls.set("dd.botsSeeded", true);
+      }
+      if (!list.some((x) => x.id === "daydream")) { const v = { ...PRESET_BOTS[0], avatar: null, ts: Date.now() }; await BotDB.put(v); list.push(v); }
+      sort();
+    }
+    const sort = () => list.sort((a, b) => (a.id === "daydream" ? -1 : b.id === "daydream" ? 1 : (a.order ?? 99) - (b.order ?? 99) || a.ts - b.ts));
+    const get = (id) => list.find((b) => b.id === id) || list.find((b) => b.id === "daydream") || { ...PRESET_BOTS[0] };
+    function avatarEl(bot, size = "") {
+      const d = document.createElement("div"); d.className = "avatar" + (size ? " " + size : "");
+      if (bot.avatar) {
+        const key = bot.id + ":" + bot.ts;
+        if (!urls.has(key)) urls.set(key, URL.createObjectURL(bot.avatar));
+        const im = document.createElement("img"); im.src = urls.get(key); im.alt = ""; d.append(im);
+      } else d.textContent = (bot.name || "?").trim().charAt(0).toUpperCase();
+      return d;
+    }
+    async function shrink(blob) {
+      try {
+        const bmp = await createImageBitmap(blob);
+        const side = Math.min(bmp.width, bmp.height), c = document.createElement("canvas"); c.width = c.height = 320;
+        c.getContext("2d").drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, 320, 320);
+        return await new Promise((res) => c.toBlob((b) => res(b || blob), "image/jpeg", 0.9));
+      } catch { return blob; }
+    }
+
+    // ----- editor dialog -----
+    const dlg = $("#botDialog");
+    let editing = null, draftAvatar = null, genCtl = null;
+    function fillVoices(selected) {
+      const sel = $("#botVoice"); sel.innerHTML = "";
+      const none = document.createElement("option"); none.value = ""; none.textContent = voice.supported ? "No voice" : "Voices aren't available in this browser"; sel.append(none);
+      for (const v of voice.list()) { const o = document.createElement("option"); o.value = v.name; o.textContent = `${v.name} (${v.lang})`; sel.append(o); }
+      sel.value = voice.list().some((v) => v.name === selected) ? selected : "";
+    }
+    voice.onChange(() => { if (dlg.open) fillVoices($("#botVoice").value || (editing && editing.voice)); });
+    function showAvatar() {
+      const prev = $("#botAvatarPreview"); prev.innerHTML = "";
+      if (draftAvatar) { const im = document.createElement("img"); im.src = URL.createObjectURL(draftAvatar); im.alt = ""; prev.append(im); }
+      else prev.textContent = ($("#botName").value || "?").trim().charAt(0).toUpperCase() || "?";
+      $("#botAvatarClear").hidden = !draftAvatar;
+    }
+    function edit(bot) {
+      editing = bot ? { ...bot } : null;
+      draftAvatar = bot ? bot.avatar || null : null;
+      $("#botDlgTitle").textContent = bot ? `Edit ${bot.name}` : "New character";
+      $("#botName").value = bot ? bot.name : "";
+      $("#botAppearance").value = bot ? bot.appearance || "" : "";
+      $("#botPersonality").value = bot ? bot.personality || "" : "";
+      $("#botGreeting").value = bot ? bot.greeting || "" : "";
+      $("#botMedia").checked = bot ? bot.media !== false : true;
+      $("#botDelete").hidden = !bot || bot.builtin;
+      $("#botDelete").dataset.confirm = ""; $("#botDelete").textContent = "Delete character";
+      $("#botAvatarHint").textContent = "Generating uses your Image engine setting.";
+      fillVoices(bot ? bot.voice : "");
+      showAvatar();
+      dlg.showModal();
+      $("#botName").focus();
+    }
+    $("#botName").addEventListener("input", () => { if (!draftAvatar) showAvatar(); });
+    $("#botAvatarFile").addEventListener("change", async (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (f) { draftAvatar = await shrink(f); showAvatar(); } });
+    $("#botAvatarClear").addEventListener("click", () => { draftAvatar = null; showAvatar(); });
+    $("#botAvatarGen").addEventListener("click", async () => {
+      const look = $("#botAppearance").value.trim() || $("#botName").value.trim();
+      const hint = $("#botAvatarHint"), btn = $("#botAvatarGen");
+      if (!look) { hint.textContent = "Describe their appearance first."; return; }
+      btn.disabled = true; genCtl = new AbortController();
+      try {
+        const blob = await ENGINES[st.engine]({
+          prompt: `Portrait of ${look}. Head and shoulders, looking at the camera, soft flattering light, detailed, high quality`,
+          shape: "square", seed: randSeed(), signal: genCtl.signal,
+          onWait: (l) => { hint.textContent = `Waiting ${l}s for the free engine…`; },
+          onStatus: (t) => { hint.textContent = t; },
+        });
+        draftAvatar = await shrink(blob); showAvatar(); hint.textContent = "Done. Generate again for a different look.";
+      } catch (e) { if (!genCtl.signal.aborted) hint.textContent = e && e.user ? e.message : "Couldn't make the picture. Try again."; }
+      finally { btn.disabled = false; genCtl = null; }
+    });
+    $("#botVoiceTest").addEventListener("click", () => {
+      const v = $("#botVoice").value;
+      if (!v) return;
+      voice.speak($("#botGreeting").value.trim() || `Hi, I'm ${$("#botName").value.trim() || "your new character"}.`, v);
+    });
+    const closeDlg = () => { if (genCtl) genCtl.abort(); voice.stop(); dlg.close(); };
+    $("#botCancel").addEventListener("click", closeDlg);
+    $("#botDelete").addEventListener("click", async (e) => {
+      const b = e.currentTarget;
+      if (!editing || editing.builtin) return;
+      if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "Press again to delete"; return; }
+      await BotDB.del(editing.id); list = list.filter((x) => x.id !== editing.id);
+      closeDlg(); changed();
+    });
+    $("#botForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = $("#botName").value.trim();
+      if (!name) { $("#botName").focus(); return; }
+      const bot = {
+        ...(editing || { id: "b" + Date.now().toString(36), order: 50 }),
+        name, appearance: $("#botAppearance").value.trim(), personality: $("#botPersonality").value.trim(),
+        greeting: $("#botGreeting").value.trim(), voice: $("#botVoice").value, media: $("#botMedia").checked,
+        avatar: draftAvatar || null, ts: Date.now(),
+      };
+      const isNew = !editing;
+      await BotDB.put(bot);
+      list = list.filter((x) => x.id !== bot.id); list.push(bot); sort();
+      closeDlg(); changed(isNew ? bot : null);
+    });
+
+    return { load, get, all: () => list, avatarEl, edit, onChange: (f) => listeners.push(f) };
+  })();
+
+  // =====================================================================
+  //  Chat: conversations with a character, who can also make media
+  // =====================================================================
   chat = (() => {
     const box = $("#messages"), input = $("#chatInput"), persona = $("#aiPersona");
     let convos = [], cur = null, busy = false, ctl = null, loaded = false;
+    let botId = ls.get("dd.botId", "daydream");
+    let voiceOn = ls.get("dd.voiceOn", true);
     persona.value = ls.get("dd.persona", "");
     persona.addEventListener("input", () => ls.set("dd.persona", persona.value));
 
-    const SYSTEM = `You are Daydream, a friendly, capable AI assistant running privately on the user's own PC inside the Daydream Studio app. You answer directly and helpfully.
-
-Daydream Studio can create images and videos for you. Use this ability whenever the user wants a picture or video made:
+    const MEDIA_RULES = `You can create images and videos inside this app. Use this whenever the user wants a picture or video made:
 - For an image, write one short sentence, then on its own line write:
-[[image: a detailed visual description of the image for an image generator]]
-- For a video, write one short sentence, then on its own line write:
+[[image: a detailed visual description for an image generator]]
+- For a short video (a few seconds), write one short sentence, then on its own line write:
 [[video: a detailed description of the scene, the motion and the camera movement]]
+- For a long video (more than 10 seconds, for example 1 or 2 minutes), write one short sentence, then on its own line write:
+[[longvideo: the idea for the whole video | 2 min]]
 You may add "| wide" or "| tall" before the closing brackets to choose the shape. To animate the most recent image from this conversation, add "| animate" to a video tag.
-Write the description in English, rich in concrete detail (subject, setting, lighting, style). Never explain the tags or show them as code. Only use them when the user wants something made.`;
-    const TAG_RE = /\[\[\s*(image|video)\s*:\s*([\s\S]*?)\]\]/gi;
+Write descriptions in English, rich in concrete detail (subject, setting, lighting, style). Never explain the tags or show them as code. Only use them when the user wants something made.`;
+    const MEMORY_RULES = `When the user tells you something lasting about themselves that would be useful in future chats (their name, likes and dislikes, projects, people or pets in their life), add on its own line:
+[[remember: a short fact about the user, written in the third person]]
+Only do this for new facts. Never mention or explain this.`;
+    const TAG_RE = /\[\[\s*(image|video|longvideo|remember)\s*:\s*([\s\S]*?)\]\]/gi;
+
+    const curBot = () => bots.get(cur ? cur.botId || "daydream" : botId);
+    function systemPrompt(bot) {
+      const parts = [];
+      parts.push(`Your name is ${bot.name}.\n${bot.personality || "You are a friendly, helpful AI."}`);
+      parts.push("You are running privately on the user's own PC inside the Daydream Studio app. Stay in character.");
+      if (bot.appearance) parts.push(`Your appearance: ${bot.appearance}`);
+      if (bot.greeting) parts.push(`You opened this conversation by saying: "${bot.greeting}"`);
+      if (bot.media !== false) parts.push(MEDIA_RULES + (bot.appearance ? "\nIf the user asks for a picture or video of you, include your appearance in the description." : ""));
+      if (memory.auto()) parts.push(MEMORY_RULES);
+      const mem = memory.block(); if (mem) parts.push(mem);
+      const extra = persona.value.trim(); if (extra) parts.push(`The user's custom instructions:\n${extra}`);
+      return parts.join("\n\n");
+    }
 
     function visible(text) {
       let t = String(text || "").replace(/<think>[\s\S]*?<\/think>/gi, "");
@@ -2205,19 +2919,28 @@ Write the description in English, rich in concrete detail (subject, setting, lig
       return t.trim();
     }
     const thinkingNow = (text) => /<think>(?![\s\S]*<\/think>)/i.test(text || "");
+    function nearestTotal(opts) {
+      let secs = 60;
+      const m = opts.match(/(\d+(?:\.\d+)?)\s*(h|hour|m|min|minute|s|sec|second)/);
+      if (m) { const v = parseFloat(m[1]); secs = /^h/.test(m[2]) ? v * 3600 : /^m/.test(m[2]) ? v * 60 : v; }
+      return Object.keys(VTOTALS).map(Number).reduce((a, b) => (Math.abs(b - secs) < Math.abs(a - secs) ? b : a), 60);
+    }
     function parseTags(text) {
       const t = String(text || "").replace(/<think>[\s\S]*?<\/think>/gi, "");
-      const out = []; let m;
+      const media = [], remember = []; let m;
       TAG_RE.lastIndex = 0;
       while ((m = TAG_RE.exec(t))) {
         const kind = m[1].toLowerCase();
+        if (kind === "remember") { const f = m[2].trim(); if (f) remember.push(f); continue; }
         const parts = m[2].split("|").map((s) => s.trim()).filter(Boolean);
         const prompt = parts.shift() || "";
         const opts = parts.join(" ").toLowerCase();
-        const shape = /\bwide\b/.test(opts) ? "wide" : /\btall\b/.test(opts) ? "tall" : /\bsquare\b/.test(opts) ? "square" : kind === "video" ? "wide" : "square";
-        if (prompt) out.push({ kind, prompt, shape, animate: kind === "video" && /\banimate\b/.test(opts) });
+        const shape = /\bwide\b/.test(opts) ? "wide" : /\btall\b/.test(opts) ? "tall" : /\bsquare\b/.test(opts) ? "square" : kind === "image" ? "square" : "wide";
+        if (!prompt) continue;
+        if (kind === "longvideo") media.push({ kind, prompt, shape, total: String(nearestTotal(opts)), status: "offer" });
+        else media.push({ kind, prompt, shape, animate: kind === "video" && /\banimate\b/.test(opts), status: "pending" });
       }
-      return out.slice(0, 4);
+      return { media: media.slice(0, 4), remember: remember.slice(0, 5) };
     }
 
     const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -2249,12 +2972,57 @@ Write the description in English, rich in concrete detail (subject, setting, lig
     function scrollDown() { box.scrollTop = box.scrollHeight; }
     function save() { return cur && cur.messages.length ? ChatDB.put(cur) : Promise.resolve(); }
 
+    // ----- characters in the sidebar and header -----
+    function renderBots() {
+      const ul = $("#bots"); ul.innerHTML = "";
+      const active = curBot().id;
+      for (const b of bots.all()) {
+        const li = document.createElement("li"); if (b.id === active) li.className = "active";
+        const pick = document.createElement("button"); pick.type = "button"; pick.className = "pick"; pick.title = `New chat with ${b.name}`;
+        const nm = document.createElement("span"); nm.textContent = b.name;
+        pick.append(bots.avatarEl(b, "sm"), nm);
+        pick.addEventListener("click", () => { if (busy) return; botId = b.id; ls.set("dd.botId", botId); cur = null; voice.stop(); renderAll(); input.focus(); });
+        const ed = document.createElement("button"); ed.type = "button"; ed.className = "icon-btn"; ed.style.width = ed.style.height = "30px"; ed.title = `Edit ${b.name}`;
+        ed.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+        ed.setAttribute("aria-label", `Edit ${b.name}`);
+        ed.addEventListener("click", () => bots.edit(b));
+        li.append(pick, ed); ul.append(li);
+      }
+    }
+    function renderHead() {
+      const b = curBot();
+      const av = $("#headAvatar"); av.replaceWith(Object.assign(bots.avatarEl(b), { id: "headAvatar" }));
+      $("#headName").textContent = b.name;
+      const sub = (b.personality || "").replace(/^You are\s+/i, "").split(/(?<=[.!?])\s/)[0] || "";
+      $("#headSub").textContent = sub.length > 90 ? sub.slice(0, 88) + "…" : sub;
+      const vt = $("#voiceToggle");
+      vt.hidden = !voice.supported;
+      vt.setAttribute("aria-pressed", String(voiceOn && !!b.voice));
+      vt.title = !b.voice ? `${b.name} has no voice yet. Pick one in Edit character.` : voiceOn ? "Reading replies aloud. Click to mute." : "Muted. Click to read replies aloud.";
+      input.placeholder = `Message ${b.name}…`;
+    }
+    $("#voiceToggle").addEventListener("click", () => {
+      const b = curBot();
+      if (!b.voice) { bots.edit(b); return; }
+      voiceOn = !voiceOn; ls.set("dd.voiceOn", voiceOn); if (!voiceOn) voice.stop(); renderHead();
+    });
+    $("#editBot").addEventListener("click", () => bots.edit(curBot()));
+    $("#newBot").addEventListener("click", () => bots.edit(null));
+    bots.onChange((saved_) => {
+      // A brand-new character opens a fresh chat with them.
+      if (saved_ && saved_.id && !busy) { botId = saved_.id; cur = null; }
+      if (!bots.all().some((b) => b.id === botId)) botId = "daydream";
+      ls.set("dd.botId", botId); renderAll();
+    });
+
     function renderList() {
       const ul = $("#convos"); ul.innerHTML = "";
       $("#convosEmpty").hidden = convos.length > 0;
       for (const c of convos) {
         const li = document.createElement("li"); if (cur && c.id === cur.id) li.className = "active";
-        const b = document.createElement("button"); b.type = "button"; b.className = "open"; b.textContent = c.title || "New chat"; b.title = c.title || "";
+        const b = document.createElement("button"); b.type = "button"; b.className = "open";
+        const who = bots.get(c.botId || "daydream");
+        b.textContent = (who.id !== "daydream" ? who.name + ": " : "") + (c.title || "New chat"); b.title = c.title || "";
         b.addEventListener("click", () => { if (!busy) openConvo(c.id); });
         const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.setAttribute("aria-label", "Delete chat " + (c.title || ""));
         x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
@@ -2262,28 +3030,40 @@ Write the description in English, rich in concrete detail (subject, setting, lig
           if (x.dataset.confirm !== "1") { x.dataset.confirm = "1"; x.style.width = "auto"; x.textContent = "Delete?"; setTimeout(() => renderList(), 3000); return; }
           if (busy && cur && cur.id === c.id) return;
           await ChatDB.del(c.id); convos = convos.filter((v) => v.id !== c.id);
-          if (cur && cur.id === c.id) { cur = null; renderMessages(); }
-          renderList();
+          if (cur && cur.id === c.id) { cur = null; renderAll(); } else renderList();
         });
         li.append(b, x); ul.append(li);
       }
     }
 
     function welcome() {
+      const b = curBot();
       const w = document.createElement("div"); w.className = "welcome";
-      w.innerHTML = "<h2>What can I help with?</h2><p>Chat with an AI that runs on your own PC. Ask it for a picture or a short video and it will make one right here.</p>";
-      const chips = document.createElement("div"); chips.className = "chips";
-      for (const s of [
-        "Make a photo of a cozy log cabin in the snow at night",
-        "Write a short story about a lighthouse keeper",
-        "Make a 3 second video of waves rolling onto a beach at sunset",
-        "Give me 5 ideas for a fantasy book cover, then draw the best one",
-      ]) {
-        const b = document.createElement("button"); b.type = "button"; b.textContent = s;
-        b.addEventListener("click", () => send(s));
-        chips.append(b);
+      if (b.id === "daydream" && !b.greeting) {
+        w.innerHTML = "<h2>What can I help with?</h2><p>Chat with an AI that runs on your own PC. Ask it for a picture or a short video and it will make one right here.</p>";
+        const chips = document.createElement("div"); chips.className = "chips";
+        for (const s of [
+          "Make a photo of a cozy log cabin in the snow at night",
+          "Write a short story about a lighthouse keeper",
+          "Make a 3 second video of waves rolling onto a beach at sunset",
+          "Give me 5 ideas for a fantasy book cover, then draw the best one",
+        ]) {
+          const c = document.createElement("button"); c.type = "button"; c.textContent = s;
+          c.addEventListener("click", () => send(s));
+          chips.append(c);
+        }
+        w.append(chips);
+      } else {
+        w.append(bots.avatarEl(b, "lg"));
+        const h = document.createElement("h2"); h.textContent = b.name; w.append(h);
+        const p = document.createElement("p"); p.textContent = b.greeting || `Say hello to ${b.name}.`; w.append(p);
+        if (b.media !== false && b.appearance) {
+          const chips = document.createElement("div"); chips.className = "chips";
+          const c = document.createElement("button"); c.type = "button"; c.textContent = "Send me a picture of you";
+          c.addEventListener("click", () => send("Send me a picture of you"));
+          chips.append(c); w.append(chips);
+        }
       }
-      w.append(chips);
       return w;
     }
 
@@ -2303,24 +3083,53 @@ Write the description in English, rich in concrete detail (subject, setting, lig
       bubble.hidden = !vis;
     }
 
+    function longOffer(m) {
+      const n = document.createElement("div"); n.className = "note-card";
+      const t = document.createElement("div");
+      t.innerHTML = "<b>Long video idea</b>";
+      const p = document.createElement("div"); p.textContent = `${VTOTALS[m.total] ? VTOTALS[m.total].label : ""} · ${m.prompt}`; p.style.color = "var(--muted)";
+      const hint = document.createElement("div"); hint.className = "hint"; hint.textContent = "Long videos take a while, so they're made in the Video tab, where you can watch progress and resume later.";
+      const b = document.createElement("button"); b.type = "button"; b.className = "btn small accent"; b.textContent = "Set up in Video tab"; b.style.alignSelf = "flex-start";
+      b.addEventListener("click", () => {
+        st.vmode = "long"; ls.set("dd.vmode", "long");
+        if (VTOTALS[m.total]) { st.vtotal = m.total; ls.set("dd.vtotal", m.total); }
+        if (SHAPES[m.shape]) { st.shape = m.shape; ls.set("dd.shape", m.shape); const r = document.getElementById("shape-" + m.shape); if (r) r.checked = true; }
+        for (const [name, val] of [["vmode", "long"], ["vtotal", st.vtotal]]) { const r = document.getElementById(`${name}-${val}`); if (r) r.checked = true; }
+        setMode("video"); setPrompt(m.prompt);
+        showMsg("Long video set up from your chat. Check the length and settings, then press Make long video.");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+      n.append(t, p, hint, b);
+      return n;
+    }
+
     function msgEl(m) {
       const row = document.createElement("div"); row.className = "msg-row " + (m.role === "user" ? "user" : "ai");
       if (m.role === "user") {
         const b = document.createElement("div"); b.className = "bubble"; b.textContent = m.content; row.append(b);
         return row;
       }
-      const who = document.createElement("span"); who.className = "who"; who.textContent = "Daydream";
+      const bot = curBot();
+      const whoRow = document.createElement("div"); whoRow.className = "who-row";
+      const who = document.createElement("span"); who.className = "who"; who.textContent = bot.name;
+      whoRow.append(bots.avatarEl(bot, "sm"), who);
       const b = document.createElement("div"); b.className = "bubble";
-      row.append(who, b);
+      row.append(whoRow, b);
       paint(b, m.content, true);
       const media = document.createElement("div"); media.className = "chat-media"; row.append(media);
       for (const md_ of m.media || []) {
+        if (md_.kind === "longvideo") { media.append(longOffer(md_)); continue; }
         const [w, h] = cardSize(md_);
         const card = makeCard(w, h); media.append(card.el);
         const item = md_.galleryId && saved.find((x) => x.id === md_.galleryId);
         if (md_.status === "done" && item) card.done(item);
         else if (md_.status === "done") card.fail("This was deleted from your gallery.");
         else card.fail(md_.error || "This wasn't finished. Ask again to retry.");
+      }
+      if (m.remembered && m.remembered.length) {
+        const n = document.createElement("div"); n.className = "mem-note";
+        n.textContent = "Saved to memory: " + m.remembered.join(" · ");
+        row.append(n);
       }
       if (m.error) { const n = document.createElement("div"); n.className = "note-card"; n.textContent = m.error; row.append(n); }
       return row;
@@ -2332,8 +3141,9 @@ Write the description in English, rich in concrete detail (subject, setting, lig
       for (const m of cur.messages) box.append(msgEl(m));
       scrollDown();
     }
+    function renderAll() { renderBots(); renderHead(); renderList(); renderMessages(); }
 
-    function openConvo(id) { cur = convos.find((c) => c.id === id) || null; renderMessages(); renderList(); input.focus(); }
+    function openConvo(id) { cur = convos.find((c) => c.id === id) || null; voice.stop(); renderAll(); input.focus(); }
 
     function buildHistory() {
       const budget = ai.budget();
@@ -2348,8 +3158,7 @@ Write the description in English, rich in concrete detail (subject, setting, lig
         out.unshift(msgs[i]);
       }
       while (out.length && out[0].role !== "user") out.shift();
-      const extra = persona.value.trim();
-      return [{ role: "system", content: SYSTEM + (extra ? `\n\nThe user's custom instructions:\n${extra}` : "") }, ...out];
+      return [{ role: "system", content: systemPrompt(curBot()) }, ...out];
     }
 
     function lastImageBlob() {
@@ -2364,10 +3173,15 @@ Write the description in English, rich in concrete detail (subject, setting, lig
     async function runMedia(reply, row, signal) {
       const holder = row.querySelector(".chat-media");
       holder.innerHTML = "";
-      const cards = reply.media.map((m) => { const [w, h] = cardSize(m); const c = makeCard(w, h); holder.append(c.el); c.status(m.kind === "video" ? "Waiting to make the video…" : "Waiting…"); return c; });
+      const cards = reply.media.map((m) => {
+        if (m.kind === "longvideo") { holder.append(longOffer(m)); return null; }
+        const [w, h] = cardSize(m); const c = makeCard(w, h); holder.append(c.el);
+        c.status(m.kind === "video" ? "Waiting to make the video…" : "Waiting…"); return c;
+      });
       scrollDown();
       for (let i = 0; i < reply.media.length; i++) {
         const m = reply.media[i], card = cards[i];
+        if (!card) continue;
         if (signal.aborted) { m.status = "error"; m.error = "Stopped."; card.fail("Stopped."); continue; }
         const seed = m.kind === "video" ? Math.floor(Math.random() * 2 ** 48) : randSeed();
         try {
@@ -2396,7 +3210,8 @@ Write the description in English, rich in concrete detail (subject, setting, lig
     async function send(text) {
       text = String(text || "").trim();
       if (busy || !text) return;
-      if (!cur) { cur = { id: "c" + Date.now().toString(36), title: text.slice(0, 60), ts: Date.now(), messages: [] }; convos.unshift(cur); }
+      voice.stop();
+      if (!cur) { cur = { id: "c" + Date.now().toString(36), botId: curBot().id, title: text.slice(0, 60), ts: Date.now(), messages: [] }; convos.unshift(cur); }
       cur.messages.push({ role: "user", content: text });
       const reply = { role: "assistant", content: "" };
       cur.messages.push(reply);
@@ -2421,11 +3236,17 @@ Write the description in English, rich in concrete detail (subject, setting, lig
         if (!signal.aborted) { console.error(e); reply.error = e && e.user ? e.message : "The AI stopped with an error: " + (e && e.message ? e.message : e); }
       }
       if (!reply.content.trim() && !reply.error) reply.error = signal.aborted ? "Stopped." : "The AI didn't reply. Try again.";
-      const tags = signal.aborted ? [] : parseTags(reply.content);
-      if (tags.length) reply.media = tags.map((t) => ({ ...t, status: "pending" }));
+      const tags = signal.aborted ? { media: [], remember: [] } : parseTags(reply.content);
+      if (tags.media.length) reply.media = tags.media;
+      if (memory.auto() && tags.remember.length) {
+        const added = tags.remember.filter((f) => memory.add(f));
+        if (added.length) reply.remembered = added;
+      }
       const fresh = msgEl(reply); row.replaceWith(fresh); scrollDown();
       save(); renderList(); updateBadge();
-      if (tags.length) await runMedia(reply, fresh, signal);
+      const bot = curBot();
+      if (!signal.aborted && !reply.error && voiceOn && bot.voice) voice.speak(visible(reply.content), bot.voice);
+      if (tags.media.some((m) => m.kind !== "longvideo")) await runMedia(reply, fresh, signal);
       await save();
       setBusy(false); ctl = null;
       input.focus();
@@ -2435,16 +3256,42 @@ Write the description in English, rich in concrete detail (subject, setting, lig
     input.addEventListener("input", autosize);
     input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(input.value); } });
     $("#chatForm").addEventListener("submit", (e) => { e.preventDefault(); send(input.value); });
-    $("#chatStop").addEventListener("click", () => ctl && ctl.abort());
-    $("#newChat").addEventListener("click", () => { if (busy) return; cur = null; renderMessages(); renderList(); input.focus(); });
+    $("#chatStop").addEventListener("click", () => { voice.stop(); if (ctl) ctl.abort(); });
+    $("#newChat").addEventListener("click", () => { if (busy) return; cur = null; voice.stop(); renderAll(); input.focus(); });
+
+    // ----- talk instead of typing (browser speech recognition) -----
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const mic = $("#micBtn");
+    if (SR) {
+      mic.hidden = false;
+      let rec = null;
+      mic.addEventListener("click", () => {
+        if (rec) { rec.stop(); return; }
+        voice.stop();
+        rec = new SR();
+        rec.lang = navigator.language || "en-GB";
+        rec.interimResults = true; rec.continuous = false;
+        let finalText = "";
+        rec.onresult = (e) => {
+          let fin = "", interim = "";
+          for (const r of e.results) { if (r.isFinal) fin += r[0].transcript; else interim += r[0].transcript; }
+          finalText = fin; input.value = (fin + interim).trim(); autosize();
+        };
+        rec.onerror = (e) => { if (e.error === "not-allowed" || e.error === "service-not-allowed") { input.placeholder = "Microphone blocked. Allow it in the browser's site settings."; } };
+        rec.onend = () => { mic.classList.remove("rec"); rec = null; if (finalText.trim() && !busy) send(finalText); };
+        mic.classList.add("rec");
+        try { rec.start(); } catch { mic.classList.remove("rec"); rec = null; }
+      });
+    }
 
     async function show() {
       if (!loaded) {
         loaded = true;
         await galleryReady;
+        await bots.load();
         convos = await ChatDB.all();
         cur = null;
-        renderList(); renderMessages();
+        renderAll();
       }
       ai.refresh();
       setTimeout(() => input.focus(), 0);
