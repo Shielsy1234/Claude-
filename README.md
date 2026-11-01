@@ -74,6 +74,15 @@ Pick under **Video model** in the Video tab:
 
 The 14B files are the fp8 versions from [Comfy-Org/Wan_2.2_ComfyUI_Repackaged](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged); the full list with links is in the app under **Video engine → How to set up**. On a 16 GB card ComfyUI streams parts of the 14B model from system RAM, so 32 GB of RAM or more is recommended.
 
+### Free online video (no PC needed)
+
+Under **Video model → Free online** there are two models that run on Hugging Face's free shared GPUs, so they work anywhere, including on your phone:
+
+- **LTX Video** ([Lightricks/ltx-video-distilled](https://huggingface.co/spaces/Lightricks/ltx-video-distilled)): text-to-video or image-to-video, fast, short clips.
+- **Wan 2.2 14B Fast** ([zerogpu-aoti/wan2-2-fp8da-aoti-faster](https://huggingface.co/spaces/zerogpu-aoti/wan2-2-fp8da-aoti-faster)): animates a picture; with only a description, the app makes a picture first with your Image engine.
+
+There's a free daily GPU allowance: small without an account, more with a free [Hugging Face token](https://huggingface.co/settings/tokens) (Read access) pasted under **Video engine**. These are public demos, so they can be busy or change.
+
 ### Use from your phone
 
 Your phone can make videos (and ComfyUI images) using your PC's GPU, at home or away, through [Tailscale](https://tailscale.com/download) (free):
