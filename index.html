@@ -677,6 +677,20 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
             <div class="status-line" id="comfyStatus" data-s="idle"><i></i><span id="comfyStatusText">Not checked yet.</span></div>
             <ul class="checklist" id="comfyChecklist" hidden></ul>
           </div>
+          <details class="more" id="phoneHelp" style="border-top:0;padding-top:0">
+            <summary>Use from your phone</summary>
+            <div class="inner">
+              <p class="hint" style="color:var(--ink)">Make videos (and ComfyUI images) on your phone, powered by your PC, at home or away. Uses <b>Tailscale</b>, a free app that links your devices privately and gives your PC a secure address.</p>
+              <ol class="steps">
+                <li>On your PC: install <a href="https://tailscale.com/download" target="_blank" rel="noopener">Tailscale</a> and sign in.</li>
+                <li>On your iPhone: install <b>Tailscale</b> from the App Store and sign in with the same account. Leave it switched on.</li>
+                <li>In the <a href="https://login.tailscale.com/admin/dns" target="_blank" rel="noopener">Tailscale admin page</a> (DNS section), turn on <b>MagicDNS</b> and <b>HTTPS Certificates</b>.</li>
+                <li>On your PC, open Command Prompt and run (use your ComfyUI port, e.g. 8188 or 8000):<br><code>tailscale serve --bg 8188</code><br>It shows an address like <code>https://your-pc.tail1234.ts.net</code>.</li>
+                <li>On your phone, open Daydream in Safari (Share → Add to Home Screen for an app icon), go to <b>Video → Video engine</b>, enter that <b>https://</b> address as the ComfyUI address and press <b>Check</b>.</li>
+              </ol>
+              <p class="hint">Your PC must be on with ComfyUI running. On the phone, choose <b>Image engine → ComfyUI on this PC</b> to make images on your PC too. Videos and images you make on the phone are saved in the phone's gallery.</p>
+            </div>
+          </details>
           <details class="more" id="comfyHelp" style="border-top:0;padding-top:0">
             <summary>How to set up ComfyUI (one time)</summary>
             <div class="inner">
@@ -1640,8 +1654,17 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     if (spec[0] === "COMBO" && spec[1] && Array.isArray(spec[1].options)) return spec[1].options;
     return [];
   }
+  // A secure (https) page can't talk to a plain http:// address on another device; browsers block it.
+  function insecureRemote(base) {
+    try {
+      const u = new URL(base);
+      return location.protocol === "https:" && u.protocol === "http:" && !/^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/i.test(u.hostname);
+    } catch { return false; }
+  }
+  const INSECURE_HINT = "This address starts with http://, which phones and other devices can't use from this secure page. Use your PC's https:// address from Tailscale instead (see “Use from your phone” in the Video engine settings).";
   async function comfyJson(path, opts = {}) {
     let r;
+    if (insecureRemote(comfyBase())) throw new GenError(INSECURE_HINT);
     try { r = await fetch(comfyBase() + path, opts); }
     catch { throw new GenError(`Can't reach ComfyUI at ${comfyBase()}. Check that ComfyUI is running, the address is right, and the CORS setting from the setup steps is turned on.`); }
     if (!r.ok) {
@@ -2811,6 +2834,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
       olStatus("idle", "Connecting to Ollama…");
       try {
         let r;
+        if (insecureRemote(olBase())) throw new GenError(INSECURE_HINT.replace("Video engine", "AI model"));
         try { r = await fetch(olBase() + "/api/tags"); }
         catch { throw new GenError(`Can't reach Ollama at ${olBase()}. Check that Ollama is running and that you set OLLAMA_ORIGINS (see the steps below).`); }
         if (!r.ok) throw new GenError(`Ollama returned error ${r.status}.`);

@@ -74,6 +74,17 @@ Pick under **Video model** in the Video tab:
 
 The 14B files are the fp8 versions from [Comfy-Org/Wan_2.2_ComfyUI_Repackaged](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged); the full list with links is in the app under **Video engine → How to set up**. On a 16 GB card ComfyUI streams parts of the 14B model from system RAM, so 32 GB of RAM or more is recommended.
 
+### Use from your phone
+
+Your phone can make videos (and ComfyUI images) using your PC's GPU, at home or away, through [Tailscale](https://tailscale.com/download) (free):
+
+1. Install Tailscale on the PC and the iPhone, signed in to the same account.
+2. In the Tailscale admin console → DNS, turn on **MagicDNS** and **HTTPS Certificates**.
+3. On the PC, run `tailscale serve --bg 8188` (your ComfyUI port). It prints an `https://<pc>.<tailnet>.ts.net` address.
+4. On the phone, open Daydream, and enter that https address under **Video → Video engine → ComfyUI address**.
+
+The phone needs the https address: browsers block a secure page from talking to plain `http://` addresses on other devices. The app explains this if you enter an `http://` address on a phone.
+
 ### Long videos
 
 Choose **Video type → Long video** for 30 seconds up to 5 minutes. Video models make about 5 seconds at a time, so the app makes many 5-second clips and joins them into one file (with [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm)):
