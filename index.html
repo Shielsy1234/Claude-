@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Daydream Studio</title>
-<meta name="description" content="Type what you're picturing and get a realistic image, or a page of ideas.">
+<meta name="description" content="Type what you're picturing and get a realistic image, a video, or a page of ideas.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: composer column on the left, results "contact sheet" on the right, saved-photo gallery as a band below. Stacks on phones. */
+/* Layout: composer column on the left, results "contact sheet" on the right, saved gallery as a band below. Stacks on phones. */
 :root {
   --paper: #EDF0F6; --surface: #FFFFFF; --sunken: #E2E7F0; --ink: #171E2D; --muted: #586379;
   --line: #D3DAE6; --accent: #3446D4; --accent-soft: #E3E6FB; --accent-ink: #FFFFFF;
@@ -38,7 +38,7 @@ body {
   padding-block: max(24px, env(safe-area-inset-top, 0px)) max(48px, env(safe-area-inset-bottom, 0px));
 }
 [hidden] { display: none !important; }
-img { max-width: 100%; }
+img, video { max-width: 100%; }
 a { color: var(--accent); }
 button, input, textarea, select { font: inherit; color: inherit; }
 :focus-visible { outline: 2.5px solid var(--accent); outline-offset: 2px; }
@@ -48,17 +48,18 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .brand h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(28px, 4.2vw, 42px); letter-spacing: -0.02em; line-height: 1.05; margin: 0; }
 .brand h1 span { color: var(--accent); }
 .brand p { margin: 2px 0 0; color: var(--muted); }
-.pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font: 500 12px/1.2 var(--f-mono); color: var(--muted); }
-.pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+.pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font: 500 12px/1.2 var(--f-mono); color: var(--muted); max-width: 100%; }
+.pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--good); flex: none; }
 
-.main { display: grid; grid-template-columns: minmax(0, 410px) minmax(0, 1fr); gap: 24px; align-items: start; }
-@media (max-width: 880px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.main { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
 
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 18px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--sunken); border-radius: 11px; }
-.modes button { border: 0; background: transparent; padding: 9px 10px; border-radius: 8px; cursor: pointer; font-weight: 600; color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 8px; }
+.modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--sunken); border-radius: 11px; }
+.modes button { border: 0; background: transparent; padding: 9px 6px; border-radius: 8px; cursor: pointer; font-weight: 600; color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 7px; }
 .modes button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
-.modes svg { width: 16px; height: 16px; }
+.modes svg { width: 16px; height: 16px; flex: none; }
 
 .field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .label { font: 500 11px/1 var(--f-mono); text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
@@ -68,6 +69,7 @@ textarea#prompt:focus, .input:focus, select:focus { border-color: var(--accent);
 .input, select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--paper); font-size: 15px; min-width: 0; }
 .hint { font-size: 12.5px; color: var(--muted); margin: 0; }
 .hint kbd { font: 500 11px var(--f-mono); padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); }
+code { font: 500 12px var(--f-mono); background: var(--sunken); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { position: relative; }
@@ -89,11 +91,25 @@ textarea#prompt:focus, .input:focus, select:focus { border-color: var(--accent);
 .engine b { display: block; font-weight: 600; font-size: 14.5px; }
 .engine small { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.4; margin-top: 2px; }
 .engine:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-.engine .tag { font: 500 10px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 2px; background: var(--sunken); color: var(--muted); }
+.engine .tag { font: 500 10px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 2px; background: var(--sunken); color: var(--muted); white-space: nowrap; }
 .engine .tag.best { background: var(--accent); color: var(--accent-ink); }
-.keybox { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: var(--sunken); }
+.keybox { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: var(--sunken); min-width: 0; }
 .keyrow { display: flex; gap: 6px; }
 .keyrow .input { flex: 1; font-family: var(--f-mono); font-size: 13px; }
+.status-line { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; }
+.status-line i { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; margin-top: 6px; }
+.status-line[data-s="ok"] i { background: var(--good); }
+.status-line[data-s="warn"] i { background: var(--spark); }
+.status-line[data-s="bad"] i { background: var(--danger); }
+.bar-track { height: 8px; border-radius: 99px; background: var(--paper); overflow: hidden; border: 1px solid var(--line); }
+.bar-fill { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.checklist li { display: flex; gap: 8px; align-items: flex-start; overflow-wrap: anywhere; }
+.checklist li::before { content: "•"; color: var(--muted); font-weight: 700; flex: none; width: 12px; text-align: center; }
+.checklist li.ok::before { content: "✓"; color: var(--good); }
+.checklist li.bad::before { content: "✗"; color: var(--danger); }
+ol.steps { margin: 0; padding-left: 20px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; color: var(--ink); }
+ol.steps li { overflow-wrap: anywhere; }
 
 .btn { border: 1px solid var(--line); background: var(--surface); padding: 9px 14px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; color: var(--ink); white-space: nowrap; }
 .btn:hover { border-color: var(--accent); }
@@ -102,15 +118,24 @@ textarea#prompt:focus, .input:focus, select:focus { border-color: var(--accent);
 .btn svg { width: 16px; height: 16px; flex: none; }
 .btn.primary { flex: 1; background: var(--accent); border-color: var(--accent); color: var(--accent-ink); padding: 13px 16px; font-family: var(--f-display); font-size: 16px; font-weight: 700; }
 .btn.primary:hover { filter: brightness(1.08); }
+.btn.accent { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .btn.ghost { background: transparent; }
 .btn.small { padding: 6px 10px; font-size: 13px; border-radius: 8px; }
-.actions { display: flex; gap: 8px; }
+.btn.danger { color: var(--danger); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.drop { border: 1.5px dashed var(--line); border-radius: 12px; padding: 12px; display: flex; gap: 12px; align-items: center; background: var(--paper); min-width: 0; }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; flex: none; }
+.drop .txt { font-size: 13px; color: var(--muted); flex: 1; min-width: 0; }
+.drop .txt b { color: var(--ink); display: block; font-size: 14px; }
 
 details.more { border-top: 1px dashed var(--line); padding-top: 14px; }
-details.more summary { cursor: pointer; font-weight: 600; font-size: 14px; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+details.more summary { cursor: pointer; font-weight: 600; font-size: 14px; list-style: none; display: flex; align-items: center; gap: 8px; }
 details.more summary::-webkit-details-marker { display: none; }
-details.more summary::after { content: "+"; font: 500 18px var(--f-mono); color: var(--muted); }
+details.more summary::after { content: "+"; font: 500 18px var(--f-mono); color: var(--muted); margin-left: 4px; }
 details.more[open] summary::after { content: "−"; }
+details.more summary .sum { margin-left: auto; font-weight: 500; color: var(--muted); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-top: 14px; }
 .try .chips button { border: 1px dashed var(--line); background: transparent; padding: 5px 10px; border-radius: 999px; font-size: 13px; color: var(--muted); cursor: pointer; text-align: left; }
 .try .chips button:hover { color: var(--ink); border-color: var(--accent); border-style: solid; }
@@ -124,23 +149,25 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
 .sheet.one { grid-template-columns: minmax(0, 1fr); }
 .shot { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; min-width: 0; }
 .shot .pic { position: relative; background: var(--sunken); display: grid; place-items: center; overflow: hidden; max-width: 100%; }
-.shot .pic img { display: block; width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; }
-.sheet.one .shot .pic img { object-fit: contain; max-height: 72vh; }
+.shot .pic img, .shot .pic video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.shot .pic img { cursor: zoom-in; }
+.sheet.one .shot .pic img, .sheet.one .shot .pic video { object-fit: contain; max-height: 72vh; }
 .shot .bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; justify-content: space-between; align-items: center; }
 .shot .bar .meta { font: 400 11.5px var(--f-mono); color: var(--muted); }
 .shot .bar .btns { display: flex; gap: 6px; flex-wrap: wrap; }
-.develop { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--muted); font-size: 13.5px; text-align: center; padding: 20px; }
+.develop { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--muted); font-size: 13.5px; text-align: center; padding: 20px; max-width: 420px; }
 .develop .spin { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--accent-soft); border-top-color: var(--accent); animation: spin .8s linear infinite; }
 .develop .t { font: 500 12px var(--f-mono); font-variant-numeric: tabular-nums; }
+.develop .bar-track { width: 200px; max-width: 100%; }
 .shimmer { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--surface) 55%, transparent) 50%, transparent 70%); background-size: 200% 100%; animation: shimmer 1.6s linear infinite; pointer-events: none; }
-.failed { color: var(--danger); padding: 20px; text-align: center; font-size: 14px; }
+.failed { color: var(--danger); padding: 20px; text-align: center; font-size: 14px; overflow-wrap: anywhere; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 .empty { border: 1.5px dashed var(--line); border-radius: var(--r); padding: 40px 20px; text-align: center; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .empty svg { width: 48px; height: 48px; opacity: .55; }
 .empty b { color: var(--ink); font-family: var(--f-display); font-size: 18px; }
 .final-prompt { font: 400 12px/1.5 var(--f-mono); color: var(--muted); background: var(--sunken); border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; margin: 0; }
-.msg { margin: 0; padding: 10px 14px; border-radius: 10px; font-size: 14px; background: var(--accent-soft); }
+.msg { margin: 0; padding: 10px 14px; border-radius: 10px; font-size: 14px; background: var(--accent-soft); overflow-wrap: anywhere; }
 .msg.err { background: color-mix(in srgb, var(--danger) 13%, var(--surface)); border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent); }
 
 /* Ideas */
@@ -161,7 +188,8 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
 @media (max-width: 480px) { .thumbs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .thumb { position: relative; min-width: 0; }
 .thumb button.open { display: block; width: 100%; padding: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; cursor: zoom-in; background: var(--sunken); aspect-ratio: 1 / 1; max-width: 100%; }
-.thumb button.open img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb button.open img, .thumb button.open video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .play { position: absolute; left: 8px; bottom: 8px; font: 500 10px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; padding: 3px 6px; border-radius: 5px; background: rgba(10,12,20,.75); color: #fff; pointer-events: none; }
 .thumb .del { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: grid; place-items: center; opacity: 0; }
 .thumb:hover .del, .thumb .del:focus-visible { opacity: 1; }
 @media (hover: none) { .thumb .del { opacity: 1; } }
@@ -170,9 +198,9 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
 .fineprint { font-size: 12.5px; color: var(--muted); margin: 0; }
 
 /* Lightbox */
-.lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(8,10,16,.92); display: flex; flex-direction: column; padding: max(14px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) max(14px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px)); gap: 12px; }
+.lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(8,10,16,.94); display: flex; flex-direction: column; padding: max(14px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) max(14px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px)); gap: 12px; }
 .lightbox .lb-img { flex: 1; min-height: 0; display: grid; place-items: center; }
-.lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+.lightbox img, .lightbox video { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
 .lightbox .lb-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; color: #E6E9F2; }
 .lightbox .lb-bar p { margin: 0; font-size: 13.5px; flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; max-height: 4.5em; overflow: auto; }
 .lightbox .btn { background: #1E2433; border-color: #333B50; color: #E6E9F2; }
@@ -185,7 +213,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   <header class="top">
     <div class="brand">
       <h1>Daydream <span>Studio</span></h1>
-      <p>Type what you're picturing. Get a realistic image, or a page of ideas.</p>
+      <p>Type what you're picturing. Get a realistic image, a video, or a page of ideas.</p>
     </div>
     <div class="pill" id="engineBadge"><i></i><span id="engineBadgeText">Free engine</span></div>
   </header>
@@ -196,6 +224,9 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
         <button type="button" id="modeImage" aria-pressed="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Image
         </button>
+        <button type="button" id="modeVideo" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="14" height="14" rx="2"/><path d="m16 10 6-3v10l-6-3"/></svg>Video
+        </button>
         <button type="button" id="modeIdeas" aria-pressed="false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/></svg>Ideas
         </button>
@@ -205,12 +236,25 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
         <div class="field">
           <div class="label-row">
             <label class="label" for="prompt" id="promptLabel">Describe your image</label>
-            <button type="button" class="btn small ghost" id="enhance" title="Rewrite your prompt with photographic detail">
+            <button type="button" class="btn small ghost" id="enhance" title="Rewrite your prompt with more visual detail">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8Z"/><path d="M19 15v4M17 17h4"/></svg>Improve prompt
             </button>
           </div>
           <textarea id="prompt" placeholder="An old fisherman mending nets on a wooden dock at golden hour"></textarea>
           <p class="hint">Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to generate.</p>
+        </div>
+
+        <div class="field" id="startField" hidden>
+          <span class="label">Start from an image (optional)</span>
+          <div class="drop" id="drop">
+            <img id="startPreview" alt="Start image" hidden>
+            <div class="txt" id="startText"><b>No start image</b>The video is made from your description alone. Add a photo to bring it to life.</div>
+            <div class="actions" style="flex-direction:column">
+              <label class="btn small" for="startFile">Choose…</label>
+              <button type="button" class="btn small ghost" id="startClear" hidden>Remove</button>
+            </div>
+            <input type="file" id="startFile" accept="image/*" hidden>
+          </div>
         </div>
 
         <div class="field" id="lookField">
@@ -223,17 +267,27 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
           <div class="chips" id="shapes" role="radiogroup" aria-labelledby="shapeLabel"></div>
         </div>
 
+        <div class="field" id="lengthField" hidden>
+          <span class="label" id="lengthLabel">Length</span>
+          <div class="chips" id="lengths" role="radiogroup" aria-labelledby="lengthLabel"></div>
+        </div>
+
+        <div class="field" id="vqField" hidden>
+          <span class="label" id="vqLabel">Video quality</span>
+          <div class="chips" id="vquality" role="radiogroup" aria-labelledby="vqLabel"></div>
+        </div>
+
         <div class="field" id="countField">
           <span class="label" id="countLabel">How many</span>
           <div class="chips" id="counts" role="radiogroup" aria-labelledby="countLabel"></div>
-          <p class="hint" id="countNote" hidden>The free engine makes one image at a time. Add a Pollinations key under Image engine to make several at once.</p>
+          <p class="hint" id="countNote" hidden>The free engine makes one image at a time.</p>
         </div>
 
         <label class="toggle" id="realField"><input type="checkbox" id="realism" checked>
           <span>Extra realism<small>Adds camera and lighting details so results look like real photos.</small></span>
         </label>
 
-        <div class="actions">
+        <div class="actions" style="flex-wrap:nowrap">
           <button type="submit" class="btn primary" id="go">Generate image</button>
           <button type="button" class="btn" id="stop" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>Stop</button>
         </div>
@@ -244,19 +298,43 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
         <div class="chips" id="suggest"></div>
       </div>
 
+      <!-- Image engine -->
       <details class="more" id="engineDetails">
-        <summary>Image engine: <span id="engineSummary" style="margin-left:auto;margin-right:8px;font-weight:500;color:var(--muted)"></span></summary>
+        <summary>Image engine <span class="sum" id="engineSummary"></span></summary>
         <div class="inner">
           <div class="engines" role="radiogroup" aria-label="Image engine">
+            <label class="engine"><input type="radio" name="engine" value="local" id="engine-local">
+              <b>This PC <span class="tag best">Private · unlimited</span></b>
+              <small>Runs Z-Image Turbo on your own graphics card in this browser. No account, no limits, nothing leaves your computer. One-time 6 GB download.</small></label>
             <label class="engine"><input type="radio" name="engine" value="free" id="engine-free">
-              <b>Free, no sign-up</b>
-              <small>Works right away. Decent realism, up to 768 px, small watermark. Good for trying ideas.</small></label>
+              <b>Free online, no sign-up</b>
+              <small>Works on any device right away. Basic realism, up to 768 px, small watermark, one image every 45 seconds.</small></label>
             <label class="engine"><input type="radio" name="engine" value="pollinations" id="engine-pollinations">
-              <b>Pollinations account <span class="tag best">More realistic</span></b>
-              <small>Free account with a daily allowance. Sharper, far more lifelike models (Z-Image Turbo, FLUX) at full resolution, no watermark.</small></label>
+              <b>Pollinations account</b>
+              <small>Online, free daily allowance. Lifelike models at full size, no watermark. Needs a free key.</small></label>
             <label class="engine"><input type="radio" name="engine" value="openai" id="engine-openai">
               <b>OpenAI <span class="tag">Paid</span></b>
-              <small>GPT Image models. Excellent detail and text in images. Billed to your OpenAI account, roughly 1 to 20 cents an image.</small></label>
+              <small>GPT Image models, billed to your OpenAI account, roughly 1 to 20 cents an image.</small></label>
+          </div>
+
+          <div class="keybox" id="localBox" hidden>
+            <div class="status-line" id="localStatus" data-s="idle"><i></i><span id="localStatusText">Checking your graphics card…</span></div>
+            <div id="localProgress" hidden>
+              <div class="bar-track"><div class="bar-fill" id="localBar"></div></div>
+              <p class="hint" id="localProgressText" style="margin-top:6px"></p>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn small accent" id="localDownload" hidden>Download model (6 GB)</button>
+              <button type="button" class="btn small" id="localCancel" hidden>Pause download</button>
+              <button type="button" class="btn small ghost danger" id="localDelete" hidden>Delete model</button>
+            </div>
+            <label class="label" for="localQuality">Quality</label>
+            <select id="localQuality">
+              <option value="quick">Quick draft: 512 px, 6 steps</option>
+              <option value="standard" selected>Standard: 1024 px, 8 steps</option>
+              <option value="large">Large: about 1300 px, 9 steps (slower)</option>
+            </select>
+            <p class="hint">Needs Chrome or Edge on a PC with a modern graphics card. The model is stored by your browser for this site, so it only downloads once. The first image after opening the page takes longer while the model loads onto your GPU.</p>
           </div>
 
           <div class="keybox" id="polBox" hidden>
@@ -264,7 +342,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
             <div class="keyrow"><input class="input" id="polKey" type="password" autocomplete="off" placeholder="pk_… or sk_…"><button type="button" class="btn small" id="polKeyShow">Show</button></div>
             <label class="label" for="polModel">Model</label>
             <select id="polModel"></select>
-            <p class="hint">Get a free key at <a href="https://enter.pollinations.ai" target="_blank" rel="noopener">enter.pollinations.ai</a> (sign in, then create a key). Models marked "paid" use purchased credits.</p>
+            <p class="hint">Get a free key at <a href="https://enter.pollinations.ai" target="_blank" rel="noopener">enter.pollinations.ai</a>. Models marked "paid" use purchased credits.</p>
           </div>
 
           <div class="keybox" id="oaBox" hidden>
@@ -286,6 +364,39 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
             <p class="hint">Create a key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>.</p>
           </div>
           <p class="fineprint">Keys are saved only in this browser and are sent only to the provider you pick.</p>
+        </div>
+      </details>
+
+      <!-- Video engine -->
+      <details class="more" id="videoDetails" hidden>
+        <summary>Video engine <span class="sum" id="videoSummary">ComfyUI on this PC</span></summary>
+        <div class="inner">
+          <p class="hint" style="font-size:13.5px;color:var(--ink)">Videos are made by <b>ComfyUI</b> running on your PC with the <b>Wan 2.2</b> video model. This page sends it your prompt and shows the result.</p>
+          <div class="field">
+            <label class="label" for="comfyUrl">ComfyUI address</label>
+            <div class="keyrow"><input class="input" id="comfyUrl" type="url" autocomplete="off" placeholder="http://127.0.0.1:8000"><button type="button" class="btn small" id="comfyCheck">Check</button></div>
+          </div>
+          <div class="keybox">
+            <div class="status-line" id="comfyStatus" data-s="idle"><i></i><span id="comfyStatusText">Not checked yet.</span></div>
+            <ul class="checklist" id="comfyChecklist" hidden></ul>
+          </div>
+          <details class="more" id="comfyHelp" style="border-top:0;padding-top:0">
+            <summary>How to set up ComfyUI (one time)</summary>
+            <div class="inner">
+              <ol class="steps">
+                <li>Install <a href="https://www.comfy.org/download" target="_blank" rel="noopener">ComfyUI Desktop</a> for Windows. When it asks for your GPU, pick <b>AMD (ROCm)</b>. If AMD recommends a driver during setup, install it.</li>
+                <li>Download these 3 files (about 16 GB) and put them in your ComfyUI <code>models</code> folder:
+                  <ul class="checklist" style="margin-top:6px">
+                    <li><a href="https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors" target="_blank" rel="noopener">wan2.2_ti2v_5B_fp16.safetensors</a>&nbsp;→ <code>models/diffusion_models</code></li>
+                    <li><a href="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" target="_blank" rel="noopener">umt5_xxl_fp8_e4m3fn_scaled.safetensors</a>&nbsp;→ <code>models/text_encoders</code></li>
+                    <li><a href="https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan2.2_vae.safetensors" target="_blank" rel="noopener">wan2.2_vae.safetensors</a>&nbsp;→ <code>models/vae</code></li>
+                  </ul>
+                </li>
+                <li>Let this page talk to ComfyUI: in ComfyUI Desktop open <b>Settings → Server Config</b> and set <b>Enable CORS header</b> to <code>*</code>, then restart ComfyUI. (Portable or manual installs: start ComfyUI with <code>--enable-cors-header "*"</code>.)</li>
+                <li>Copy the address ComfyUI shows (Desktop usually uses <code>http://127.0.0.1:8000</code>, manual installs <code>http://127.0.0.1:8188</code>) into the box above and press <b>Check</b>. If the browser asks to allow access to devices on your local network, choose <b>Allow</b>.</li>
+              </ol>
+            </div>
+          </details>
         </div>
       </details>
     </section>
@@ -311,21 +422,22 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
 
   <section class="gallery" aria-labelledby="galleryTitle">
     <div class="gallery-head">
-      <h2 id="galleryTitle">Saved images<span class="count" id="galleryCount"></span></h2>
+      <h2 id="galleryTitle">Saved<span class="count" id="galleryCount"></span></h2>
       <div id="clearArea"></div>
     </div>
     <ul class="thumbs" id="thumbs"></ul>
-    <p class="fineprint" id="galleryNote">Every image you make is saved here, in this browser only. Use Download to keep a copy.</p>
+    <p class="fineprint" id="galleryNote"></p>
   </section>
 </div>
 
-<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Image viewer">
-  <div class="lb-img"><img id="lbImg" alt=""></div>
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Viewer">
+  <div class="lb-img"><img id="lbImg" alt=""><video id="lbVideo" controls loop playsinline hidden></video></div>
   <div class="lb-bar">
     <p id="lbText"></p>
     <div class="actions">
       <a class="btn" id="lbDownload" download>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Download</a>
+      <button type="button" class="btn" id="lbAnimate">Animate</button>
       <button type="button" class="btn" id="lbReuse">Use prompt</button>
       <button type="button" class="btn" id="lbClose">Close</button>
     </div>
@@ -340,6 +452,12 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
   };
+  const sleep = (ms, signal) => new Promise((res, rej) => {
+    const t = setTimeout(res, ms);
+    if (signal) signal.addEventListener("abort", () => { clearTimeout(t); rej(new DOMException("aborted", "AbortError")); }, { once: true });
+  });
+  class GenError extends Error { constructor(msg) { super(msg); this.user = true; } }
+  const fmtGB = (b) => (b / 1073741824).toFixed(b > 10737418240 ? 0 : 1) + " GB";
 
   // ---------- options ----------
   const LOOKS = {
@@ -357,6 +475,18 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     wide:   { label: "Wide", w: 1344, h: 768, oa: "1536x1024" },
     tall:   { label: "Tall", w: 768, h: 1344, oa: "1024x1536" },
   };
+  // This PC sizes: Z-Image needs multiples of 16.
+  const LOCAL_Q = {
+    quick:    { steps: 6, sizes: { square: [512, 512], wide: [768, 432], tall: [432, 768] } },
+    standard: { steps: 8, sizes: { square: [1024, 1024], wide: [1280, 720], tall: [720, 1280] } },
+    large:    { steps: 9, sizes: { square: [1280, 1280], wide: [1664, 928], tall: [928, 1664] } },
+  };
+  // Wan 2.2 5B: sizes are multiples of 32, length is 4n+1 frames at 24 fps.
+  const VQ = {
+    quick: { label: "Quick", sizes: { square: [640, 640], wide: [832, 480], tall: [480, 832] }, steps: 20 },
+    full:  { label: "Full 720p", sizes: { square: [960, 960], wide: [1280, 704], tall: [704, 1280] }, steps: 20 },
+  };
+  const LENGTHS = { 2: { label: "2 sec", frames: 49 }, 3: { label: "3 sec", frames: 73 }, 5: { label: "5 sec", frames: 121 } };
   const COUNTS = { 1: { label: "1" }, 2: { label: "2" }, 4: { label: "4" } };
   const SUGGEST = {
     image: [
@@ -367,12 +497,20 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
       "Snow-capped mountains reflected in a still alpine lake",
       "A bowl of steaming ramen on a dark wooden table",
     ],
+    video: [
+      "Waves rolling onto a black sand beach at sunset, slow camera push in",
+      "A hummingbird hovering at a red flower, slow motion",
+      "Rain running down a café window at night, neon reflections",
+      "A drone shot gliding over a misty pine forest at dawn",
+      "A cat stretching and yawning on a sunny windowsill",
+      "Steam rising from a cup of coffee, soft morning light",
+    ],
     ideas: [
       "Names for a cozy coffee shop",
       "A theme for a 7-year-old's birthday party",
       "Photo shoot ideas for a rainy day",
       "Weekend trips within 3 hours of Dublin",
-      "Gift ideas for someone who loves hiking",
+      "Short video ideas for a travel channel",
       "Characters for a fantasy short story",
     ],
   };
@@ -389,13 +527,18 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     shape: ls.get("dd.shape", "square"),
     count: String(ls.get("dd.count", "1")),
     engine: ls.get("dd.engine", "free"),
+    vlen: String(ls.get("dd.vlen", "3")),
+    vq: ls.get("dd.vq", "quick"),
+    startImage: null, // Blob for image-to-video
     busy: false,
     ctl: null,
   };
   if (!LOOKS[st.look]) st.look = "photo";
   if (!SHAPES[st.shape]) st.shape = "square";
   if (!COUNTS[st.count]) st.count = "1";
-  if (!["free", "pollinations", "openai"].includes(st.engine)) st.engine = "free";
+  if (!LENGTHS[st.vlen]) st.vlen = "3";
+  if (!VQ[st.vq]) st.vq = "quick";
+  if (!["local", "free", "pollinations", "openai"].includes(st.engine)) st.engine = "free";
 
   // ---------- controls ----------
   function radios(box, name, opts, cur, onChange) {
@@ -411,6 +554,8 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   radios($("#looks"), "look", LOOKS, st.look, (k) => { st.look = k; ls.set("dd.look", k); });
   radios($("#shapes"), "shape", SHAPES, st.shape, (k) => { st.shape = k; ls.set("dd.shape", k); });
   radios($("#counts"), "count", COUNTS, st.count, (k) => { st.count = k; ls.set("dd.count", k); });
+  radios($("#lengths"), "vlen", LENGTHS, st.vlen, (k) => { st.vlen = k; ls.set("dd.vlen", k); });
+  radios($("#vquality"), "vq", VQ, st.vq, (k) => { st.vq = k; ls.set("dd.vq", k); });
 
   const realEl = $("#realism");
   realEl.checked = ls.get("dd.real", true);
@@ -431,48 +576,68 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     }
   }
 
+  const MODE_TEXT = {
+    image: { label: "Describe your image", ph: "An old fisherman mending nets on a wooden dock at golden hour", go: "Generate image", busy: "Generating…" },
+    video: { label: "Describe your video", ph: "Waves rolling onto a black sand beach at sunset, slow camera push in", go: "Generate video", busy: "Making video…" },
+    ideas: { label: "What do you need ideas for?", ph: "Names for a cozy coffee shop by the sea", go: "Generate ideas", busy: "Thinking…" },
+  };
   function setMode(m) {
     st.mode = m;
-    $("#modeImage").setAttribute("aria-pressed", String(m === "image"));
-    $("#modeIdeas").setAttribute("aria-pressed", String(m === "ideas"));
-    for (const id of ["#lookField", "#shapeField", "#countField", "#realField", "#enhance"]) $(id).hidden = m !== "image";
-    $("#imageView").hidden = m !== "image";
+    for (const [id, mm] of [["#modeImage", "image"], ["#modeVideo", "video"], ["#modeIdeas", "ideas"]]) $(id).setAttribute("aria-pressed", String(m === mm));
+    const isImg = m === "image", isVid = m === "video";
+    $("#lookField").hidden = !isImg;
+    $("#realField").hidden = !isImg;
+    $("#countField").hidden = !isImg;
+    $("#shapeField").hidden = !(isImg || isVid);
+    $("#enhance").hidden = m === "ideas";
+    $("#startField").hidden = !isVid;
+    $("#lengthField").hidden = !isVid;
+    $("#vqField").hidden = !isVid;
+    $("#engineDetails").hidden = !isImg;
+    $("#videoDetails").hidden = !isVid;
+    $("#imageView").hidden = m === "ideas";
     $("#ideasView").hidden = m !== "ideas";
-    $("#promptLabel").textContent = m === "image" ? "Describe your image" : "What do you need ideas for?";
-    promptEl.placeholder = m === "image" ? "An old fisherman mending nets on a wooden dock at golden hour" : "Names for a cozy coffee shop by the sea";
-    updateGo(); renderSuggest(); hideMsg();
+    $("#promptLabel").textContent = MODE_TEXT[m].label;
+    promptEl.placeholder = MODE_TEXT[m].ph;
+    updateGo(); renderSuggest(); hideMsg(); updateBadge();
+    if (isVid && !comfyState.checked) comfyCheck(true);
   }
   $("#modeImage").addEventListener("click", () => setMode("image"));
+  $("#modeVideo").addEventListener("click", () => setMode("video"));
   $("#modeIdeas").addEventListener("click", () => setMode("ideas"));
 
   function updateGo() {
-    $("#go").textContent = st.busy ? (st.mode === "image" ? "Generating…" : "Thinking…") : (st.mode === "image" ? "Generate image" : "Generate ideas");
+    $("#go").textContent = st.busy ? MODE_TEXT[st.mode].busy : MODE_TEXT[st.mode].go;
     $("#go").disabled = st.busy;
     $("#enhance").disabled = st.busy;
     $("#stop").hidden = !st.busy;
   }
-
   function showMsg(t, err) { const m = $("#msg"); m.textContent = t; m.hidden = false; m.classList.toggle("err", !!err); }
   function hideMsg() { $("#msg").hidden = true; }
 
-  // ---------- engine settings ----------
-  const polKey = $("#polKey"), oaKey = $("#oaKey"), polModel = $("#polModel"), oaModel = $("#oaModel"), oaQuality = $("#oaQuality");
+  // ---------- image engine settings ----------
+  const polKey = $("#polKey"), oaKey = $("#oaKey"), polModel = $("#polModel"), oaModel = $("#oaModel"), oaQuality = $("#oaQuality"), localQuality = $("#localQuality");
   polKey.value = ls.get("dd.polKey", "");
   oaKey.value = ls.get("dd.oaKey", "");
-  oaModel.value = ls.get("dd.oaModel", "gpt-image-1.5");
-  if (!oaModel.value) oaModel.value = "gpt-image-1.5";
+  oaModel.value = ls.get("dd.oaModel", "gpt-image-1.5"); if (!oaModel.value) oaModel.value = "gpt-image-1.5";
   oaQuality.value = ls.get("dd.oaQuality", "medium");
+  localQuality.value = ls.get("dd.localQ", "standard"); if (!localQuality.value) localQuality.value = "standard";
   polKey.addEventListener("input", () => { ls.set("dd.polKey", polKey.value.trim()); updateEngineUI(); });
   oaKey.addEventListener("input", () => { ls.set("dd.oaKey", oaKey.value.trim()); updateEngineUI(); });
   polModel.addEventListener("change", () => { ls.set("dd.polModel", polModel.value); updateEngineUI(); });
   oaModel.addEventListener("change", () => { ls.set("dd.oaModel", oaModel.value); updateEngineUI(); });
   oaQuality.addEventListener("change", () => ls.set("dd.oaQuality", oaQuality.value));
+  localQuality.addEventListener("change", () => ls.set("dd.localQ", localQuality.value));
   for (const [btn, inp] of [["#polKeyShow", polKey], ["#oaKeyShow", oaKey]]) {
     $(btn).addEventListener("click", (e) => { const show = inp.type === "password"; inp.type = show ? "text" : "password"; e.currentTarget.textContent = show ? "Hide" : "Show"; });
   }
   document.querySelectorAll('input[name="engine"]').forEach((r) => {
     r.checked = r.value === st.engine;
-    r.addEventListener("change", () => { st.engine = r.value; ls.set("dd.engine", r.value); updateEngineUI(); if (r.value === "pollinations") loadPolModels(); });
+    r.addEventListener("change", () => {
+      st.engine = r.value; ls.set("dd.engine", r.value); updateEngineUI();
+      if (r.value === "pollinations") loadPolModels();
+      if (r.value === "local") local.refreshStatus();
+    });
   });
 
   function fillPolModels(list) {
@@ -500,21 +665,24 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   }
 
   function engineName() {
+    if (st.engine === "local") return "This PC · Z-Image Turbo";
     if (st.engine === "pollinations") return "Pollinations · " + (polModel.selectedOptions[0] ? polModel.selectedOptions[0].textContent.split(" · ")[0] : polModel.value);
     if (st.engine === "openai") return "OpenAI · " + oaModel.value;
-    return "Free engine";
+    return "Free online engine";
+  }
+  function updateBadge() {
+    $("#engineBadgeText").textContent = st.mode === "video" ? "Video · ComfyUI on this PC" : st.mode === "ideas" ? "Ideas · free text service" : engineName();
   }
   function updateEngineUI() {
+    $("#localBox").hidden = st.engine !== "local";
     $("#polBox").hidden = st.engine !== "pollinations";
     $("#oaBox").hidden = st.engine !== "openai";
     $("#engineSummary").textContent = engineName();
-    $("#engineBadgeText").textContent = engineName();
-    $("#countField").classList.toggle("locked", st.engine === "free");
     $("#countNote").hidden = st.engine !== "free";
     document.querySelectorAll('input[name="count"]').forEach((r) => { r.disabled = st.engine === "free" && r.value !== "1"; });
+    updateBadge();
   }
   if (st.engine === "pollinations") loadPolModels();
-  updateEngineUI();
 
   // ---------- prompt building ----------
   function buildPrompt(text) {
@@ -525,24 +693,368 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     return parts.join(", ");
   }
 
-  // ---------- image engines ----------
-  class GenError extends Error { constructor(msg) { super(msg); this.user = true; } }
-
   async function readError(r) {
     let detail = "";
     try { const j = await r.clone().json(); detail = (j.error && (j.error.message || j.error)) || j.message || ""; } catch { try { detail = (await r.text()).slice(0, 200); } catch {} }
-    return String(detail || "");
+    return typeof detail === "string" ? detail : JSON.stringify(detail);
   }
 
-  function sleep(ms, signal) {
-    return new Promise((res, rej) => {
-      const t = setTimeout(res, ms);
-      if (signal) signal.addEventListener("abort", () => { clearTimeout(t); rej(new DOMException("aborted", "AbortError")); }, { once: true });
+  // =====================================================================
+  //  This PC: Z-Image Turbo in the browser with ONNX Runtime Web (WebGPU)
+  //  Pipeline ported from Microsoft's MIT-licensed webnn-developer-preview
+  //  z-image-turbo demo; models from huggingface.co/webnn/Z-Image-Turbo.
+  // =====================================================================
+  const local = (() => {
+    const ORT_SRC = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.29.0/dist/ort.webgpu.min.js";
+    const TF_SRC = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1/dist/transformers.min.js";
+    const REPO = "webnn/Z-Image-Turbo";
+    const BASE = `https://huggingface.co/${REPO}/resolve/main/onnx/`;
+    const FILES = [
+      { name: "text_encoder_model_q4f16.onnx", size: 57983622 },
+      { name: "text_encoder_model_q4f16.onnx_data", size: 2036236288 },
+      { name: "text_encoder_model_q4f16.onnx_data_1", size: 124387328 },
+      { name: "transformer_model_q4f16.onnx", size: 129947430 },
+      { name: "transformer_model_q4f16.onnx_data", size: 2032271360 },
+      { name: "transformer_model_q4f16.onnx_data_1", size: 1507590144 },
+      { name: "scheduler_step_model_f16.onnx", size: 3902 },
+      { name: "vae_pre_process_model_f16.onnx", size: 346 },
+      { name: "vae_decoder_model_f16.onnx", size: 99209498 },
+    ];
+    const MODELS = {
+      text_encoder: { graph: "text_encoder_model_q4f16.onnx", data: ["text_encoder_model_q4f16.onnx_data", "text_encoder_model_q4f16.onnx_data_1"] },
+      transformer: { graph: "transformer_model_q4f16.onnx", data: ["transformer_model_q4f16.onnx_data", "transformer_model_q4f16.onnx_data_1"] },
+      scheduler_step: { graph: "scheduler_step_model_f16.onnx", data: [] },
+      vae_pre_process: { graph: "vae_pre_process_model_f16.onnx", data: [] },
+      vae_decoder: { graph: "vae_decoder_model_f16.onnx", data: [] },
+    };
+    const TOTAL = FILES.reduce((a, f) => a + f.size, 0);
+    const opfsName = (n) => "zimage-turbo__" + n;
+
+    let gpuOk = null, gpuInfo = "", sessions = null, loadingPromise = null, tokenizer = null, dlCtl = null;
+
+    // ----- status UI -----
+    function status(s, text) { $("#localStatus").dataset.s = s; $("#localStatusText").textContent = text; }
+    function progress(on, frac, text) {
+      $("#localProgress").hidden = !on;
+      if (on) { $("#localBar").style.width = (Math.max(0, Math.min(1, frac)) * 100).toFixed(1) + "%"; $("#localProgressText").textContent = text || ""; }
+    }
+    function buttons({ download = false, cancel = false, del = false } = {}) {
+      $("#localDownload").hidden = !download; $("#localCancel").hidden = !cancel; $("#localDelete").hidden = !del;
+    }
+
+    async function checkGpu() {
+      if (gpuOk !== null) return gpuOk;
+      if (!window.isSecureContext || !navigator.gpu) {
+        gpuOk = false; gpuInfo = "This browser can't use your graphics card here. Open the page in Chrome or Edge on your PC, from its web address (not a file you double-clicked).";
+        return gpuOk;
+      }
+      try {
+        const a = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+        if (!a) { gpuOk = false; gpuInfo = "No compatible graphics card found. Update your graphics driver and use Chrome or Edge."; return gpuOk; }
+        const info = a.info || {};
+        const name = [info.vendor, info.architecture, info.description].filter(Boolean).join(" ").trim();
+        if (!a.features.has("shader-f16")) {
+          gpuOk = false; gpuInfo = `Your graphics card${name ? ` (${name})` : ""} is missing 16-bit support in this browser. Update Chrome and your graphics driver.`;
+          return gpuOk;
+        }
+        gpuOk = true; gpuInfo = name ? `Graphics card: ${name}` : "Graphics card ready";
+      } catch (e) { gpuOk = false; gpuInfo = "Couldn't access the graphics card: " + (e && e.message ? e.message : e); }
+      return gpuOk;
+    }
+
+    async function opfsRoot() {
+      try { return await navigator.storage.getDirectory(); }
+      catch { throw new GenError("This browser won't let the page store the model. Open the page from its web address in Chrome or Edge (not as a downloaded file, and not in a private window)."); }
+    }
+    async function fileSize(root, name) {
+      try { const fh = await root.getFileHandle(name); return (await fh.getFile()).size; } catch { return 0; }
+    }
+    async function downloadedBytes() {
+      let root; try { root = await navigator.storage.getDirectory(); } catch { return 0; }
+      let have = 0;
+      for (const f of FILES) have += Math.min(await fileSize(root, opfsName(f.name)), f.size);
+      return have;
+    }
+    async function isDownloaded() { return (await downloadedBytes()) >= TOTAL; }
+
+    async function refreshStatus() {
+      if (st.engine !== "local") return;
+      status("idle", "Checking your graphics card…");
+      const ok = await checkGpu();
+      if (!ok) { status("bad", gpuInfo); buttons({}); return; }
+      if (dlCtl) return; // a download is running and owns the UI
+      const have = await downloadedBytes();
+      if (have >= TOTAL) {
+        status("ok", sessions ? `Ready. Model loaded on your GPU. ${gpuInfo}.` : `Model downloaded. ${gpuInfo}.`);
+        buttons({ del: true }); progress(false);
+      } else if (have > 0) {
+        status("warn", `Download paused at ${fmtGB(have)} of ${fmtGB(TOTAL)}. ${gpuInfo}.`);
+        buttons({ download: true, del: true }); $("#localDownload").textContent = "Resume download";
+        progress(true, have / TOTAL, `${fmtGB(have)} of ${fmtGB(TOTAL)}`);
+      } else {
+        status("warn", `One-time download needed (${fmtGB(TOTAL)}). ${gpuInfo}.`);
+        buttons({ download: true }); $("#localDownload").textContent = `Download model (${fmtGB(TOTAL)})`;
+        progress(false);
+      }
+    }
+
+    async function download() {
+      if (dlCtl) return;
+      if (!(await checkGpu())) { status("bad", gpuInfo); return; }
+      dlCtl = new AbortController();
+      const signal = dlCtl.signal;
+      buttons({ cancel: true }); hideMsg();
+      try {
+        const root = await opfsRoot();
+        try { if (navigator.storage.persist) await navigator.storage.persist(); } catch {}
+        let done = 0;
+        for (const f of FILES) done += Math.min(await fileSize(root, opfsName(f.name)), f.size);
+        try {
+          const est = await navigator.storage.estimate();
+          if (est && est.quota && est.quota - (est.usage || 0) < (TOTAL - done) * 1.02) {
+            throw new GenError(`Not enough free disk space for the browser to store the model. It needs about ${fmtGB(TOTAL - done)} more. Free up space on your drive and try again.`);
+          }
+        } catch (e) { if (e && e.user) throw e; }
+        const t0 = performance.now(), start = done;
+        const report = () => {
+          const secs = (performance.now() - t0) / 1000, rate = (done - start) / Math.max(secs, 0.5);
+          const left = rate > 0 ? (TOTAL - done) / rate : 0;
+          const eta = left > 90 ? `about ${Math.round(left / 60)} min left` : left > 0 ? "less than 2 min left" : "";
+          progress(true, done / TOTAL, `${fmtGB(done)} of ${fmtGB(TOTAL)}${rate > 0 ? ` · ${(rate / 1048576).toFixed(1)} MB/s` : ""}${eta ? ` · ${eta}` : ""}`);
+        };
+        status("idle", "Downloading the model. You can keep using the online engines meanwhile.");
+        report();
+        for (const f of FILES) {
+          const name = opfsName(f.name);
+          const fh = await root.getFileHandle(name, { create: true });
+          let have = (await fh.getFile()).size;
+          if (have > f.size) have = 0;
+          if (have === f.size) continue;
+          const r = await fetch(BASE + f.name, { signal, headers: have ? { Range: `bytes=${have}-` } : {} });
+          if (!(r.ok || r.status === 206)) throw new GenError(`The model download failed (error ${r.status}). Check your connection and press Resume.`);
+          const resuming = have > 0 && r.status === 206;
+          if (!resuming) { done -= have; have = 0; }
+          const w = await fh.createWritable({ keepExistingData: resuming });
+          try {
+            if (resuming) await w.seek(have); else await w.truncate(0);
+            const reader = r.body.getReader();
+            let last = 0;
+            for (;;) {
+              const { done: end, value } = await reader.read();
+              if (end) break;
+              await w.write(value);
+              have += value.byteLength; done += value.byteLength;
+              const now = performance.now(); if (now - last > 400) { last = now; report(); }
+            }
+            await w.close();
+          } catch (e) { try { await w.close(); } catch {} throw e; }
+        }
+        report();
+        status("ok", `Model downloaded. ${gpuInfo}.`);
+        buttons({ del: true });
+        progress(false);
+        showMsg("The model is downloaded. Type a prompt and press Generate image.");
+      } catch (e) {
+        dlCtl = null;
+        if (signal.aborted) { await refreshStatus(); }
+        else {
+          const m = e && e.user ? e.message : "The download stopped: " + (e && e.message ? e.message : e) + ". Press Resume to continue where it left off.";
+          status("bad", m); showMsg(m, true);
+          buttons({ download: true, del: true }); $("#localDownload").textContent = "Resume download";
+        }
+      } finally { dlCtl = null; }
+    }
+
+    async function remove() {
+      if (dlCtl) dlCtl.abort();
+      await release();
+      try {
+        const root = await navigator.storage.getDirectory();
+        for (const f of FILES) { try { await root.removeEntry(opfsName(f.name)); } catch {} }
+      } catch {}
+      showMsg("The downloaded model was deleted from this browser.");
+      await refreshStatus();
+    }
+
+    async function release() {
+      if (!sessions) return;
+      for (const s of Object.values(sessions)) { try { await s.release(); } catch {} }
+      sessions = null; loadingPromise = null;
+    }
+
+    function loadScript(src) {
+      return new Promise((res, rej) => {
+        if (window.ort) return res();
+        const s = document.createElement("script"); s.src = src; s.crossOrigin = "anonymous";
+        s.onload = () => res(); s.onerror = () => rej(new GenError("Couldn't load the AI runtime. Check your internet connection (it's needed once per visit to load the app code)."));
+        document.head.append(s);
+      });
+    }
+
+    async function getTokenizer() {
+      if (tokenizer) return tokenizer;
+      const tf = await import(TF_SRC);
+      tf.env.allowLocalModels = false;
+      tf.env.remotePathTemplate = "{model}/resolve/{revision}/tokenizer/";
+      tokenizer = await tf.AutoTokenizer.from_pretrained(REPO);
+      return tokenizer;
+    }
+
+    async function load(onStatus) {
+      if (sessions) return sessions;
+      if (loadingPromise) return loadingPromise;
+      loadingPromise = (async () => {
+        if (!(await checkGpu())) throw new GenError(gpuInfo);
+        if (!(await isDownloaded())) throw new GenError("Download the model first: open Image engine below the form and press Download model.");
+        onStatus("Loading the AI runtime…");
+        await loadScript(ORT_SRC);
+        ort.env.webgpu.powerPreference = "high-performance";
+        ort.env.logLevel = "error";
+        await getTokenizer();
+        const root = await opfsRoot();
+        const out = {};
+        const names = Object.keys(MODELS);
+        for (let i = 0; i < names.length; i++) {
+          const key = names[i], m = MODELS[key];
+          onStatus(`Loading the model onto your GPU (${i + 1} of ${names.length})…`);
+          const graph = await (await (await root.getFileHandle(opfsName(m.graph))).getFile()).arrayBuffer();
+          const externalData = [];
+          for (const d of m.data) externalData.push({ path: d, data: await (await root.getFileHandle(opfsName(d))).getFile() });
+          out[key] = await ort.InferenceSession.create(graph, {
+            executionProviders: [{ name: "webgpu", deviceType: "gpu" }],
+            logSeverityLevel: 3,
+            ...(externalData.length ? { externalData } : {}),
+          });
+        }
+        sessions = out;
+        refreshStatus();
+        return out;
+      })();
+      try { return await loadingPromise; } catch (e) { loadingPromise = null; throw e; }
+    }
+
+    // ----- float16 helpers -----
+    const HAS_F16 = typeof Float16Array !== "undefined";
+    const f32buf = new Float32Array(1), u32buf = new Uint32Array(f32buf.buffer);
+    function f32ToF16Bits(v) {
+      f32buf[0] = v; const x = u32buf[0];
+      const sign = (x >>> 16) & 0x8000; let exp = ((x >>> 23) & 0xff) - 127 + 15; let mant = x & 0x7fffff;
+      if (exp <= 0) { if (exp < -10) return sign; mant = (mant | 0x800000) >> (1 - exp); return sign | ((mant + 0x1000) >> 13); }
+      if (exp >= 31) return sign | 0x7c00;
+      const r = sign | (exp << 10) | ((mant + 0x1000) >> 13);
+      return r;
+    }
+    function f16BitsToF32(h) {
+      const s = h & 0x8000 ? -1 : 1, e = (h >> 10) & 0x1f, f = h & 0x3ff;
+      if (e === 0) return s * Math.pow(2, -14) * (f / 1024);
+      if (e === 31) return f ? NaN : s * Infinity;
+      return s * Math.pow(2, e - 15) * (1 + f / 1024);
+    }
+    function toHalf(values) {
+      if (HAS_F16) return Float16Array.from(values);
+      const out = new Uint16Array(values.length); for (let i = 0; i < values.length; i++) out[i] = f32ToF16Bits(values[i]); return out;
+    }
+    function halfReader(data) {
+      if (HAS_F16 && data instanceof Float16Array) return (i) => data[i];
+      if (data instanceof Uint16Array) return (i) => f16BitsToF32(data[i]);
+      return (i) => data[i];
+    }
+    function halfTensor(values, dims) { return new ort.Tensor("float16", toHalf(values), dims); }
+
+    function mulberry32(seed) {
+      let t = seed >>> 0;
+      return () => { t += 0x6d2b79f5; let r = Math.imul(t ^ (t >>> 15), t | 1); r ^= r + Math.imul(r ^ (r >>> 7), r | 61); return ((r ^ (r >>> 14)) >>> 0) / 4294967296; };
+    }
+    function noise(size, seed) {
+      const rand = mulberry32(seed), out = new Float32Array(size);
+      for (let i = 0; i < size; i += 2) {
+        let u = rand(); const v = rand(); if (u === 0) u = Number.EPSILON;
+        const mag = Math.sqrt(-2 * Math.log(u));
+        out[i] = mag * Math.cos(2 * Math.PI * v);
+        if (i + 1 < size) out[i + 1] = mag * Math.sin(2 * Math.PI * v);
+      }
+      return out;
+    }
+    // Flow-match Euler timesteps (same as the demo's scheduler.js), as fractions in [0, 1].
+    function timesteps(n) {
+      const N = 1000, shift = 3;
+      const sh = (s) => (shift * s) / (1 + (shift - 1) * s);
+      const smax = sh(1), smin = sh(1 / N);
+      const out = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        const t = n === 1 ? smax * N : smax * N + ((smin * N - smax * N) * i) / (n - 1);
+        out[i] = (1000 - sh(t / N) * N) / 1000;
+      }
+      out[n - 1] = 1;
+      return out;
+    }
+
+    async function tokens(prompt) {
+      const tok = await getTokenizer();
+      const text = tok.apply_chat_template([{ role: "user", content: prompt }], { tokenize: false, add_generation_prompt: true, enable_thinking: true });
+      const enc = tok([text], { padding: false, max_length: 512, truncation: true, return_tensor: false });
+      const ids = enc.input_ids[0].map((x) => BigInt(x));
+      const mask = enc.attention_mask[0].map((x) => BigInt(x));
+      return { ids: BigInt64Array.from(ids), mask: BigInt64Array.from(mask) };
+    }
+
+    async function generate({ prompt, width, height, steps, seed, signal, onStatus }) {
+      const s = await load(onStatus);
+      if (signal && signal.aborted) throw new DOMException("aborted", "AbortError");
+      onStatus("Reading your prompt…");
+      const { ids, mask } = await tokens(prompt);
+      const te = await s.text_encoder.run({
+        input_ids: new ort.Tensor("int64", ids, [1, ids.length]),
+        attention_mask: new ort.Tensor("int64", mask, [1, mask.length]),
+      });
+      const ehs = te.encoder_hidden_states;
+      const lh = height / 8, lw = width / 8, dims = [1, 16, lh, lw];
+      let latents = halfTensor(noise(16 * lh * lw, seed), dims);
+      const ts = timesteps(steps);
+      try {
+        for (let i = 0; i < steps; i++) {
+          if (signal && signal.aborted) throw new DOMException("aborted", "AbortError");
+          onStatus(`Step ${i + 1} of ${steps}${i === 0 ? " (the first image at a new size takes longer)" : ""}`, (i + 0.5) / (steps + 1));
+          const tr = await s.transformer.run({ hidden_states: latents, encoder_hidden_states: ehs, timestep: halfTensor([ts[i]], [1]) });
+          const sc = await s.scheduler_step.run({ noise_pred: tr.sample, latents, step_info: halfTensor([i, steps], [2]) });
+          tr.sample.dispose && tr.sample.dispose();
+          latents.dispose && latents.dispose();
+          latents = sc.latents_out;
+        }
+        onStatus("Developing the picture…", steps / (steps + 1));
+        const pre = await s.vae_pre_process.run({ latents });
+        const dec = await s.vae_decoder.run({ latent_sample: pre.scaled_latents });
+        const px = dec.sample, read = halfReader(px.data);
+        const [, , H, W] = px.dims;
+        const canvas = document.createElement("canvas"); canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext("2d"), img = ctx.createImageData(W, H), c = H * W;
+        for (let j = 0; j < c; j++) {
+          img.data[j * 4] = (read(j) / 2 + 0.5) * 255;
+          img.data[j * 4 + 1] = (read(j + c) / 2 + 0.5) * 255;
+          img.data[j * 4 + 2] = (read(j + 2 * c) / 2 + 0.5) * 255;
+          img.data[j * 4 + 3] = 255;
+        }
+        ctx.putImageData(img, 0, 0);
+        for (const t of [pre.scaled_latents, px]) t.dispose && t.dispose();
+        return await new Promise((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new GenError("Couldn't create the image file."))), "image/png"));
+      } finally {
+        latents.dispose && latents.dispose();
+        ehs.dispose && ehs.dispose();
+      }
+    }
+
+    $("#localDownload").addEventListener("click", download);
+    $("#localCancel").addEventListener("click", () => dlCtl && dlCtl.abort());
+    $("#localDelete").addEventListener("click", (e) => {
+      const b = e.currentTarget;
+      if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "Press again to delete"; setTimeout(() => { b.dataset.confirm = ""; b.textContent = "Delete model"; }, 4000); return; }
+      b.dataset.confirm = ""; b.textContent = "Delete model"; remove();
     });
-  }
 
-  // The free service allows about one request every 45 seconds per person.
-  // When it says "wait", count down and try again (at most a few times).
+    return { refreshStatus, generate, isDownloaded, checkGpu, gpuInfo: () => gpuInfo };
+  })();
+
+  // ---------- online image engines ----------
   async function freeFetch(url, signal, onWait) {
     for (let attempt = 0; ; attempt++) {
       const r = await fetch(url, { signal });
@@ -561,18 +1073,18 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     }
   }
 
-  async function genFree(prompt, shape, seed, signal, onWait) {
+  async function genFree({ prompt, shape, seed, signal, onWait }) {
     const s = SHAPES[shape];
     const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${s.w}&height=${s.h}&seed=${seed}&nologo=true&private=true`;
     const r = await freeFetch(url, signal, onWait);
-    if (r.status === 402 || r.status === 429) throw new GenError("The free engine only allows one image every 45 seconds. Wait a moment and try again, or add a free Pollinations key for unlimited images.");
+    if (r.status === 402 || r.status === 429) throw new GenError("The free engine only allows one image every 45 seconds. Wait a moment and try again, or switch to This PC for unlimited images.");
     if (!r.ok) throw new GenError(`The free engine is busy right now (error ${r.status}). Try again in a minute.`);
     const b = await r.blob();
     if (!b.type.startsWith("image/")) throw new GenError("The free engine sent back something that isn't an image. Try again.");
     return b;
   }
 
-  async function genPollinations(prompt, shape, seed, signal) {
+  async function genPollinations({ prompt, shape, seed, signal }) {
     const key = polKey.value.trim();
     if (!key) throw new GenError("Add your Pollinations key under Image engine first. It's free at enter.pollinations.ai.");
     const s = SHAPES[shape];
@@ -587,7 +1099,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     return b;
   }
 
-  async function genOpenAI(prompt, shape, seed, signal) {
+  async function genOpenAI({ prompt, shape, signal }) {
     const key = oaKey.value.trim();
     if (!key) throw new GenError("Add your OpenAI API key under Image engine first.");
     const r = await fetch("https://api.openai.com/v1/images/generations", {
@@ -612,7 +1124,247 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     throw new GenError("OpenAI returned no image. Try again.");
   }
 
-  const ENGINES = { free: genFree, pollinations: genPollinations, openai: genOpenAI };
+  async function genLocal({ prompt, shape, seed, signal, onStatus }) {
+    const q = LOCAL_Q[localQuality.value] || LOCAL_Q.standard;
+    const [width, height] = q.sizes[shape];
+    return local.generate({ prompt, width, height, steps: q.steps, seed, signal, onStatus });
+  }
+
+  const ENGINES = { free: genFree, pollinations: genPollinations, openai: genOpenAI, local: genLocal };
+
+  // =====================================================================
+  //  Video: ComfyUI on this PC (Wan 2.2 TI2V 5B)
+  // =====================================================================
+  const WAN_NEG = "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走";
+  const WAN_FILES = {
+    unet: { want: "wan2.2_ti2v_5B_fp16.safetensors", node: "UNETLoader", input: "unet_name", folder: "models/diffusion_models" },
+    clip: { want: "umt5_xxl_fp8_e4m3fn_scaled.safetensors", node: "CLIPLoader", input: "clip_name", folder: "models/text_encoders" },
+    vae: { want: "wan2.2_vae.safetensors", node: "VAELoader", input: "vae_name", folder: "models/vae" },
+  };
+  const comfyState = { checked: false, ok: false, files: {}, saver: "SaveWEBM" };
+  const comfyUrlEl = $("#comfyUrl");
+  comfyUrlEl.value = ls.get("dd.comfyUrl", "http://127.0.0.1:8000");
+  comfyUrlEl.addEventListener("change", () => { ls.set("dd.comfyUrl", comfyUrlEl.value.trim()); comfyState.checked = false; });
+  function comfyBase() {
+    let u = (comfyUrlEl.value || "").trim() || "http://127.0.0.1:8000";
+    if (!/^https?:\/\//i.test(u)) u = "http://" + u;
+    return u.replace(/\/+$/, "");
+  }
+  function comfyStatus(s, text) { $("#comfyStatus").dataset.s = s; $("#comfyStatusText").textContent = text; }
+  function comboOptions(spec) {
+    if (!spec) return [];
+    if (Array.isArray(spec[0])) return spec[0];
+    if (spec[0] === "COMBO" && spec[1] && Array.isArray(spec[1].options)) return spec[1].options;
+    return [];
+  }
+  async function comfyJson(path, opts = {}) {
+    let r;
+    try { r = await fetch(comfyBase() + path, opts); }
+    catch { throw new GenError(`Can't reach ComfyUI at ${comfyBase()}. Check that ComfyUI is running, the address is right, and the CORS setting from the setup steps is turned on.`); }
+    if (!r.ok) {
+      let detail = ""; try { detail = JSON.stringify(await r.json()); } catch {}
+      const e = new GenError(`ComfyUI returned error ${r.status}.`); e.status = r.status; e.detail = detail; throw e;
+    }
+    return r.json();
+  }
+
+  async function comfyCheck(quiet) {
+    const btn = $("#comfyCheck"); btn.disabled = true;
+    comfyStatus("idle", "Connecting to ComfyUI…");
+    const list = $("#comfyChecklist"); list.hidden = true; list.innerHTML = "";
+    try {
+      const stats = await comfyJson("/system_stats");
+      const dev = stats.devices && stats.devices[0];
+      const gpu = dev ? `${dev.name || dev.type}${dev.vram_total ? ` · ${fmtGB(dev.vram_total)} VRAM` : ""}` : "connected";
+      const missing = [];
+      for (const [k, f] of Object.entries(WAN_FILES)) {
+        const info = await comfyJson("/object_info/" + f.node);
+        const opts = comboOptions(info[f.node] && info[f.node].input && info[f.node].input.required && info[f.node].input.required[f.input]);
+        const found = opts.find((o) => String(o).split(/[\\/]/).pop() === f.want);
+        comfyState.files[k] = found || null;
+        const li = document.createElement("li"); li.className = found ? "ok" : "bad";
+        li.textContent = found ? f.want : `${f.want} is missing. Put it in ${f.folder}, then press Check again.`;
+        list.append(li);
+        if (!found) missing.push(f.want);
+      }
+      const wan = await comfyJson("/object_info/Wan22ImageToVideoLatent");
+      if (!wan.Wan22ImageToVideoLatent) {
+        const li = document.createElement("li"); li.className = "bad"; li.textContent = "Your ComfyUI is too old for Wan 2.2. Update ComfyUI."; list.append(li); missing.push("update");
+      }
+      const webm = await comfyJson("/object_info/SaveWEBM").catch(() => ({}));
+      comfyState.saver = webm.SaveWEBM ? "SaveWEBM" : "SaveAnimatedWEBP";
+      list.hidden = false;
+      comfyState.checked = true; comfyState.ok = missing.length === 0;
+      if (comfyState.ok) comfyStatus("ok", `Connected. ${gpu}. Ready to make videos.`);
+      else { comfyStatus("warn", `Connected (${gpu}), but some files are missing.`); $("#videoDetails").open = true; }
+      $("#videoSummary").textContent = comfyState.ok ? "ComfyUI · ready" : "ComfyUI · needs setup";
+      return comfyState.ok;
+    } catch (e) {
+      comfyState.checked = true; comfyState.ok = false;
+      comfyStatus("bad", e && e.user ? e.message : "Couldn't talk to ComfyUI.");
+      $("#videoSummary").textContent = "ComfyUI · not connected";
+      $("#videoDetails").open = true;
+      if (!quiet) $("#comfyHelp").open = true;
+      return false;
+    } finally { btn.disabled = false; }
+  }
+  $("#comfyCheck").addEventListener("click", () => { ls.set("dd.comfyUrl", comfyUrlEl.value.trim()); comfyCheck(false); });
+
+  function wanWorkflow({ prompt, width, height, frames, steps, seed, startImage }) {
+    const wf = {
+      "37": { class_type: "UNETLoader", inputs: { unet_name: comfyState.files.unet, weight_dtype: "default" } },
+      "38": { class_type: "CLIPLoader", inputs: { clip_name: comfyState.files.clip, type: "wan", device: "default" } },
+      "39": { class_type: "VAELoader", inputs: { vae_name: comfyState.files.vae } },
+      "48": { class_type: "ModelSamplingSD3", inputs: { model: ["37", 0], shift: 8 } },
+      "6": { class_type: "CLIPTextEncode", inputs: { text: prompt, clip: ["38", 0] } },
+      "7": { class_type: "CLIPTextEncode", inputs: { text: WAN_NEG, clip: ["38", 0] } },
+      "55": { class_type: "Wan22ImageToVideoLatent", inputs: { vae: ["39", 0], width, height, length: frames, batch_size: 1 } },
+      "3": { class_type: "KSampler", inputs: { model: ["48", 0], positive: ["6", 0], negative: ["7", 0], latent_image: ["55", 0], seed, steps, cfg: 5, sampler_name: "uni_pc", scheduler: "simple", denoise: 1 } },
+      "8": { class_type: "VAEDecode", inputs: { samples: ["3", 0], vae: ["39", 0] } },
+    };
+    if (comfyState.saver === "SaveWEBM") wf["60"] = { class_type: "SaveWEBM", inputs: { images: ["8", 0], filename_prefix: "daydream/video", codec: "vp9", fps: 24, crf: 20 } };
+    else wf["60"] = { class_type: "SaveAnimatedWEBP", inputs: { images: ["8", 0], filename_prefix: "daydream/video", fps: 24, lossless: false, quality: 90, method: "default" } };
+    if (startImage) { wf["56"] = { class_type: "LoadImage", inputs: { image: startImage } }; wf["55"].inputs.start_image = ["56", 0]; }
+    return wf;
+  }
+
+  function comfyErrorText(e) {
+    try {
+      const j = JSON.parse(e.detail || "{}");
+      const parts = [];
+      if (j.error && j.error.message) parts.push(j.error.message + (j.error.details ? `: ${j.error.details}` : ""));
+      for (const ne of Object.values(j.node_errors || {})) for (const er of ne.errors || []) parts.push(`${ne.class_type || "node"}: ${er.message}${er.details ? ` (${er.details})` : ""}`);
+      if (parts.length) return "ComfyUI rejected the job. " + parts.join(" · ");
+    } catch {}
+    return e.message;
+  }
+
+  async function genVideo({ prompt, shape, seed, signal, onStatus }) {
+    if (!comfyState.ok && !(await comfyCheck(false))) throw new GenError("ComfyUI isn't ready yet. Open Video engine below the form and follow the setup steps.");
+    const q = VQ[st.vq], [width, height] = q.sizes[shape], frames = LENGTHS[st.vlen].frames;
+    let startName = null;
+    if (st.startImage) {
+      onStatus("Sending your start image to ComfyUI…");
+      const fd = new FormData();
+      fd.append("image", st.startImage, "daydream-start.png");
+      fd.append("overwrite", "true");
+      const up = await comfyJson("/upload/image", { method: "POST", body: fd, signal });
+      startName = up.subfolder ? `${up.subfolder}/${up.name}` : up.name;
+    }
+    const clientId = "daydream-" + Math.random().toString(36).slice(2);
+    const wf = wanWorkflow({ prompt, width, height, frames, steps: q.steps, seed, startImage: startName });
+    let queued;
+    try { queued = await comfyJson("/prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: wf, client_id: clientId }), signal }); }
+    catch (e) { throw new GenError(comfyErrorText(e)); }
+    const id = queued.prompt_id;
+    const stopJob = () => {
+      fetch(comfyBase() + "/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ delete: [id] }) }).catch(() => {});
+      fetch(comfyBase() + "/interrupt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt_id: id }) }).catch(() => {});
+    };
+    if (signal) signal.addEventListener("abort", stopJob, { once: true });
+
+    // Live progress over ComfyUI's websocket (optional; completion is detected by polling).
+    let ws = null, sampling = false;
+    try {
+      ws = new WebSocket(comfyBase().replace(/^http/i, "ws") + "/ws?clientId=" + clientId);
+      ws.onmessage = (ev) => {
+        if (typeof ev.data !== "string") return;
+        let m; try { m = JSON.parse(ev.data); } catch { return; }
+        const d = m.data || {};
+        if (d.prompt_id && d.prompt_id !== id) return;
+        if (m.type === "progress" && d.max) {
+          const node = String(d.node || "");
+          if (node === "3" || (!node && d.max === q.steps)) { sampling = true; onStatus(`Making frames: step ${d.value} of ${d.max}`, d.value / d.max); }
+        } else if (m.type === "executing" && d.node) {
+          const node = String(d.node);
+          if (node === "37" || node === "38" || node === "39") onStatus("Loading the video model (slow the first time)…");
+          else if (node === "6" || node === "7") onStatus("Reading your prompt…");
+          else if (node === "55") onStatus("Preparing the start frame…");
+          else if (node === "8") onStatus("Decoding frames…", 0.97);
+          else if (node === "60") onStatus("Saving the video…", 0.99);
+        }
+      };
+    } catch {}
+
+    try {
+      onStatus("Waiting for ComfyUI to start…");
+      for (;;) {
+        await sleep(2000, signal);
+        let h;
+        try { h = await comfyJson("/history/" + encodeURIComponent(id), { signal }); } catch (e) { if (signal && signal.aborted) throw e; continue; }
+        const job = h[id];
+        if (!job) {
+          if (!sampling) {
+            try {
+              const qq = await comfyJson("/queue", { signal });
+              const ahead = (qq.queue_pending || []).findIndex((x) => x[1] === id);
+              if (ahead > 0) onStatus(`Waiting in ComfyUI's queue (${ahead} job${ahead === 1 ? "" : "s"} ahead)…`);
+            } catch {}
+          }
+          continue;
+        }
+        const stt = job.status || {};
+        if (stt.status_str === "error") {
+          const err = (stt.messages || []).find((x) => x[0] === "execution_error");
+          const msg = err && err[1] ? err[1].exception_message : "unknown error";
+          if (/out of memory|OOM|HIP|hipError/i.test(msg)) throw new GenError("ComfyUI ran out of graphics memory. Choose Quick quality or a shorter length and try again.");
+          throw new GenError("ComfyUI hit an error: " + String(msg).trim().slice(0, 300));
+        }
+        if (!stt.completed && stt.status_str !== "success") continue;
+        const outs = job.outputs || {};
+        const files = [];
+        for (const o of Object.values(outs)) for (const key of ["images", "gifs", "videos"]) for (const f of o[key] || []) if (f && f.filename) files.push(f);
+        const vid = files.find((f) => /\.(webm|mp4|webp|gif|mkv)$/i.test(f.filename)) || files[0];
+        if (!vid) throw new GenError("ComfyUI finished but didn't return a video file.");
+        onStatus("Downloading the video from ComfyUI…", 1);
+        const url = `${comfyBase()}/view?filename=${encodeURIComponent(vid.filename)}&subfolder=${encodeURIComponent(vid.subfolder || "")}&type=${encodeURIComponent(vid.type || "output")}`;
+        const r = await fetch(url, { signal });
+        if (!r.ok) throw new GenError(`Couldn't download the finished video from ComfyUI (error ${r.status}).`);
+        let blob = await r.blob();
+        const ext = vid.filename.split(".").pop().toLowerCase();
+        const mime = { webm: "video/webm", mp4: "video/mp4", webp: "image/webp", gif: "image/gif", mkv: "video/x-matroska" }[ext];
+        if (mime && blob.type !== mime) blob = new Blob([blob], { type: mime });
+        return { blob, width, height };
+      }
+    } finally {
+      if (signal) signal.removeEventListener("abort", stopJob);
+      try { ws && ws.close(); } catch {}
+    }
+  }
+
+  // ---------- start image for video ----------
+  let startUrl = null;
+  function setStartImage(blob) {
+    st.startImage = blob || null;
+    if (startUrl) { URL.revokeObjectURL(startUrl); startUrl = null; }
+    const prev = $("#startPreview"), txt = $("#startText");
+    if (blob) {
+      startUrl = URL.createObjectURL(blob); prev.src = startUrl; prev.hidden = false;
+      txt.innerHTML = "<b>Start image set</b>The video will begin from this picture and follow your description.";
+    } else {
+      prev.hidden = true; prev.removeAttribute("src");
+      txt.innerHTML = "<b>No start image</b>The video is made from your description alone. Add a photo to bring it to life.";
+    }
+    $("#startClear").hidden = !blob;
+  }
+  $("#startFile").addEventListener("change", (e) => { const f = e.target.files && e.target.files[0]; if (f) setStartImage(f); e.target.value = ""; });
+  $("#startClear").addEventListener("click", () => setStartImage(null));
+  const drop = $("#drop");
+  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", (e) => {
+    e.preventDefault(); drop.classList.remove("over");
+    const f = [...(e.dataTransfer.files || [])].find((x) => x.type.startsWith("image/"));
+    if (f) setStartImage(f);
+  });
+  function animate(item) {
+    setMode("video");
+    setStartImage(item.blob);
+    setPrompt(item.prompt);
+    showMsg("Start image set. Describe the motion you want (for example \"slow camera push in, hair moving in the wind\") and press Generate video.");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    promptEl.focus();
+  }
 
   // ---------- gallery storage (IndexedDB) ----------
   const DB = (() => {
@@ -648,30 +1400,46 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
 
   let saved = [];
   const urls = new Map();
+  const isVideo = (it) => it.kind === "video" && /^video\//.test(it.blob.type);
   function urlFor(item) { if (!urls.has(item.id)) urls.set(item.id, URL.createObjectURL(item.blob)); return urls.get(item.id); }
-  function extFor(blob) { return blob.type.includes("png") ? "png" : blob.type.includes("webp") ? "webp" : "jpg"; }
+  function extFor(blob) {
+    const t = blob.type;
+    return t.includes("png") ? "png" : t.includes("webp") ? "webp" : t.includes("webm") ? "webm" : t.includes("mp4") ? "mp4" : t.includes("gif") ? "gif" : "jpg";
+  }
   function slug(s) { return (s || "image").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "image"; }
   function fileName(item) { return `${slug(item.prompt)}-${item.seed || ""}.${extFor(item.blob)}`.replace("-.", "."); }
+  function mediaEl(item, { controls = false, thumb = false } = {}) {
+    if (isVideo(item)) {
+      const v = document.createElement("video");
+      v.src = urlFor(item); v.muted = true; v.loop = true; v.playsInline = true; v.preload = "metadata";
+      if (controls) { v.controls = true; v.autoplay = true; }
+      if (thumb) { v.addEventListener("mouseenter", () => v.play().catch(() => {})); v.addEventListener("mouseleave", () => v.pause()); }
+      return v;
+    }
+    const img = document.createElement("img"); img.src = urlFor(item); img.alt = thumb ? "" : item.prompt; img.loading = "lazy";
+    return img;
+  }
 
   async function loadGallery() { saved = await DB.all(); renderGallery(); }
-
   function renderGallery() {
     const ul = $("#thumbs"); ul.innerHTML = "";
-    $("#galleryCount").textContent = saved.length ? `${saved.length} image${saved.length === 1 ? "" : "s"}` : "";
-    $("#galleryNote").textContent = saved.length ? "Saved in this browser only. Use Download to keep a copy." : "Nothing saved yet. Every image you make will collect here.";
+    const nImg = saved.filter((x) => x.kind !== "video").length, nVid = saved.length - nImg;
+    const parts = []; if (nImg) parts.push(`${nImg} image${nImg === 1 ? "" : "s"}`); if (nVid) parts.push(`${nVid} video${nVid === 1 ? "" : "s"}`);
+    $("#galleryCount").textContent = parts.join(" · ");
+    $("#galleryNote").textContent = saved.length ? "Saved in this browser only. Use Download to keep a copy." : "Nothing saved yet. Everything you make will collect here.";
     for (const it of saved) {
       const li = document.createElement("li"); li.className = "thumb";
       const b = document.createElement("button"); b.type = "button"; b.className = "open"; b.setAttribute("aria-label", "View " + it.prompt);
-      const img = document.createElement("img"); img.src = urlFor(it); img.alt = ""; img.loading = "lazy";
-      b.append(img); b.addEventListener("click", () => openLightbox(it));
+      b.append(mediaEl(it, { thumb: true })); b.addEventListener("click", () => openLightbox(it));
+      li.append(b);
+      if (it.kind === "video") { const p = document.createElement("span"); p.className = "play"; p.textContent = "▶ Video"; li.append(p); }
       const del = document.createElement("button"); del.type = "button"; del.className = "del"; del.setAttribute("aria-label", "Delete " + it.prompt);
       del.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
       del.addEventListener("click", async () => { await DB.del(it.id); saved = saved.filter((x) => x.id !== it.id); renderGallery(); });
-      li.append(b, del); ul.append(li);
+      li.append(del); ul.append(li);
     }
     renderClear(false);
   }
-
   function renderClear(confirming) {
     const area = $("#clearArea"); area.innerHTML = "";
     if (!saved.length) return;
@@ -679,8 +1447,8 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
       const b = document.createElement("button"); b.type = "button"; b.className = "btn small ghost"; b.textContent = "Delete all";
       b.addEventListener("click", () => renderClear(true)); area.append(b); return;
     }
-    const w = document.createElement("span"); w.className = "confirm"; w.append(`Delete all ${saved.length} images?`);
-    const yes = document.createElement("button"); yes.type = "button"; yes.className = "btn small"; yes.textContent = "Delete all"; yes.style.color = "var(--danger)";
+    const w = document.createElement("span"); w.className = "confirm"; w.append(`Delete all ${saved.length}?`);
+    const yes = document.createElement("button"); yes.type = "button"; yes.className = "btn small danger"; yes.textContent = "Delete all";
     yes.addEventListener("click", async () => { await DB.clear(); saved = []; renderGallery(); });
     const no = document.createElement("button"); no.type = "button"; no.className = "btn small ghost"; no.textContent = "Cancel";
     no.addEventListener("click", () => renderClear(false));
@@ -691,53 +1459,66 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   let lbItem = null;
   function openLightbox(it) {
     lbItem = it;
-    $("#lbImg").src = urlFor(it); $("#lbImg").alt = it.prompt;
+    const vid = isVideo(it), img = $("#lbImg"), v = $("#lbVideo");
+    img.hidden = vid; v.hidden = !vid;
+    if (vid) { v.src = urlFor(it); v.play().catch(() => {}); } else { img.src = urlFor(it); img.alt = it.prompt; v.removeAttribute("src"); }
     $("#lbText").textContent = it.prompt + (it.engine ? `  ·  ${it.engine}` : "");
     $("#lbDownload").href = urlFor(it); $("#lbDownload").download = fileName(it);
+    $("#lbAnimate").hidden = it.kind === "video";
     $("#lightbox").hidden = false; $("#lbClose").focus();
     document.body.style.overflow = "hidden";
   }
-  function closeLightbox() { $("#lightbox").hidden = true; document.body.style.overflow = ""; lbItem = null; }
+  function closeLightbox() { $("#lightbox").hidden = true; document.body.style.overflow = ""; $("#lbVideo").pause(); lbItem = null; }
   $("#lbClose").addEventListener("click", closeLightbox);
   $("#lightbox").addEventListener("click", (e) => { if (e.target.id === "lightbox" || e.target.classList.contains("lb-img")) closeLightbox(); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#lightbox").hidden) closeLightbox(); });
-  $("#lbReuse").addEventListener("click", () => { if (lbItem) { setMode("image"); setPrompt(lbItem.prompt); closeLightbox(); promptEl.focus(); } });
+  $("#lbReuse").addEventListener("click", () => { if (lbItem) { setMode(lbItem.kind === "video" ? "video" : "image"); setPrompt(lbItem.prompt); closeLightbox(); promptEl.focus(); } });
+  $("#lbAnimate").addEventListener("click", () => { if (lbItem) { const it = lbItem; closeLightbox(); animate(it); } });
 
   // ---------- results sheet ----------
-  function makeCard(shape) {
-    const s = SHAPES[shape];
+  function makeCard(w, h) {
     const card = document.createElement("div"); card.className = "shot";
-    const pic = document.createElement("div"); pic.className = "pic"; pic.style.aspectRatio = `${s.w} / ${s.h}`;
-    pic.innerHTML = '<div class="develop"><span class="spin" aria-hidden="true"></span><span>Developing your image…</span><span class="t">0s</span></div><div class="shimmer"></div>';
+    const pic = document.createElement("div"); pic.className = "pic"; pic.style.aspectRatio = `${w} / ${h}`;
+    pic.innerHTML = '<div class="develop"><span class="spin" aria-hidden="true"></span><span class="lbl">Starting…</span><div class="bar-track" hidden><div class="bar-fill"></div></div><span class="t">0s</span></div><div class="shimmer"></div>';
     const bar = document.createElement("div"); bar.className = "bar"; bar.hidden = true;
     card.append(pic, bar);
     const start = Date.now();
     let waiting = 0;
-    const timer = setInterval(() => { const t = pic.querySelector(".t"); if (t && !waiting) t.textContent = Math.round((Date.now() - start) / 1000) + "s"; }, 500);
+    const elapsed = () => { const s = Math.round((Date.now() - start) / 1000); return s >= 60 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${s}s`; };
+    const timer = setInterval(() => { const t = pic.querySelector(".t"); if (t && !waiting) t.textContent = elapsed(); }, 500);
     return {
       el: card,
+      status(text, frac) {
+        const l = pic.querySelector(".lbl"); if (l) l.textContent = text;
+        const tr = pic.querySelector(".bar-track"), f = pic.querySelector(".bar-fill");
+        if (tr && f) { if (typeof frac === "number") { tr.hidden = false; f.style.width = (Math.max(0, Math.min(1, frac)) * 100).toFixed(1) + "%"; } }
+      },
       wait(left) {
         waiting = left;
-        const label = pic.querySelector(".develop span:nth-child(2)"), t = pic.querySelector(".t");
+        const label = pic.querySelector(".lbl"), t = pic.querySelector(".t");
         if (!label || !t) return;
         if (left > 0) { label.textContent = "The free engine needs a short break between images. Starting in"; t.textContent = left + "s"; }
-        else { label.textContent = "Developing your image…"; }
+        else label.textContent = "Developing your image…";
       },
       done(item) {
         clearInterval(timer);
         pic.innerHTML = "";
-        const img = document.createElement("img"); img.src = urlFor(item); img.alt = item.prompt;
-        img.addEventListener("click", () => openLightbox(item));
-        pic.append(img);
-        bar.hidden = false;
-        bar.innerHTML = "";
-        const meta = document.createElement("span"); meta.className = "meta"; meta.textContent = `${Math.round((Date.now() - start) / 1000)}s · seed ${item.seed}`;
+        const m = mediaEl(item, { controls: true });
+        if (m.tagName === "IMG") m.addEventListener("click", () => openLightbox(item));
+        pic.append(m);
+        bar.hidden = false; bar.innerHTML = "";
+        const meta = document.createElement("span"); meta.className = "meta"; meta.textContent = `${elapsed()} · seed ${item.seed}`;
         const btns = document.createElement("div"); btns.className = "btns";
-        const dl = document.createElement("a"); dl.className = "btn small"; dl.href = urlFor(item); dl.download = fileName(item);
-        dl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Download';
         const view = document.createElement("button"); view.type = "button"; view.className = "btn small ghost"; view.textContent = "View";
         view.addEventListener("click", () => openLightbox(item));
-        btns.append(view, dl); bar.append(meta, btns);
+        btns.append(view);
+        if (item.kind !== "video") {
+          const an = document.createElement("button"); an.type = "button"; an.className = "btn small ghost"; an.textContent = "Animate";
+          an.addEventListener("click", () => animate(item)); btns.append(an);
+        }
+        const dl = document.createElement("a"); dl.className = "btn small"; dl.href = urlFor(item); dl.download = fileName(item);
+        dl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Download';
+        btns.append(dl); bar.append(meta, btns);
       },
       fail(text) {
         clearInterval(timer);
@@ -753,6 +1534,9 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     sheet.append(d);
   }
 
+  const newId = () => "img" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const randSeed = () => Math.floor(Math.random() * 2147483647);
+
   async function makeImages(text) {
     const shape = st.shape, engine = st.engine;
     const n = engine === "free" ? 1 : Number(st.count);
@@ -761,38 +1545,62 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     const label = engineName();
     st.ctl = new AbortController(); const signal = st.ctl.signal;
     st.busy = true; updateGo(); hideMsg();
+    let w = SHAPES[shape].w, h = SHAPES[shape].h;
+    if (engine === "local") [w, h] = (LOCAL_Q[localQuality.value] || LOCAL_Q.standard).sizes[shape];
     $("#batchTitle").textContent = text;
     $("#batchMeta").textContent = `${label} · ${SHAPES[shape].label}`;
     $("#finalPrompt").hidden = false; $("#finalPrompt").textContent = "Prompt sent: " + full;
     const sheet = $("#sheet"); sheet.className = "sheet" + (n === 1 ? " one" : ""); sheet.innerHTML = "";
-    const cards = Array.from({ length: n }, () => { const c = makeCard(shape); sheet.append(c.el); return c; });
+    const cards = Array.from({ length: n }, () => { const c = makeCard(w, h); sheet.append(c.el); return c; });
+    cards.forEach((c, i) => c.status(i === 0 || engine !== "local" ? "Developing your image…" : "Waiting for the previous image…"));
     let ok = 0, firstErr = null;
-    // Free engine allows one request at a time, others run in parallel.
     const runOne = async (i) => {
-      const seed = Math.floor(Math.random() * 2147483647);
+      const seed = randSeed();
       try {
-        const blob = await gen(full, shape, seed, signal, (left) => cards[i].wait(left));
-        const item = { id: "img" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), prompt: text, fullPrompt: full, engine: label, shape, seed, blob, ts: Date.now() };
+        const blob = await gen({ prompt: full, shape, seed, signal, onWait: (left) => cards[i].wait(left), onStatus: (t, f) => cards[i].status(t, f) });
+        const item = { id: newId(), kind: "image", prompt: text, fullPrompt: full, engine: label, shape, seed, blob, ts: Date.now() };
         await DB.put(item); saved.unshift(item); renderGallery();
         cards[i].done(item); ok++;
       } catch (e) {
         if (signal.aborted) { cards[i].fail("Stopped."); return; }
-        const m = e && e.user ? e.message : "Couldn't reach the image service. Check your connection and try again.";
+        console.error(e);
+        const m = e && e.user ? e.message : `Something went wrong: ${e && e.message ? e.message : e}`;
         if (!firstErr) firstErr = m;
         cards[i].fail(m);
       }
     };
     try {
-      if (engine === "free") { for (let i = 0; i < n; i++) { if (signal.aborted) { cards[i].fail("Stopped."); continue; } await runOne(i); } }
+      // The free engine and This PC (one GPU) run one at a time; the others run in parallel.
+      if (engine === "free" || engine === "local") { for (let i = 0; i < n; i++) { if (signal.aborted) { cards[i].fail("Stopped."); continue; } await runOne(i); } }
       else await Promise.all(cards.map((_, i) => runOne(i)));
       if (firstErr) showMsg(firstErr, true);
-      else if (ok && engine === "free") showMsg("Want sharper, more lifelike results? Open Image engine below the form and add a free Pollinations key.");
-    } finally {
-      st.busy = false; st.ctl = null; updateGo();
-    }
+      else if (ok && engine === "free") showMsg("Want sharper, more lifelike results with no limits? Open Image engine below the form and choose This PC.");
+    } finally { st.busy = false; st.ctl = null; updateGo(); }
   }
 
-  // ---------- text helpers (free Pollinations text API) ----------
+  async function makeVideo(text) {
+    const shape = st.shape, q = VQ[st.vq], [w, h] = q.sizes[shape];
+    st.ctl = new AbortController(); const signal = st.ctl.signal;
+    st.busy = true; updateGo(); hideMsg();
+    $("#batchTitle").textContent = text;
+    $("#batchMeta").textContent = `Wan 2.2 · ${LENGTHS[st.vlen].label} · ${w}×${h}${st.startImage ? " · from your image" : ""}`;
+    $("#finalPrompt").hidden = true;
+    const sheet = $("#sheet"); sheet.className = "sheet one"; sheet.innerHTML = "";
+    const card = makeCard(w, h); sheet.append(card.el);
+    card.status("Connecting to ComfyUI…");
+    const seed = Math.floor(Math.random() * 2 ** 48);
+    try {
+      const { blob } = await genVideo({ prompt: text, shape, seed, signal, onStatus: (t, f) => card.status(t, f) });
+      const item = { id: newId(), kind: "video", prompt: text, engine: `Wan 2.2 via ComfyUI · ${LENGTHS[st.vlen].label}`, shape, seed, blob, ts: Date.now() };
+      await DB.put(item); saved.unshift(item); renderGallery();
+      card.done(item);
+    } catch (e) {
+      if (signal.aborted) { card.fail("Stopped."); showMsg("Stopped. ComfyUI was told to cancel the job."); }
+      else { console.error(e); const m = e && e.user ? e.message : `Something went wrong: ${e && e.message ? e.message : e}`; card.fail(m); showMsg(m, true); }
+    } finally { st.busy = false; st.ctl = null; updateGo(); }
+  }
+
+  // ---------- text helpers (Pollinations text API) ----------
   async function askText(prompt, signal, onWait) {
     const seed = Math.floor(Math.random() * 1e9);
     const key = polKey.value.trim();
@@ -806,13 +1614,17 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     if (!r.ok) throw new GenError(`The text service had a problem (error ${r.status}). Try again.`);
     return (await r.text()).trim();
   }
+  const waitMsg = (left) => { if (left > 0) showMsg(`The free text service needs a short break. Trying again in ${left}s…`); else hideMsg(); };
 
   $("#enhance").addEventListener("click", async () => {
     const text = promptEl.value.trim();
     if (!text) { showMsg("Type a short idea first, then press Improve prompt."); promptEl.focus(); return; }
     const btn = $("#enhance"); btn.disabled = true; const old = btn.innerHTML; btn.textContent = "Improving…";
+    const ask = st.mode === "video"
+      ? `Rewrite this video idea as one vivid prompt for a realistic AI video generator. Describe the subject, the motion, the camera movement, lighting and mood in under 70 words. Reply with only the prompt, no quotes or preamble.\n\nIdea: ${text}`
+      : `Rewrite this image idea as one vivid, specific prompt for a photorealistic image generator. Describe the subject, setting, lighting, camera angle and mood in under 60 words. Reply with only the prompt, no quotes or preamble.\n\nIdea: ${text}`;
     try {
-      const out = await askText(`Rewrite this image idea as one vivid, specific prompt for a photorealistic image generator. Describe the subject, setting, lighting, camera angle and mood in under 60 words. Reply with only the prompt, no quotes or preamble.\n\nIdea: ${text}`, undefined, (left) => { if (left > 0) showMsg(`The free service needs a short break. Trying again in ${left}s…`); else hideMsg(); });
+      const out = await askText(ask, undefined, waitMsg);
       const clean = out.replace(/^["'\s]+|["'\s]+$/g, "").replace(/^prompt:\s*/i, "");
       if (clean) { setPrompt(clean); showMsg("Prompt improved. Edit it if you like, then press Generate."); }
     } catch (e) { showMsg(e && e.user ? e.message : "Couldn't reach the text service. Try again.", true); }
@@ -825,7 +1637,6 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     if (a >= 0 && b > a) { try { return JSON.parse(text.slice(a, b + 1)); } catch {} }
     return null;
   }
-
   function renderIdeasLoading(text) {
     $("#ideasTitle").textContent = "Ideas for: " + text;
     const ul = $("#ideas"); ul.innerHTML = "";
@@ -835,7 +1646,6 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
       ul.append(li);
     }
   }
-
   function renderIdeas(prompt, items) {
     $("#ideasTitle").textContent = "Ideas for: " + prompt;
     const ul = $("#ideas"); ul.innerHTML = "";
@@ -852,12 +1662,11 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
       row.append(draw, more); li.append(n, h, p, row); ul.append(li);
     });
   }
-
   async function makeIdeas(text) {
     st.ctl = new AbortController(); const signal = st.ctl.signal;
     st.busy = true; updateGo(); hideMsg(); renderIdeasLoading(text);
     try {
-      const out = await askText(`Brainstorm 6 fresh, specific and varied ideas for: "${text}". Mix crowd-pleasers with a couple of surprising ones. Reply with only a JSON array of 6 objects with keys "title" (max 7 words), "pitch" (1-2 sentences) and "imagePrompt" (one vivid sentence describing a realistic photo that shows the idea). No markdown.`, signal, (left) => { if (left > 0) showMsg(`The free service needs a short break. Trying again in ${left}s…`); else hideMsg(); });
+      const out = await askText(`Brainstorm 6 fresh, specific and varied ideas for: "${text}". Mix crowd-pleasers with a couple of surprising ones. Reply with only a JSON array of 6 objects with keys "title" (max 7 words), "pitch" (1-2 sentences) and "imagePrompt" (one vivid sentence describing a realistic photo that shows the idea). No markdown.`, signal, waitMsg);
       const arr = parseJsonArray(out);
       const items = (arr || []).filter((x) => x && (x.title || x.pitch)).map((x) => ({ title: String(x.title || "Idea"), pitch: String(x.pitch || ""), imagePrompt: String(x.imagePrompt || x.title || "") }));
       if (!items.length) throw new GenError("The ideas came back jumbled. Press Generate to try again.");
@@ -873,16 +1682,20 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   function submit() {
     if (st.busy) return;
     const text = promptEl.value.trim();
-    if (!text) { showMsg(st.mode === "image" ? "Type what you'd like to see first." : "Type what you need ideas for first."); promptEl.focus(); return; }
-    if (st.mode === "image") makeImages(text); else makeIdeas(text);
+    if (!text) { showMsg(st.mode === "ideas" ? "Type what you need ideas for first." : "Type what you'd like to see first."); promptEl.focus(); return; }
+    if (st.mode === "image") makeImages(text);
+    else if (st.mode === "video") makeVideo(text);
+    else makeIdeas(text);
   }
   $("#form").addEventListener("submit", (e) => { e.preventDefault(); submit(); });
   $("#stop").addEventListener("click", () => st.ctl && st.ctl.abort());
 
   // ---------- boot ----------
+  updateEngineUI();
   setMode("image");
   showEmpty();
   loadGallery();
+  if (st.engine === "local") local.refreshStatus();
 })();
 </script>
 </body>
