@@ -25,7 +25,8 @@ When a local AI is loaded, **Ideas** and **Improve prompt** use it too instead o
 
 | Engine | Where it runs | Cost | Notes |
 | --- | --- | --- | --- |
-| **This PC** | Your graphics card, in the browser (WebGPU) | Free, unlimited | Z-Image Turbo, highly realistic. One-time 5.6 GB download, stored by the browser. Private: prompts and images never leave your PC. No safety checker. |
+| **This PC** | Your graphics card, in the browser (WebGPU) | Free, unlimited | Z-Image Turbo, highly realistic. One-time 5.6 GB download, stored by the browser. Private: prompts and images never leave your PC. No safety checker. Chrome or Edge only. |
+| **ComfyUI on this PC** | Your graphics card, in ComfyUI | Free, unlimited | The same Z-Image Turbo model running natively in ComfyUI: faster, and works in any browser including Firefox. Needs the 3 Z-Image files ([diffusion model](https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors), [text encoder](https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors), [VAE](https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors)) and the CORS setting described under Video. |
 | Free online | Pollinations | Free | Basic quality, 768 px, watermark, one image every 45 seconds |
 | Pollinations account | Pollinations | Free daily allowance | Key from [enter.pollinations.ai](https://enter.pollinations.ai) |
 | OpenAI | OpenAI | Paid per image | Key from [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |

@@ -447,6 +447,9 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
             <label class="engine"><input type="radio" name="engine" value="local" id="engine-local">
               <b>This PC <span class="tag best">Private · unlimited</span></b>
               <small>Runs Z-Image Turbo on your own graphics card in this browser. No account, no limits, nothing leaves your computer. One-time 6 GB download.</small></label>
+            <label class="engine"><input type="radio" name="engine" value="comfy" id="engine-comfy">
+              <b>ComfyUI on this PC <span class="tag">Any browser</span></b>
+              <small>Runs Z-Image Turbo in ComfyUI on your graphics card. Faster than This PC, and works in Firefox too. Unlimited and private.</small></label>
             <label class="engine"><input type="radio" name="engine" value="free" id="engine-free">
               <b>Free online, no sign-up</b>
               <small>Works on any device right away. Basic realism, up to 768 px, small watermark, one image every 45 seconds.</small></label>
@@ -469,13 +472,39 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
               <button type="button" class="btn small" id="localCancel" hidden>Pause download</button>
               <button type="button" class="btn small ghost danger" id="localDelete" hidden>Delete model</button>
             </div>
+            <p class="hint">Needs Chrome or Edge on a PC with a modern graphics card. The model is stored by your browser for this site, so it only downloads once. The first image after opening the page takes longer while the model loads onto your GPU.</p>
+          </div>
+
+          <div class="keybox" id="comfyImgBox" hidden>
+            <label class="label" for="comfyUrlImg">ComfyUI address</label>
+            <div class="keyrow"><input class="input" id="comfyUrlImg" type="url" autocomplete="off" placeholder="http://127.0.0.1:8000"><button type="button" class="btn small" id="comfyImgCheck">Check</button></div>
+            <div class="status-line" id="comfyImgStatus" data-s="idle"><i></i><span id="comfyImgStatusText">Not checked yet.</span></div>
+            <ul class="checklist" id="comfyImgChecklist" hidden></ul>
+            <details class="more" style="border-top:0;padding-top:0">
+              <summary>How to set up (one time)</summary>
+              <div class="inner">
+                <ol class="steps">
+                  <li>Set up ComfyUI and its CORS setting as described in the Video tab (Video engine → How to set up ComfyUI). It's the same ComfyUI for images and video.</li>
+                  <li>Download these 3 files (about 16 GB) into your ComfyUI <code>models</code> folder:
+                    <ul class="checklist" style="margin-top:6px">
+                      <li><a href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors" target="_blank" rel="noopener">z_image_turbo_bf16.safetensors</a>&nbsp;→ <code>models/diffusion_models</code></li>
+                      <li><a href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors" target="_blank" rel="noopener">qwen_3_4b.safetensors</a>&nbsp;→ <code>models/text_encoders</code></li>
+                      <li><a href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors" target="_blank" rel="noopener">ae.safetensors</a>&nbsp;→ <code>models/vae</code></li>
+                    </ul>
+                  </li>
+                  <li>Press <b>Check</b>. You want three green ticks.</li>
+                </ol>
+              </div>
+            </details>
+          </div>
+
+          <div class="field" id="zQualityField" hidden>
             <label class="label" for="localQuality">Quality</label>
             <select id="localQuality">
               <option value="quick">Quick draft: 512 px, 6 steps</option>
               <option value="standard" selected>Standard: 1024 px, 8 steps</option>
               <option value="large">Large: about 1300 px, 9 steps (slower)</option>
             </select>
-            <p class="hint">Needs Chrome or Edge on a PC with a modern graphics card. The model is stored by your browser for this site, so it only downloads once. The first image after opening the page takes longer while the model loads onto your GPU.</p>
           </div>
 
           <div class="keybox" id="polBox" hidden>
@@ -679,7 +708,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   if (!COUNTS[st.count]) st.count = "1";
   if (!LENGTHS[st.vlen]) st.vlen = "3";
   if (!VQ[st.vq]) st.vq = "quick";
-  if (!["local", "free", "pollinations", "openai"].includes(st.engine)) st.engine = "free";
+  if (!["local", "comfy", "free", "pollinations", "openai"].includes(st.engine)) st.engine = "free";
   // Chat modules are created further down; declared here so earlier code can check them safely.
   let ai = null, chat = null, galleryReady = Promise.resolve();
 
@@ -786,6 +815,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
       st.engine = r.value; ls.set("dd.engine", r.value); updateEngineUI();
       if (r.value === "pollinations") loadPolModels();
       if (r.value === "local") local.refreshStatus();
+      if (r.value === "comfy" && !comfyImgState.checked) comfyImgCheck();
     });
   });
 
@@ -815,6 +845,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
 
   function engineName() {
     if (st.engine === "local") return "This PC · Z-Image Turbo";
+    if (st.engine === "comfy") return "ComfyUI · Z-Image Turbo";
     if (st.engine === "pollinations") return "Pollinations · " + (polModel.selectedOptions[0] ? polModel.selectedOptions[0].textContent.split(" · ")[0] : polModel.value);
     if (st.engine === "openai") return "OpenAI · " + oaModel.value;
     return "Free online engine";
@@ -828,6 +859,8 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   }
   function updateEngineUI() {
     $("#localBox").hidden = st.engine !== "local";
+    $("#comfyImgBox").hidden = st.engine !== "comfy";
+    $("#zQualityField").hidden = !(st.engine === "local" || st.engine === "comfy");
     $("#polBox").hidden = st.engine !== "pollinations";
     $("#oaBox").hidden = st.engine !== "openai";
     $("#engineSummary").textContent = engineName();
@@ -898,7 +931,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     async function checkGpu() {
       if (gpuOk !== null) return gpuOk;
       if (/Firefox\//.test(navigator.userAgent)) {
-        gpuOk = false; gpuInfo = "Firefox can't run these AI models yet. Open this page in Microsoft Edge (already on your PC) or Google Chrome instead.";
+        gpuOk = false; gpuInfo = "Firefox can't run the in-browser AI models. In Firefox, use ComfyUI for images and Ollama for chat (both are options here), or open this page in Microsoft Edge or Google Chrome.";
         return gpuOk;
       }
       if (!window.isSecureContext || !navigator.gpu) {
@@ -1297,7 +1330,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     return local.generate({ prompt, width, height, steps: q.steps, seed, signal, onStatus });
   }
 
-  const ENGINES = { free: genFree, pollinations: genPollinations, openai: genOpenAI, local: genLocal };
+  const ENGINES = { free: genFree, pollinations: genPollinations, openai: genOpenAI, local: genLocal, comfy: (o) => genComfyImage(o) };
 
   // =====================================================================
   //  Video: ComfyUI on this PC (Wan 2.2 TI2V 5B)
@@ -1310,8 +1343,18 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   };
   const comfyState = { checked: false, ok: false, files: {}, saver: "SaveWEBM" };
   const comfyUrlEl = $("#comfyUrl");
-  comfyUrlEl.value = ls.get("dd.comfyUrl", "http://127.0.0.1:8000");
-  comfyUrlEl.addEventListener("change", () => { ls.set("dd.comfyUrl", comfyUrlEl.value.trim()); comfyState.checked = false; });
+  const comfyUrlImgEl = $("#comfyUrlImg");
+  comfyUrlEl.value = comfyUrlImgEl.value = ls.get("dd.comfyUrl", "http://127.0.0.1:8000");
+  // One ComfyUI address, shown in both the Video and Image engine settings.
+  function setComfyUrl(v) {
+    v = String(v || "").trim();
+    comfyUrlEl.value = comfyUrlImgEl.value = v;
+    ls.set("dd.comfyUrl", v);
+    comfyState.checked = comfyState.ok = false;
+    comfyImgState.checked = comfyImgState.ok = false;
+  }
+  comfyUrlEl.addEventListener("change", () => setComfyUrl(comfyUrlEl.value));
+  comfyUrlImgEl.addEventListener("change", () => setComfyUrl(comfyUrlImgEl.value));
   function comfyBase() {
     let u = (comfyUrlEl.value || "").trim() || "http://127.0.0.1:8000";
     if (!/^https?:\/\//i.test(u)) u = "http://" + u;
@@ -1335,25 +1378,32 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     return r.json();
   }
 
+  // Checks which of a set of model files ComfyUI can see; fills a checklist.
+  async function comfyFileCheck(fileSet, listEl, filesOut) {
+    const stats = await comfyJson("/system_stats");
+    const dev = stats.devices && stats.devices[0];
+    const gpu = dev ? `${dev.name || dev.type}${dev.vram_total ? ` · ${fmtGB(dev.vram_total)} VRAM` : ""}` : "connected";
+    const missing = [];
+    listEl.innerHTML = "";
+    for (const [k, f] of Object.entries(fileSet)) {
+      const info = await comfyJson("/object_info/" + f.node);
+      const opts = comboOptions(info[f.node] && info[f.node].input && info[f.node].input.required && info[f.node].input.required[f.input]);
+      const found = opts.find((o) => String(o).split(/[\\/]/).pop() === f.want);
+      filesOut[k] = found || null;
+      const li = document.createElement("li"); li.className = found ? "ok" : "bad";
+      li.textContent = found ? f.want : `${f.want} is missing. Put it in ${f.folder}, then press Check again.`;
+      listEl.append(li);
+      if (!found) missing.push(f.want);
+    }
+    return { gpu, missing };
+  }
+
   async function comfyCheck(quiet) {
     const btn = $("#comfyCheck"); btn.disabled = true;
     comfyStatus("idle", "Connecting to ComfyUI…");
-    const list = $("#comfyChecklist"); list.hidden = true; list.innerHTML = "";
+    const list = $("#comfyChecklist"); list.hidden = true;
     try {
-      const stats = await comfyJson("/system_stats");
-      const dev = stats.devices && stats.devices[0];
-      const gpu = dev ? `${dev.name || dev.type}${dev.vram_total ? ` · ${fmtGB(dev.vram_total)} VRAM` : ""}` : "connected";
-      const missing = [];
-      for (const [k, f] of Object.entries(WAN_FILES)) {
-        const info = await comfyJson("/object_info/" + f.node);
-        const opts = comboOptions(info[f.node] && info[f.node].input && info[f.node].input.required && info[f.node].input.required[f.input]);
-        const found = opts.find((o) => String(o).split(/[\\/]/).pop() === f.want);
-        comfyState.files[k] = found || null;
-        const li = document.createElement("li"); li.className = found ? "ok" : "bad";
-        li.textContent = found ? f.want : `${f.want} is missing. Put it in ${f.folder}, then press Check again.`;
-        list.append(li);
-        if (!found) missing.push(f.want);
-      }
+      const { gpu, missing } = await comfyFileCheck(WAN_FILES, list, comfyState.files);
       const wan = await comfyJson("/object_info/Wan22ImageToVideoLatent");
       if (!wan.Wan22ImageToVideoLatent) {
         const li = document.createElement("li"); li.className = "bad"; li.textContent = "Your ComfyUI is too old for Wan 2.2. Update ComfyUI."; list.append(li); missing.push("update");
@@ -1375,7 +1425,50 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
       return false;
     } finally { btn.disabled = false; }
   }
-  $("#comfyCheck").addEventListener("click", () => { ls.set("dd.comfyUrl", comfyUrlEl.value.trim()); comfyCheck(false); });
+  $("#comfyCheck").addEventListener("click", () => { setComfyUrl(comfyUrlEl.value); comfyCheck(false); });
+
+  // ----- ComfyUI image engine (Z-Image Turbo) -----
+  const ZIMG_FILES = {
+    unet: { want: "z_image_turbo_bf16.safetensors", node: "UNETLoader", input: "unet_name", folder: "models/diffusion_models" },
+    clip: { want: "qwen_3_4b.safetensors", node: "CLIPLoader", input: "clip_name", folder: "models/text_encoders" },
+    vae: { want: "ae.safetensors", node: "VAELoader", input: "vae_name", folder: "models/vae" },
+  };
+  const comfyImgState = { checked: false, ok: false, files: {} };
+  function comfyImgStatus(s, text) { $("#comfyImgStatus").dataset.s = s; $("#comfyImgStatusText").textContent = text; }
+  async function comfyImgCheck() {
+    const btn = $("#comfyImgCheck"); btn.disabled = true;
+    comfyImgStatus("idle", "Connecting to ComfyUI…");
+    const list = $("#comfyImgChecklist"); list.hidden = true;
+    try {
+      const { gpu, missing } = await comfyFileCheck(ZIMG_FILES, list, comfyImgState.files);
+      list.hidden = false;
+      comfyImgState.checked = true; comfyImgState.ok = missing.length === 0;
+      if (comfyImgState.ok) comfyImgStatus("ok", `Connected. ${gpu}. Ready to make images.`);
+      else comfyImgStatus("warn", `Connected (${gpu}), but some files are missing. See How to set up below.`);
+      return comfyImgState.ok;
+    } catch (e) {
+      comfyImgState.checked = true; comfyImgState.ok = false;
+      comfyImgStatus("bad", e && e.user ? e.message : "Couldn't talk to ComfyUI.");
+      return false;
+    } finally { btn.disabled = false; }
+  }
+  $("#comfyImgCheck").addEventListener("click", () => { setComfyUrl($("#comfyUrlImg").value); comfyImgCheck(); });
+
+  function zImageWorkflow({ prompt, width, height, steps, seed }) {
+    const f = comfyImgState.files;
+    return {
+      "28": { class_type: "UNETLoader", inputs: { unet_name: f.unet, weight_dtype: "default" } },
+      "30": { class_type: "CLIPLoader", inputs: { clip_name: f.clip, type: "lumina2", device: "default" } },
+      "29": { class_type: "VAELoader", inputs: { vae_name: f.vae } },
+      "11": { class_type: "ModelSamplingAuraFlow", inputs: { model: ["28", 0], shift: 3 } },
+      "27": { class_type: "CLIPTextEncode", inputs: { text: prompt, clip: ["30", 0] } },
+      "33": { class_type: "ConditioningZeroOut", inputs: { conditioning: ["27", 0] } },
+      "13": { class_type: "EmptySD3LatentImage", inputs: { width, height, batch_size: 1 } },
+      "3": { class_type: "KSampler", inputs: { model: ["11", 0], positive: ["27", 0], negative: ["33", 0], latent_image: ["13", 0], seed, steps, cfg: 1, sampler_name: "res_multistep", scheduler: "simple", denoise: 1 } },
+      "8": { class_type: "VAEDecode", inputs: { samples: ["3", 0], vae: ["29", 0] } },
+      "9": { class_type: "SaveImage", inputs: { images: ["8", 0], filename_prefix: "daydream/image" } },
+    };
+  }
 
   function wanWorkflow({ prompt, width, height, frames, steps, seed, startImage }) {
     const wf = {
@@ -1406,28 +1499,12 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     return e.message;
   }
 
-  async function genVideo({ prompt, shape, seed, signal, onStatus, startImage = st.startImage, vq = st.vq, vlen = st.vlen }) {
-    if (!comfyState.ok && !(await comfyCheck(false))) throw new GenError("ComfyUI isn't ready yet. Open the Video tab, then Video engine, and follow the setup steps.");
-    const q = VQ[vq], [width, height] = q.sizes[shape], frames = LENGTHS[vlen].frames;
-    if ($("#freeVram").checked) {
-      onStatus("Freeing graphics memory for the video…");
-      try { await local.release(); } catch {}
-      try { if (ai) await ai.unload(); } catch {}
-    }
-    let startName = null;
-    if (startImage) {
-      onStatus("Sending your start image to ComfyUI…");
-      const fd = new FormData();
-      fd.append("image", startImage, "daydream-start.png");
-      fd.append("overwrite", "true");
-      const up = await comfyJson("/upload/image", { method: "POST", body: fd, signal });
-      startName = up.subfolder ? `${up.subfolder}/${up.name}` : up.name;
-    }
+  // Queues a workflow in ComfyUI, reports progress, waits for it, and downloads the output file.
+  async function runComfyJob(wf, { signal, onStatus, steps, stepText, nodeText, want, what }) {
     const clientId = "daydream-" + Math.random().toString(36).slice(2);
-    const wf = wanWorkflow({ prompt, width, height, frames, steps: q.steps, seed, startImage: startName });
     let queued;
     try { queued = await comfyJson("/prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: wf, client_id: clientId }), signal }); }
-    catch (e) { throw new GenError(comfyErrorText(e)); }
+    catch (e) { if (signal && signal.aborted) throw e; throw new GenError(comfyErrorText(e)); }
     const id = queued.prompt_id;
     const stopJob = () => {
       fetch(comfyBase() + "/queue", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ delete: [id] }) }).catch(() => {});
@@ -1446,14 +1523,10 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
         if (d.prompt_id && d.prompt_id !== id) return;
         if (m.type === "progress" && d.max) {
           const node = String(d.node || "");
-          if (node === "3" || (!node && d.max === q.steps)) { sampling = true; onStatus(`Making frames: step ${d.value} of ${d.max}`, d.value / d.max); }
+          if (node === "3" || (!node && d.max === steps)) { sampling = true; onStatus(`${stepText}: step ${d.value} of ${d.max}`, d.value / d.max); }
         } else if (m.type === "executing" && d.node) {
-          const node = String(d.node);
-          if (node === "37" || node === "38" || node === "39") onStatus("Loading the video model (slow the first time)…");
-          else if (node === "6" || node === "7") onStatus("Reading your prompt…");
-          else if (node === "55") onStatus("Preparing the start frame…");
-          else if (node === "8") onStatus("Decoding frames…", 0.97);
-          else if (node === "60") onStatus("Saving the video…", 0.99);
+          const t = nodeText[String(d.node)];
+          if (t) onStatus(t[0], t[1]);
         }
       };
     } catch {}
@@ -1461,7 +1534,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     try {
       onStatus("Waiting for ComfyUI to start…");
       for (;;) {
-        await sleep(2000, signal);
+        await sleep(1500, signal);
         let h;
         try { h = await comfyJson("/history/" + encodeURIComponent(id), { signal }); } catch (e) { if (signal && signal.aborted) throw e; continue; }
         const job = h[id];
@@ -1479,29 +1552,64 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
         if (stt.status_str === "error") {
           const err = (stt.messages || []).find((x) => x[0] === "execution_error");
           const msg = err && err[1] ? err[1].exception_message : "unknown error";
-          if (/out of memory|OOM|HIP|hipError/i.test(msg)) throw new GenError("ComfyUI ran out of graphics memory. Choose Quick quality or a shorter length and try again.");
+          if (/out of memory|OOM|HIP|hipError/i.test(msg)) throw new GenError(`ComfyUI ran out of graphics memory. Try a smaller size${what === "video" ? " or a shorter length" : ""} and try again.`);
           throw new GenError("ComfyUI hit an error: " + String(msg).trim().slice(0, 300));
         }
         if (!stt.completed && stt.status_str !== "success") continue;
-        const outs = job.outputs || {};
         const files = [];
-        for (const o of Object.values(outs)) for (const key of ["images", "gifs", "videos"]) for (const f of o[key] || []) if (f && f.filename) files.push(f);
-        const vid = files.find((f) => /\.(webm|mp4|webp|gif|mkv)$/i.test(f.filename)) || files[0];
-        if (!vid) throw new GenError("ComfyUI finished but didn't return a video file.");
-        onStatus("Downloading the video from ComfyUI…", 1);
-        const url = `${comfyBase()}/view?filename=${encodeURIComponent(vid.filename)}&subfolder=${encodeURIComponent(vid.subfolder || "")}&type=${encodeURIComponent(vid.type || "output")}`;
+        for (const o of Object.values(job.outputs || {})) for (const key of ["images", "gifs", "videos"]) for (const f of o[key] || []) if (f && f.filename) files.push(f);
+        const out = files.find((f) => want.test(f.filename)) || files[0];
+        if (!out) throw new GenError(`ComfyUI finished but didn't return the ${what}.`);
+        onStatus(`Downloading the ${what} from ComfyUI…`, 1);
+        const url = `${comfyBase()}/view?filename=${encodeURIComponent(out.filename)}&subfolder=${encodeURIComponent(out.subfolder || "")}&type=${encodeURIComponent(out.type || "output")}`;
         const r = await fetch(url, { signal });
-        if (!r.ok) throw new GenError(`Couldn't download the finished video from ComfyUI (error ${r.status}).`);
+        if (!r.ok) throw new GenError(`Couldn't download the finished ${what} from ComfyUI (error ${r.status}).`);
         let blob = await r.blob();
-        const ext = vid.filename.split(".").pop().toLowerCase();
-        const mime = { webm: "video/webm", mp4: "video/mp4", webp: "image/webp", gif: "image/gif", mkv: "video/x-matroska" }[ext];
+        const ext = out.filename.split(".").pop().toLowerCase();
+        const mime = { webm: "video/webm", mp4: "video/mp4", webp: "image/webp", gif: "image/gif", mkv: "video/x-matroska", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg" }[ext];
         if (mime && blob.type !== mime) blob = new Blob([blob], { type: mime });
-        return { blob, width, height };
+        return blob;
       }
     } finally {
       if (signal) signal.removeEventListener("abort", stopJob);
       try { ws && ws.close(); } catch {}
     }
+  }
+
+  async function genComfyImage({ prompt, shape, seed, signal, onStatus }) {
+    if (!comfyImgState.ok && !(await comfyImgCheck())) throw new GenError("ComfyUI isn't ready for images yet. Open Image engine below the form, press Check, and follow How to set up.");
+    const q = LOCAL_Q[localQuality.value] || LOCAL_Q.standard;
+    const [width, height] = q.sizes[shape];
+    const wf = zImageWorkflow({ prompt, width, height, steps: q.steps, seed });
+    return runComfyJob(wf, {
+      signal, onStatus, steps: q.steps, stepText: "Developing", what: "image", want: /\.(png|jpe?g|webp)$/i,
+      nodeText: { "28": ["Loading the image model (slow the first time)…"], "30": ["Loading the image model (slow the first time)…"], "27": ["Reading your prompt…"], "8": ["Finishing the picture…", 0.97], "9": ["Saving…", 0.99] },
+    });
+  }
+
+  async function genVideo({ prompt, shape, seed, signal, onStatus, startImage = st.startImage, vq = st.vq, vlen = st.vlen }) {
+    if (!comfyState.ok && !(await comfyCheck(false))) throw new GenError("ComfyUI isn't ready yet. Open the Video tab, then Video engine, and follow the setup steps.");
+    const q = VQ[vq], [width, height] = q.sizes[shape], frames = LENGTHS[vlen].frames;
+    if ($("#freeVram").checked) {
+      onStatus("Freeing graphics memory for the video…");
+      try { await local.release(); } catch {}
+      try { if (ai) await ai.unload(); } catch {}
+    }
+    let startName = null;
+    if (startImage) {
+      onStatus("Sending your start image to ComfyUI…");
+      const fd = new FormData();
+      fd.append("image", startImage, "daydream-start.png");
+      fd.append("overwrite", "true");
+      const up = await comfyJson("/upload/image", { method: "POST", body: fd, signal });
+      startName = up.subfolder ? `${up.subfolder}/${up.name}` : up.name;
+    }
+    const wf = wanWorkflow({ prompt, width, height, frames, steps: q.steps, seed, startImage: startName });
+    const blob = await runComfyJob(wf, {
+      signal, onStatus, steps: q.steps, stepText: "Making frames", what: "video", want: /\.(webm|mp4|webp|gif|mkv)$/i,
+      nodeText: { "37": ["Loading the video model (slow the first time)…"], "38": ["Loading the video model (slow the first time)…"], "39": ["Loading the video model (slow the first time)…"], "6": ["Reading your prompt…"], "55": ["Preparing the start frame…"], "8": ["Decoding frames…", 0.97], "60": ["Saving the video…", 0.99] },
+    });
+    return { blob, width, height };
   }
 
   // ---------- start image for video ----------
@@ -1724,7 +1832,7 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     st.ctl = new AbortController(); const signal = st.ctl.signal;
     st.busy = true; updateGo(); hideMsg();
     let w = SHAPES[shape].w, h = SHAPES[shape].h;
-    if (engine === "local") [w, h] = (LOCAL_Q[localQuality.value] || LOCAL_Q.standard).sizes[shape];
+    if (engine === "local" || engine === "comfy") [w, h] = (LOCAL_Q[localQuality.value] || LOCAL_Q.standard).sizes[shape];
     $("#batchTitle").textContent = text;
     $("#batchMeta").textContent = `${label} · ${SHAPES[shape].label}`;
     $("#finalPrompt").hidden = false; $("#finalPrompt").textContent = "Prompt sent: " + full;
@@ -2170,7 +2278,7 @@ Write the description in English, rich in concrete detail (subject, setting, lig
 
     function cardSize(m) {
       if (m.kind === "video") return VQ[st.vq].sizes[m.shape] || [832, 480];
-      if (st.engine === "local") return (LOCAL_Q[localQuality.value] || LOCAL_Q.standard).sizes[m.shape];
+      if (st.engine === "local" || st.engine === "comfy") return (LOCAL_Q[localQuality.value] || LOCAL_Q.standard).sizes[m.shape];
       return [SHAPES[m.shape].w, SHAPES[m.shape].h];
     }
 
@@ -2354,6 +2462,7 @@ Write the description in English, rich in concrete detail (subject, setting, lig
   galleryReady = loadGallery();
   setMode(["chat", "image", "video", "ideas"].includes(ls.get("dd.mode", "chat")) ? ls.get("dd.mode", "chat") : "chat");
   if (st.engine === "local") local.refreshStatus();
+  if (st.engine === "comfy") comfyImgCheck();
 })();
 </script>
 </body>
