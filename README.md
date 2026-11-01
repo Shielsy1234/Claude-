@@ -61,7 +61,18 @@ One-time setup:
 3. Allow the page to talk to ComfyUI: in ComfyUI Desktop, **Settings → Server Config → Enable CORS header** = `*`, then restart. For portable or manual installs, launch with `--enable-cors-header "*"`.
 4. In the Video tab, enter ComfyUI's address (Desktop usually `http://127.0.0.1:8000`, manual installs `http://127.0.0.1:8188`) and press **Check**. If the browser asks to allow access to local network devices, allow it.
 
-Video settings: **Quick** (832×480) or **Full 720p** (1280×704), 2, 3 or 5 seconds at 24 fps.
+Video settings: **Quick** (480p) or **Full 720p**, 2, 3 or 5 seconds.
+
+### Video models
+
+Pick under **Video model** in the Video tab:
+
+| Model | Files | Notes |
+| --- | --- | --- |
+| **Wan 2.2 5B** | about 18 GB | Quicker to set up; 24 fps; 20 sampling steps |
+| **Wan 2.2 14B** (best) | about 62 GB extra | The biggest open Wan model; better motion and prompt following. Uses the official lightx2v **4-step** LoRAs (two passes: high-noise then low-noise model), 16 fps. Text-to-video and image-to-video each need their own 4 files (about 31 GB each); image-to-video is used by Animate, storyboard pictures and Extend. |
+
+The 14B files are the fp8 versions from [Comfy-Org/Wan_2.2_ComfyUI_Repackaged](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged); the full list with links is in the app under **Video engine → How to set up**. On a 16 GB card ComfyUI streams parts of the 14B model from system RAM, so 32 GB of RAM or more is recommended.
 
 ### Long videos
 
@@ -75,6 +86,8 @@ Progress is saved after every step: press **Stop** any time, close the app, and 
 You can also ask a character in Chat for a long video ("make me a 2 minute video about…"); it sets it up in the Video tab for you.
 
 ## Other features
+
+- **Light, dark or auto theme**: the button in the header switches between Auto (follows Windows), Light and Dark
 
 - **Look presets** and an **Extra realism** switch for photographic results
 - **Improve prompt** rewrites a short idea into a detailed prompt (free Pollinations text service)

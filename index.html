@@ -9,6 +9,10 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="theme-color" content="#3446D4">
+<script>
+  // Apply the saved theme before the page paints, to avoid a flash.
+  try { const t = JSON.parse(localStorage.getItem("dd.theme") || '"auto"'); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -26,13 +30,20 @@
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --paper: #0F131B; --surface: #171D29; --sunken: #121722; --ink: #E6E9F2; --muted: #98A2B8;
     --line: #283043; --accent: #8E9AFF; --accent-soft: #232A4A; --accent-ink: #0D1120;
     --spark: #F3B04E; --good: #4CC48A; --danger: #F07D69;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
     color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --paper: #0F131B; --surface: #171D29; --sunken: #121722; --ink: #E6E9F2; --muted: #98A2B8;
+  --line: #283043; --accent: #8E9AFF; --accent-soft: #232A4A; --accent-ink: #0D1120;
+  --spark: #F3B04E; --good: #4CC48A; --danger: #F07D69;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -345,6 +356,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
       </button>
     </nav>
     <div class="top-right">
+      <button type="button" class="btn small" id="themeBtn" title="Switch between light and dark mode"></button>
       <button type="button" class="btn small accent" id="installBtn" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/></svg>Install app</button>
       <div class="pill" id="engineBadge"><i></i><span id="engineBadgeText">Free engine</span></div>
@@ -515,6 +527,12 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
           <div class="chips" id="lengths" role="radiogroup" aria-labelledby="lengthLabel"></div>
         </div>
 
+        <div class="field" id="vmodelField" hidden>
+          <label class="label" for="vmodelSel">Video model</label>
+          <select id="vmodelSel"></select>
+          <p class="hint" id="vmodelHint"></p>
+        </div>
+
         <div class="field" id="vqField" hidden>
           <span class="label" id="vqLabel">Video quality</span>
           <div class="chips" id="vquality" role="radiogroup" aria-labelledby="vqLabel"></div>
@@ -657,12 +675,8 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
             <div class="inner">
               <ol class="steps">
                 <li>Install <a href="https://www.comfy.org/download" target="_blank" rel="noopener">ComfyUI Desktop</a> for Windows. When it asks for your GPU, pick <b>AMD (ROCm)</b>. If AMD recommends a driver during setup, install it.</li>
-                <li>Download these 3 files (about 18 GB) and put them in your ComfyUI <code>models</code> folder:
-                  <ul class="checklist" style="margin-top:6px">
-                    <li><a href="https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors" target="_blank" rel="noopener">wan2.2_ti2v_5B_fp16.safetensors</a>&nbsp;→ <code>models/diffusion_models</code></li>
-                    <li><a href="https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" target="_blank" rel="noopener">umt5_xxl_fp8_e4m3fn_scaled.safetensors</a>&nbsp;→ <code>models/text_encoders</code></li>
-                    <li><a href="https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan2.2_vae.safetensors" target="_blank" rel="noopener">wan2.2_vae.safetensors</a>&nbsp;→ <code>models/vae</code></li>
-                  </ul>
+                <li><span id="vfileTotal"></span>
+                  <ul class="checklist" id="vfileList" style="margin-top:6px"></ul>
                 </li>
                 <li>Let this page talk to ComfyUI: in ComfyUI Desktop open <b>Settings → Server Config</b> and set <b>Enable CORS header</b> to <code>*</code>, then restart ComfyUI. (Portable or manual installs: start ComfyUI with <code>--enable-cors-header "*"</code>.)</li>
                 <li>Copy the address ComfyUI shows (Desktop usually uses <code>http://127.0.0.1:8000</code>, manual installs <code>http://127.0.0.1:8188</code>) into the box above and press <b>Check</b>. If the browser asks to allow access to devices on your local network, choose <b>Allow</b>.</li>
@@ -804,7 +818,17 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
   const VMETHODS = { storyboard: { label: "Storyboard (shots)" }, extend: { label: "Extend (one shot)" } };
   const CLIP_SECONDS = 5; // each clip of a long video
   // Rough minutes per 5-second clip on a mid/upper-range GPU, for the time estimate.
-  const CLIP_MINUTES = { quick: [3, 8], full: [12, 25] };
+  // Video models. Rough minutes per 5-second clip on a mid/upper-range GPU, for the time estimate.
+  const VIDEO_MODELS = {
+    "5b": { label: "Wan 2.2 5B · faster setup", short: "Wan 2.2 5B", fps: 24, steps: 20,
+      sizes: { quick: VQ.quick.sizes, full: VQ.full.sizes }, minutes: { quick: [3, 8], full: [12, 25] } },
+    "14b": { label: "Wan 2.2 14B · best quality (4-step)", short: "Wan 2.2 14B", fps: 16, steps: 4,
+      sizes: { quick: { square: [640, 640], wide: [832, 480], tall: [480, 832] }, full: { square: [960, 960], wide: [1280, 720], tall: [720, 1280] } },
+      minutes: { quick: [3, 10], full: [20, 60] } },
+  };
+  const vmodelOf = (id) => VIDEO_MODELS[id] || VIDEO_MODELS["5b"];
+  const videoSize = (vq, shape, vm) => vmodelOf(vm || st.vmodel).sizes[vq][shape];
+  const videoFrames = (seconds, vm) => Math.round(Number(seconds) * vmodelOf(vm || st.vmodel).fps) + 1;
   const COUNTS = { 1: { label: "1" }, 2: { label: "2" }, 4: { label: "4" } };
   const SUGGEST = {
     image: [
@@ -848,6 +872,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     vlen: String(ls.get("dd.vlen", "3")),
     vq: ls.get("dd.vq", "quick"),
     vmode: ls.get("dd.vmode", "single"),
+    vmodel: ls.get("dd.vmodel", "5b"),
     vtotal: String(ls.get("dd.vtotal", "60")),
     vmethod: ls.get("dd.vmethod", "storyboard"),
     startImage: null, // Blob for image-to-video
@@ -860,6 +885,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
   if (!LENGTHS[st.vlen]) st.vlen = "3";
   if (!VQ[st.vq]) st.vq = "quick";
   if (!VMODES[st.vmode]) st.vmode = "single";
+  if (!VIDEO_MODELS[st.vmodel]) st.vmodel = "5b";
   if (!VTOTALS[st.vtotal]) st.vtotal = "60";
   if (!VMETHODS[st.vmethod]) st.vmethod = "storyboard";
   if (!["local", "comfy", "free", "pollinations", "openai"].includes(st.engine)) st.engine = "free";
@@ -890,12 +916,13 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
   function updateVideoFields() {
     const isVid = st.mode === "video", long = isVid && st.vmode === "long";
     $("#vmodeField").hidden = !isVid;
+    $("#vmodelField").hidden = !isVid;
     $("#longField").hidden = !long;
     $("#lengthField").hidden = !isVid || long;
     $("#picFirstField").hidden = !long || st.vmethod !== "storyboard";
     $("#startField").hidden = !isVid || (long && st.vmethod === "storyboard");
     if (long) {
-      const n = Math.round(Number(st.vtotal) / CLIP_SECONDS), [a, b] = CLIP_MINUTES[st.vq] || CLIP_MINUTES.quick;
+      const n = Math.round(Number(st.vtotal) / CLIP_SECONDS), [a, b] = vmodelOf(st.vmodel).minutes[st.vq];
       const fmt = (m) => (m >= 90 ? `${Math.round(m / 60)} h` : `${Math.round(m)} min`);
       $("#longHint").textContent = `${n} clips of ${CLIP_SECONDS} seconds. Rough time on your PC: ${fmt(n * a)} to ${fmt(n * b)}. You can stop and resume later, even after closing the app.`;
     }
@@ -1025,7 +1052,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
   }
   function updateBadge() {
     const t = st.mode === "chat" ? "Chat · " + (ai ? ai.label() : "built-in AI")
-      : st.mode === "video" ? "Video · ComfyUI on this PC"
+      : st.mode === "video" ? "Video · " + vmodelOf(st.vmodel).short
       : st.mode === "ideas" ? "Ideas · " + (ai && ai.isReady() ? ai.label() : "free text service")
       : engineName();
     $("#engineBadgeText").textContent = t;
@@ -1520,7 +1547,55 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     clip: { want: "umt5_xxl_fp8_e4m3fn_scaled.safetensors", node: "CLIPLoader", input: "clip_name", folder: "models/text_encoders" },
     vae: { want: "wan2.2_vae.safetensors", node: "VAELoader", input: "vae_name", folder: "models/vae" },
   };
-  const comfyState = { checked: false, ok: false, files: {}, saver: "SaveWEBM" };
+  const W14 = (want, node, input, folder) => ({ want, node, input, folder });
+  const WAN14_FILES = {
+    "common.clip": W14("umt5_xxl_fp8_e4m3fn_scaled.safetensors", "CLIPLoader", "clip_name", "models/text_encoders"),
+    "common.vae21": W14("wan_2.1_vae.safetensors", "VAELoader", "vae_name", "models/vae"),
+    "t2v.high": W14("wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors", "UNETLoader", "unet_name", "models/diffusion_models"),
+    "t2v.low": W14("wan2.2_t2v_low_noise_14B_fp8_scaled.safetensors", "UNETLoader", "unet_name", "models/diffusion_models"),
+    "t2v.loraHigh": W14("wan2.2_t2v_lightx2v_4steps_lora_v1.1_high_noise.safetensors", "LoraLoaderModelOnly", "lora_name", "models/loras"),
+    "t2v.loraLow": W14("wan2.2_t2v_lightx2v_4steps_lora_v1.1_low_noise.safetensors", "LoraLoaderModelOnly", "lora_name", "models/loras"),
+    "i2v.high": W14("wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors", "UNETLoader", "unet_name", "models/diffusion_models"),
+    "i2v.low": W14("wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors", "UNETLoader", "unet_name", "models/diffusion_models"),
+    "i2v.loraHigh": W14("wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors", "LoraLoaderModelOnly", "lora_name", "models/loras"),
+    "i2v.loraLow": W14("wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors", "LoraLoaderModelOnly", "lora_name", "models/loras"),
+  };
+  // Download links for the setup steps: [file, size in GB, folder, group]
+  const HF22 = "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/";
+  const UMT5 = ["umt5_xxl_fp8_e4m3fn_scaled.safetensors", 6.7, "text_encoders", "", "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"];
+  const VIDEO_DOWNLOADS = {
+    "5b": [
+      ["wan2.2_ti2v_5B_fp16.safetensors", 10.0, "diffusion_models", ""],
+      UMT5,
+      ["wan2.2_vae.safetensors", 1.4, "vae", ""],
+    ],
+    "14b": [
+      UMT5,
+      ["wan_2.1_vae.safetensors", 0.3, "vae", ""],
+      ["wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors", 14.3, "diffusion_models", "Text-to-video"],
+      ["wan2.2_t2v_low_noise_14B_fp8_scaled.safetensors", 14.3, "diffusion_models", "Text-to-video"],
+      ["wan2.2_t2v_lightx2v_4steps_lora_v1.1_high_noise.safetensors", 1.2, "loras", "Text-to-video"],
+      ["wan2.2_t2v_lightx2v_4steps_lora_v1.1_low_noise.safetensors", 1.2, "loras", "Text-to-video"],
+      ["wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors", 14.3, "diffusion_models", "Image-to-video (Animate, storyboard pictures, Extend)"],
+      ["wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors", 14.3, "diffusion_models", "Image-to-video (Animate, storyboard pictures, Extend)"],
+      ["wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors", 1.2, "loras", "Image-to-video (Animate, storyboard pictures, Extend)"],
+      ["wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors", 1.2, "loras", "Image-to-video (Animate, storyboard pictures, Extend)"],
+    ],
+  };
+  function renderVideoDownloads() {
+    const ul = $("#vfileList"); ul.innerHTML = "";
+    let group = null, total = 0;
+    for (const [name, gb, folder, grp, url] of VIDEO_DOWNLOADS[st.vmodel]) {
+      if (grp && grp !== group) { group = grp; const h = document.createElement("li"); h.innerHTML = "<b></b>"; h.querySelector("b").textContent = grp; h.style.marginTop = "6px"; ul.append(h); }
+      total += gb;
+      const li = document.createElement("li");
+      const a = document.createElement("a"); a.href = url || HF22 + folder + "/" + name; a.target = "_blank"; a.rel = "noopener"; a.textContent = name;
+      const c = document.createElement("code"); c.textContent = "models/" + folder;
+      li.append(a, ` (${gb} GB) → `, c); ul.append(li);
+    }
+    $("#vfileTotal").textContent = `Download these files (about ${Math.round(total)} GB in total; skip any you already have) and put each in its folder inside your ComfyUI models folder (for you: D:\\Comfy-Desktop\\ComfyUI-Shared\\models):`;
+  }
+  const comfyState = { checked: false, ok: false, saver: "SaveWEBM", models: {} };
   const comfyUrlEl = $("#comfyUrl");
   const comfyUrlImgEl = $("#comfyUrlImg");
   comfyUrlEl.value = comfyUrlImgEl.value = ls.get("dd.comfyUrl", "http://127.0.0.1:8000");
@@ -1529,7 +1604,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     v = String(v || "").trim();
     comfyUrlEl.value = comfyUrlImgEl.value = v;
     ls.set("dd.comfyUrl", v);
-    comfyState.checked = comfyState.ok = false;
+    comfyState.checked = comfyState.ok = false; comfyState.models = {};
     comfyImgState.checked = comfyImgState.ok = false;
   }
   comfyUrlEl.addEventListener("change", () => setComfyUrl(comfyUrlEl.value));
@@ -1577,25 +1652,44 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     return { gpu, missing };
   }
 
-  async function comfyCheck(quiet) {
+  async function comfyCheck(quiet, vmId = st.vmodel) {
+    const ui = vmId === st.vmodel;
     const btn = $("#comfyCheck"); btn.disabled = true;
-    comfyStatus("idle", "Connecting to ComfyUI…");
-    const list = $("#comfyChecklist"); list.hidden = true;
+    if (ui) comfyStatus("idle", "Connecting to ComfyUI…");
+    const list = ui ? $("#comfyChecklist") : document.createElement("ul"); list.hidden = true;
     try {
-      const { gpu, missing } = await comfyFileCheck(WAN_FILES, list, comfyState.files);
-      const wan = await comfyJson("/object_info/Wan22ImageToVideoLatent");
-      if (!wan.Wan22ImageToVideoLatent) {
-        const li = document.createElement("li"); li.className = "bad"; li.textContent = "Your ComfyUI is too old for Wan 2.2. Update ComfyUI."; list.append(li); missing.push("update");
+      const files = {};
+      const { gpu, missing } = await comfyFileCheck(vmId === "14b" ? WAN14_FILES : WAN_FILES, list, files);
+      let nodesOk = true;
+      for (const node of vmId === "14b" ? ["KSamplerAdvanced", "LoraLoaderModelOnly", "EmptyHunyuanLatentVideo", "WanImageToVideo"] : ["Wan22ImageToVideoLatent"]) {
+        const info = await comfyJson("/object_info/" + node).catch(() => ({}));
+        if (!info[node]) nodesOk = false;
       }
+      if (!nodesOk) { const li = document.createElement("li"); li.className = "bad"; li.textContent = "Your ComfyUI is too old for this model. Update ComfyUI."; list.append(li); missing.push("update"); }
       const webm = await comfyJson("/object_info/SaveWEBM").catch(() => ({}));
       comfyState.saver = webm.SaveWEBM ? "SaveWEBM" : "SaveAnimatedWEBP";
+      let ms;
+      if (vmId === "14b") {
+        const has = (keys) => keys.every((k) => files[k]);
+        const common = nodesOk && has(["common.clip", "common.vae21"]);
+        const t2v = common && has(["t2v.high", "t2v.low", "t2v.loraHigh", "t2v.loraLow"]);
+        const i2v = common && has(["i2v.high", "i2v.low", "i2v.loraHigh", "i2v.loraLow"]);
+        ms = { files, t2v, i2v, ok: t2v || i2v };
+      } else ms = { files, ok: missing.length === 0 };
+      comfyState.models[vmId] = ms;
+      if (!ui) return ms.ok;
       list.hidden = false;
-      comfyState.checked = true; comfyState.ok = missing.length === 0;
-      if (comfyState.ok) comfyStatus("ok", `Connected. ${gpu}. Ready to make videos.`);
-      else { comfyStatus("warn", `Connected (${gpu}), but some files are missing.`); $("#videoDetails").open = true; }
-      $("#videoSummary").textContent = comfyState.ok ? "ComfyUI · ready" : "ComfyUI · needs setup";
-      return comfyState.ok;
+      comfyState.checked = true; comfyState.ok = ms.ok;
+      if (vmId === "14b" && ms.ok && !(ms.t2v && ms.i2v)) {
+        comfyStatus("warn", ms.t2v
+          ? `Connected (${gpu}). Wan 2.2 14B is ready for text-to-video. Image-to-video (Animate, storyboard pictures, Extend) still needs its 4 files.`
+          : `Connected (${gpu}). Wan 2.2 14B is ready for image-to-video. Text-to-video still needs its 4 files.`);
+      } else if (ms.ok) comfyStatus("ok", `Connected. ${gpu}. ${vmodelOf(vmId).short} is ready to make videos.`);
+      else { comfyStatus("warn", `Connected (${gpu}), but some ${vmodelOf(vmId).short} files are missing. See How to set up below.`); $("#videoDetails").open = true; }
+      $("#videoSummary").textContent = `${vmodelOf(vmId).short} · ${ms.ok ? "ready" : "needs setup"}`;
+      return ms.ok;
     } catch (e) {
+      if (!ui) return false;
       comfyState.checked = true; comfyState.ok = false;
       comfyStatus("bad", e && e.user ? e.message : "Couldn't talk to ComfyUI.");
       $("#videoSummary").textContent = "ComfyUI · not connected";
@@ -1605,6 +1699,25 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     } finally { btn.disabled = false; }
   }
   $("#comfyCheck").addEventListener("click", () => { setComfyUrl(comfyUrlEl.value); comfyCheck(false); });
+
+  // ----- video model picker -----
+  (() => {
+    const sel = $("#vmodelSel");
+    for (const [id, m] of Object.entries(VIDEO_MODELS)) { const o = document.createElement("option"); o.value = id; o.textContent = m.label; sel.append(o); }
+    sel.value = st.vmodel;
+    const hint = () => {
+      $("#vmodelHint").textContent = st.vmodel === "14b"
+        ? "The biggest open video model that fits your card: better motion and prompt following. Uses 4-step speed-up add-ons and makes 16 frames per second. About 62 GB of files, so it needs plenty of disk space and RAM."
+        : "Smaller and quicker to set up (about 18 GB). Good results at 720p, 24 frames per second.";
+    };
+    sel.addEventListener("change", () => {
+      st.vmodel = sel.value; ls.set("dd.vmodel", st.vmodel);
+      comfyState.checked = false; comfyState.ok = false;
+      hint(); renderVideoDownloads(); updateVideoFields(); updateBadge();
+      comfyCheck(true);
+    });
+    hint(); renderVideoDownloads();
+  })();
 
   // ----- ComfyUI image engine (Z-Image Turbo) -----
   const ZIMG_FILES = {
@@ -1651,9 +1764,9 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
 
   function wanWorkflow({ prompt, width, height, frames, steps, seed, startImage, lastFrame }) {
     const wf = {
-      "37": { class_type: "UNETLoader", inputs: { unet_name: comfyState.files.unet, weight_dtype: "default" } },
-      "38": { class_type: "CLIPLoader", inputs: { clip_name: comfyState.files.clip, type: "wan", device: "default" } },
-      "39": { class_type: "VAELoader", inputs: { vae_name: comfyState.files.vae } },
+      "37": { class_type: "UNETLoader", inputs: { unet_name: comfyState.models["5b"].files.unet, weight_dtype: "default" } },
+      "38": { class_type: "CLIPLoader", inputs: { clip_name: comfyState.models["5b"].files.clip, type: "wan", device: "default" } },
+      "39": { class_type: "VAELoader", inputs: { vae_name: comfyState.models["5b"].files.vae } },
       "48": { class_type: "ModelSamplingSD3", inputs: { model: ["37", 0], shift: 8 } },
       "6": { class_type: "CLIPTextEncode", inputs: { text: prompt, clip: ["38", 0] } },
       "7": { class_type: "CLIPTextEncode", inputs: { text: WAN_NEG, clip: ["38", 0] } },
@@ -1661,14 +1774,50 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
       "3": { class_type: "KSampler", inputs: { model: ["48", 0], positive: ["6", 0], negative: ["7", 0], latent_image: ["55", 0], seed, steps, cfg: 5, sampler_name: "uni_pc", scheduler: "simple", denoise: 1 } },
       "8": { class_type: "VAEDecode", inputs: { samples: ["3", 0], vae: ["39", 0] } },
     };
-    if (comfyState.saver === "SaveWEBM") wf["60"] = { class_type: "SaveWEBM", inputs: { images: ["8", 0], filename_prefix: "daydream/video", codec: "vp9", fps: 24, crf: 20 } };
-    else wf["60"] = { class_type: "SaveAnimatedWEBP", inputs: { images: ["8", 0], filename_prefix: "daydream/video", fps: 24, lossless: false, quality: 90, method: "default" } };
     if (startImage) { wf["56"] = { class_type: "LoadImage", inputs: { image: startImage } }; wf["55"].inputs.start_image = ["56", 0]; }
+    videoOutputs(wf, 24, lastFrame);
+    return wf;
+  }
+
+  // Save node (+ optional last frame, so the next clip of a long video can continue from it).
+  function videoOutputs(wf, fps, lastFrame) {
+    if (comfyState.saver === "SaveWEBM") wf["60"] = { class_type: "SaveWEBM", inputs: { images: ["8", 0], filename_prefix: "daydream/video", codec: "vp9", fps, crf: 20 } };
+    else wf["60"] = { class_type: "SaveAnimatedWEBP", inputs: { images: ["8", 0], filename_prefix: "daydream/video", fps, lossless: false, quality: 90, method: "default" } };
     if (lastFrame) {
-      // Also save the final frame, so the next clip of a long video can continue from it.
       wf["61"] = { class_type: "ImageFromBatch", inputs: { image: ["8", 0], batch_index: -1, length: 1 } };
       wf["62"] = { class_type: "SaveImage", inputs: { images: ["61", 0], filename_prefix: "daydream/lastframe" } };
     }
+  }
+
+  // Wan 2.2 14B with the official lightx2v 4-step LoRAs (two passes: high-noise model, then low-noise model).
+  function wan14Workflow({ prompt, width, height, frames, seed, startImage, lastFrame }) {
+    const f = comfyState.models["14b"].files, g = startImage ? "i2v" : "t2v";
+    const wf = {
+      "71": { class_type: "CLIPLoader", inputs: { clip_name: f["common.clip"], type: "wan", device: "default" } },
+      "73": { class_type: "VAELoader", inputs: { vae_name: f["common.vae21"] } },
+      "75": { class_type: "UNETLoader", inputs: { unet_name: f[g + ".high"], weight_dtype: "default" } },
+      "76": { class_type: "UNETLoader", inputs: { unet_name: f[g + ".low"], weight_dtype: "default" } },
+      "83": { class_type: "LoraLoaderModelOnly", inputs: { model: ["75", 0], lora_name: f[g + ".loraHigh"], strength_model: 1 } },
+      "85": { class_type: "LoraLoaderModelOnly", inputs: { model: ["76", 0], lora_name: f[g + ".loraLow"], strength_model: 1 } },
+      "82": { class_type: "ModelSamplingSD3", inputs: { model: ["83", 0], shift: 5 } },
+      "86": { class_type: "ModelSamplingSD3", inputs: { model: ["85", 0], shift: 5 } },
+      "89": { class_type: "CLIPTextEncode", inputs: { text: prompt, clip: ["71", 0] } },
+      "72": { class_type: "CLIPTextEncode", inputs: { text: WAN_NEG, clip: ["71", 0] } },
+    };
+    let pos = ["89", 0], neg = ["72", 0], lat;
+    if (startImage) {
+      wf["56"] = { class_type: "LoadImage", inputs: { image: startImage } };
+      wf["98"] = { class_type: "WanImageToVideo", inputs: { positive: pos, negative: neg, vae: ["73", 0], width, height, length: frames, batch_size: 1, start_image: ["56", 0] } };
+      pos = ["98", 0]; neg = ["98", 1]; lat = ["98", 2];
+    } else {
+      wf["74"] = { class_type: "EmptyHunyuanLatentVideo", inputs: { width, height, length: frames, batch_size: 1 } };
+      lat = ["74", 0];
+    }
+    const common = { steps: 4, cfg: 1, sampler_name: "euler", scheduler: "simple", positive: pos, negative: neg };
+    wf["81"] = { class_type: "KSamplerAdvanced", inputs: { ...common, model: ["82", 0], add_noise: "enable", noise_seed: seed, latent_image: lat, start_at_step: 0, end_at_step: 2, return_with_leftover_noise: "enable" } };
+    wf["78"] = { class_type: "KSamplerAdvanced", inputs: { ...common, model: ["86", 0], add_noise: "disable", noise_seed: 0, latent_image: ["81", 0], start_at_step: 2, end_at_step: 10000, return_with_leftover_noise: "disable" } };
+    wf["8"] = { class_type: "VAEDecode", inputs: { samples: ["78", 0], vae: ["73", 0] } };
+    videoOutputs(wf, 16, lastFrame);
     return wf;
   }
 
@@ -1695,7 +1844,8 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     return blob;
   }
 
-  async function runComfyJob(wf, { signal, onStatus, steps, stepText, nodeText, want, what }) {
+  async function runComfyJob(wf, { signal, onStatus, steps, stepText, nodeText, want, what, stepNodes }) {
+    stepNodes = stepNodes || { "3": 0 }; // sampler node id -> steps already done before it
     const clientId = "daydream-" + Math.random().toString(36).slice(2);
     let queued;
     try { queued = await comfyJson("/prompt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt: wf, client_id: clientId }), signal }); }
@@ -1718,7 +1868,11 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
         if (d.prompt_id && d.prompt_id !== id) return;
         if (m.type === "progress" && d.max) {
           const node = String(d.node || "");
-          if (node === "3" || (!node && d.max === steps)) { sampling = true; onStatus(`${stepText}: step ${d.value} of ${d.max}`, d.value / d.max); }
+          if (node in stepNodes || (!node && d.max === steps)) {
+            sampling = true;
+            const done = (stepNodes[node] || 0) + d.value;
+            onStatus(`${stepText}: step ${Math.min(done, steps)} of ${steps}`, Math.min(1, done / steps));
+          }
         } else if (m.type === "executing" && d.node) {
           const t = nodeText[String(d.node)];
           if (t) onStatus(t[0], t[1]);
@@ -1786,9 +1940,14 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     try { return await genVideoInner(opts); }
     finally { videoJobs--; if (!videoJobs) videoWaiters.splice(0).forEach((f) => f()); }
   }
-  async function genVideoInner({ prompt, shape, seed, signal, onStatus, startImage = st.startImage, vq = st.vq, vlen = st.vlen, wantLastFrame = false }) {
-    if (!comfyState.ok && !(await comfyCheck(false))) throw new GenError("ComfyUI isn't ready yet. Open the Video tab, then Video engine, and follow the setup steps.");
-    const q = VQ[vq], [width, height] = q.sizes[shape], frames = LENGTHS[vlen].frames;
+  async function genVideoInner({ prompt, shape, seed, signal, onStatus, startImage = st.startImage, vq = st.vq, vlen = st.vlen, wantLastFrame = false, vmodel = st.vmodel }) {
+    const vmId = VIDEO_MODELS[vmodel] ? vmodel : "5b", vm = vmodelOf(vmId);
+    let ms = comfyState.models[vmId];
+    if (!ms || !ms.ok) { await comfyCheck(false, vmId); ms = comfyState.models[vmId]; }
+    if (!ms || !ms.ok) throw new GenError(`ComfyUI isn't ready for ${vm.short} yet. Open the Video tab, then Video engine, and follow the setup steps.`);
+    if (vmId === "14b" && startImage && !ms.i2v) throw new GenError("Starting from a picture with Wan 2.2 14B needs its 4 image-to-video files (used by Animate, storyboard pictures and Extend). Download them (Video tab → Video engine → How to set up), or switch Video model to Wan 2.2 5B.");
+    if (vmId === "14b" && !startImage && !ms.t2v) throw new GenError("Text-to-video with Wan 2.2 14B needs its 4 text-to-video files. Download them (Video tab → Video engine → How to set up), add a start picture, or switch Video model to Wan 2.2 5B.");
+    const [width, height] = videoSize(vq, shape, vmId), frames = videoFrames(vlen, vmId);
     if ($("#freeVram").checked) {
       if (ai && ai.streaming()) { onStatus("Waiting for the chat reply to finish…"); await ai.whenIdle(); }
       onStatus("Freeing graphics memory for the video…");
@@ -1804,10 +1963,15 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
       const up = await comfyJson("/upload/image", { method: "POST", body: fd, signal });
       startName = up.subfolder ? `${up.subfolder}/${up.name}` : up.name;
     }
-    const wf = wanWorkflow({ prompt, width, height, frames, steps: q.steps, seed, startImage: startName, lastFrame: wantLastFrame });
-    const { blob, lastFrameFile } = await runComfyJob(wf, {
-      signal, onStatus, steps: q.steps, stepText: "Making frames", what: "video", want: /\.(webm|mp4|webp|gif|mkv)$/i,
-      nodeText: { "37": ["Loading the video model (slow the first time)…"], "38": ["Loading the video model (slow the first time)…"], "39": ["Loading the video model (slow the first time)…"], "6": ["Reading your prompt…"], "55": ["Preparing the start frame…"], "8": ["Decoding frames…", 0.97], "60": ["Saving the video…", 0.99] },
+    const loading = ["Loading the video model (slow the first time)…"];
+    const job = vmId === "14b"
+      ? { wf: wan14Workflow({ prompt, width, height, frames, seed, startImage: startName, lastFrame: wantLastFrame }), stepNodes: { "81": 0, "78": 2 },
+          nodeText: { "71": loading, "73": loading, "75": loading, "76": loading, "89": ["Reading your prompt…"], "98": ["Preparing the start frame…"], "78": ["Switching to the detail model…"], "8": ["Decoding frames…", 0.97], "60": ["Saving the video…", 0.99] } }
+      : { wf: wanWorkflow({ prompt, width, height, frames, steps: vm.steps, seed, startImage: startName, lastFrame: wantLastFrame }), stepNodes: { "3": 0 },
+          nodeText: { "37": loading, "38": loading, "39": loading, "6": ["Reading your prompt…"], "55": ["Preparing the start frame…"], "8": ["Decoding frames…", 0.97], "60": ["Saving the video…", 0.99] } };
+    const { blob, lastFrameFile } = await runComfyJob(job.wf, {
+      signal, onStatus, steps: vm.steps, stepText: "Making frames", what: "video", want: /\.(webm|mp4|webp|gif|mkv)$/i,
+      stepNodes: job.stepNodes, nodeText: job.nodeText,
     });
     const lastFrame = wantLastFrame && lastFrameFile ? await comfyDownload(lastFrameFile, signal, "last frame") : null;
     return { blob, width, height, lastFrame };
@@ -2124,11 +2288,11 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
   }
 
   async function makeVideo(text) {
-    const shape = st.shape, q = VQ[st.vq], [w, h] = q.sizes[shape];
+    const shape = st.shape, [w, h] = videoSize(st.vq, shape);
     st.ctl = new AbortController(); const signal = st.ctl.signal;
     st.busy = true; updateGo(); hideMsg();
     $("#batchTitle").textContent = text;
-    $("#batchMeta").textContent = `Wan 2.2 · ${LENGTHS[st.vlen].label} · ${w}×${h}${st.startImage ? " · from your image" : ""}`;
+    $("#batchMeta").textContent = `${vmodelOf(st.vmodel).short} · ${LENGTHS[st.vlen].label} · ${w}×${h}${st.startImage ? " · from your image" : ""}`;
     $("#finalPrompt").hidden = true;
     const sheet = $("#sheet"); sheet.className = "sheet one"; sheet.innerHTML = "";
     const card = makeCard(w, h); sheet.append(card.el);
@@ -2136,7 +2300,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     const seed = Math.floor(Math.random() * 2 ** 48);
     try {
       const { blob } = await genVideo({ prompt: text, shape, seed, signal, onStatus: (t, f) => card.status(t, f) });
-      const item = { id: newId(), kind: "video", prompt: text, engine: `Wan 2.2 via ComfyUI · ${LENGTHS[st.vlen].label}`, shape, seed, blob, ts: Date.now() };
+      const item = { id: newId(), kind: "video", prompt: text, engine: `${vmodelOf(st.vmodel).short} via ComfyUI · ${LENGTHS[st.vlen].label}`, shape, seed, blob, ts: Date.now() };
       await DB.put(item); saved.unshift(item); renderGallery();
       card.done(item);
     } catch (e) {
@@ -2217,7 +2381,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
       const el = document.createElement("div"); el.className = "long-card";
       el.innerHTML = `<div class="top"><b></b><span></span></div><div class="bar-track"><div class="bar-fill"></div></div><p class="hint st"></p><ul class="shots"></ul>`;
       el.querySelector(".top b").textContent = p.prompt;
-      el.querySelector(".top span").textContent = `${VMETHODS[p.method].label.split(" ")[0]} · ${VTOTALS[p.total].label} · ${p.n} clips · ${VQ[p.vq].label}`;
+      el.querySelector(".top span").textContent = `${VMETHODS[p.method].label.split(" ")[0]} · ${VTOTALS[p.total].label} · ${p.n} clips · ${vmodelOf(p.vmodel).short} · ${VQ[p.vq].label}`;
       const ul = el.querySelector(".shots");
       const urls = [];
       const lis = p.prompts.map((txt, i) => {
@@ -2302,7 +2466,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
           const base = p.picFirst ? 0.15 : 0, span = 0.83 - base;
           const left = times.length ? fmtLeft((times.reduce((a, b) => a + b, 0) / times.length) * (p.n - done())) : "";
           const r = await genVideo({
-            prompt: p.prompts[i], shape: p.shape, seed: Math.floor(Math.random() * 2 ** 48), signal, startImage: start, vq: p.vq, vlen: String(CLIP_SECONDS),
+            prompt: p.prompts[i], shape: p.shape, seed: Math.floor(Math.random() * 2 ** 48), signal, startImage: start, vq: p.vq, vlen: String(CLIP_SECONDS), vmodel: p.vmodel || "5b",
             wantLastFrame: p.method === "extend",
             onStatus: (t, f) => ui.status(`Clip ${i + 1} of ${p.n}: ${t}${left ? ` · ${left}` : ""}`, base + span * ((done() + (typeof f === "number" ? f : 0)) / p.n)),
           });
@@ -2314,11 +2478,11 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
         // 3) Join.
         ui.status("Joining the clips into one video…", 0.97);
         const joined = await join(Array.from({ length: p.n }, (_, i) => shots[i].clip));
-        const item = { id: newId(), kind: "video", prompt: p.prompt, engine: `Wan 2.2 · long video · ${VTOTALS[p.total].label}`, shape: p.shape, seed: 0, blob: joined, ts: Date.now() };
+        const item = { id: newId(), kind: "video", prompt: p.prompt, engine: `${vmodelOf(p.vmodel).short} · long video · ${VTOTALS[p.total].label}`, shape: p.shape, seed: 0, blob: joined, ts: Date.now() };
         await DB.put(item); saved.unshift(item); renderGallery();
         await discard(p.id);
         ui.status(`Finished: ${p.n} clips joined into one video. It's saved in your gallery.`, 1);
-        const [w, h] = VQ[p.vq].sizes[p.shape];
+        const [w, h] = videoSize(p.vq, p.shape, p.vmodel);
         const card = makeCard(w, h); card.done(item);
         sheet.prepend(card.el);
         return item;
@@ -2329,14 +2493,15 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
 
     async function start(text, signal) {
       const p = {
-        id: "p" + Date.now().toString(36), kind: "long", prompt: text, method: st.vmethod, total: st.vtotal, vq: st.vq, shape: st.shape,
+        id: "p" + Date.now().toString(36), kind: "long", prompt: text, method: st.vmethod, total: st.vtotal, vq: st.vq, shape: st.shape, vmodel: st.vmodel,
         picFirst: st.vmethod === "storyboard" && $("#picFirst").checked, engine: st.engine, ts: Date.now(),
         n: Math.round(Number(st.vtotal) / CLIP_SECONDS), prompts: [],
       };
       const sheet = $("#sheet"); sheet.className = "sheet one"; sheet.innerHTML = "";
-      const card = makeCard(...VQ[p.vq].sizes[p.shape]); sheet.append(card.el);
+      const card = makeCard(...videoSize(p.vq, p.shape, p.vmodel)); sheet.append(card.el);
       card.status("Checking ComfyUI…");
-      if (!comfyState.ok && !(await comfyCheck(false))) throw new GenError("ComfyUI isn't ready yet. Open Video engine below the form and follow the setup steps.");
+      const ms = comfyState.models[p.vmodel] && comfyState.models[p.vmodel].ok ? true : await comfyCheck(false, p.vmodel);
+      if (!ms) throw new GenError("ComfyUI isn't ready yet. Open Video engine below the form and follow the setup steps.");
       if (p.method === "storyboard") {
         card.status(`Planning ${p.n} shots with the AI…`);
         p.prompts = await planShots(text, p.n, signal);
@@ -3098,7 +3263,7 @@ Only do this for new facts. Never mention or explain this.`;
     }
 
     function cardSize(m) {
-      if (m.kind === "video") return VQ[st.vq].sizes[m.shape] || [832, 480];
+      if (m.kind === "video") return videoSize(st.vq, m.shape) || [832, 480];
       if (st.engine === "local" || st.engine === "comfy") return (LOCAL_Q[localQuality.value] || LOCAL_Q.standard).sizes[m.shape];
       return [SHAPES[m.shape].w, SHAPES[m.shape].h];
     }
@@ -3225,7 +3390,7 @@ Only do this for new facts. Never mention or explain this.`;
             const startImage = m.animate ? lastImageBlob(convo) : null;
             if (card()) card().status("Connecting to ComfyUI…");
             const { blob } = await genVideo({ prompt: m.prompt, shape: m.shape, seed, signal, onStatus: (t, f) => card() && card().status(t, f), startImage, vq: st.vq, vlen: st.vlen });
-            item = { id: newId(), kind: "video", prompt: m.prompt, engine: `Wan 2.2 via ComfyUI · ${LENGTHS[st.vlen].label}`, shape: m.shape, seed, blob, ts: Date.now() };
+            item = { id: newId(), kind: "video", prompt: m.prompt, engine: `${vmodelOf(st.vmodel).short} via ComfyUI · ${LENGTHS[st.vlen].label}`, shape: m.shape, seed, blob, ts: Date.now() };
           }
           await DB.put(item); saved.unshift(item); renderGallery();
           m.status = "done"; m.galleryId = item.id;
@@ -3358,6 +3523,30 @@ Only do this for new facts. Never mention or explain this.`;
     });
     window.addEventListener("appinstalled", () => { $("#installBtn").hidden = true; });
     if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
+  })();
+
+  // ---------- light / dark mode ----------
+  (() => {
+    const ICONS = {
+      auto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor"/></svg>',
+      light: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+      dark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>',
+    };
+    const LABEL = { auto: "Auto", light: "Light", dark: "Dark" };
+    const NEXT = { auto: "light", light: "dark", dark: "auto" };
+    const btn = $("#themeBtn"), meta = document.querySelector('meta[name="theme-color"]');
+    let theme = ls.get("dd.theme", "auto"); if (!LABEL[theme]) theme = "auto";
+    function apply() {
+      if (theme === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = theme;
+      const dark = theme === "dark" || (theme === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
+      if (meta) meta.content = dark ? "#0F131B" : "#3446D4";
+      btn.innerHTML = ICONS[theme] + LABEL[theme];
+      btn.title = theme === "auto" ? "Theme: Auto (follows Windows). Click for Light." : theme === "light" ? "Theme: Light. Click for Dark." : "Theme: Dark. Click for Auto.";
+      btn.setAttribute("aria-label", btn.title);
+    }
+    btn.addEventListener("click", () => { theme = NEXT[theme]; ls.set("dd.theme", theme); apply(); });
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", apply);
+    apply();
   })();
 
   // ---------- boot ----------
