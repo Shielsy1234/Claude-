@@ -331,6 +331,26 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
 .shots li.done .pv { color: var(--good); }
 .resume { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
 
+/* Help */
+.help-btn { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--muted); font: 700 11px/1 var(--f-body); cursor: pointer; display: inline-grid; place-items: center; padding: 0; margin-left: 6px; vertical-align: 1px; flex: none; text-transform: none; letter-spacing: 0; }
+.help-btn:hover, .help-btn:focus-visible { border-color: var(--accent); color: var(--accent); }
+.link-btn { border: 0; background: transparent; padding: 0; color: var(--accent); font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.links-row { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
+.help-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.help-nav { display: flex; flex-wrap: wrap; gap: 6px; }
+.help-nav button { border: 1px solid var(--line); background: var(--surface); padding: 5px 10px; border-radius: 999px; font-size: 12.5px; cursor: pointer; }
+.help-nav button:hover { border-color: var(--accent); }
+.help-body { overflow: auto; max-height: calc(100dvh - 220px); display: flex; flex-direction: column; gap: 18px; padding-right: 4px; }
+.help-sec { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); scroll-margin-top: 4px; border-radius: 6px; }
+.help-sec h3 { margin: 0; font-family: var(--f-display); font-size: 17px; }
+.help-sec p { margin: 0; font-size: 14px; }
+.help-sec.flash { animation: helpflash 1.4s ease-out; }
+.help-sec ul.checklist { padding-left: 20px; }
+.help-sec ul.checklist li { display: list-item; list-style: disc; }
+.help-sec ul.checklist li::before { content: none; }
+@keyframes helpflash { from { background: var(--accent-soft); } to { background: transparent; } }
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition: none !important; } }
 </style>
 </head>
@@ -356,10 +376,11 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
       </button>
     </nav>
     <div class="top-right">
+      <button type="button" class="btn small" id="helpBtn" data-help="" title="Help and setup guides">Help</button>
       <button type="button" class="btn small" id="themeBtn" title="Switch between light and dark mode"></button>
       <button type="button" class="btn small accent" id="installBtn" hidden>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/></svg>Install app</button>
-      <div class="pill" id="engineBadge"><i></i><span id="engineBadgeText">Free engine</span></div>
+      <div class="pill" id="engineBadge" hidden><i></i><span id="engineBadgeText">Free engine</span></div>
     </div>
   </header>
 
@@ -378,10 +399,10 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
         <p class="hint" id="convosEmpty">Your chats are saved on this PC.</p>
       </div>
       <details class="more" id="memDetails">
-        <summary>Memory <span class="sum" id="memSummary"></span></summary>
+        <summary>Memory <button type="button" class="help-btn" data-help="help-chat" aria-label="Help: memory" title="Help: memory">?</button> <span class="sum" id="memSummary"></span></summary>
         <div class="inner">
           <label class="toggle"><input type="checkbox" id="memAuto" checked>
-            <span>Remember things from chats<small>When you mention something lasting (your name, likes, projects, pets), the AI saves it here and uses it in future chats with every character.</small></span>
+            <span>Remember things from chats</span>
           </label>
           <ul class="memlist" id="memList"></ul>
           <p class="hint" id="memEmpty">Nothing remembered yet. Tell the AI about yourself, or add something below.</p>
@@ -395,10 +416,10 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
           <div class="engines" role="radiogroup" aria-label="AI model source">
             <label class="engine"><input type="radio" name="aiKind" value="builtin" id="aiKind-builtin">
               <b>Built in <span class="tag best">No install</span></b>
-              <small>Runs inside this app on your graphics card. One-time download, then works offline.</small></label>
+              <small>Runs in this app on your GPU</small></label>
             <label class="engine"><input type="radio" name="aiKind" value="ollama" id="aiKind-ollama">
               <b>Ollama</b>
-              <small>Use any model you've installed with the free Ollama app on your PC.</small></label>
+              <small>Any model from the Ollama app</small></label>
           </div>
           <div class="keybox" id="aiBuiltinBox">
             <label class="label" for="aiModel">Model</label>
@@ -425,20 +446,10 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
             <label class="label" for="olModel">Model</label>
             <select id="olModel"><option value="">Press Check to list your models</option></select>
             <div class="status-line" id="olStatus" data-s="idle"><i></i><span id="olStatusText">Not checked yet.</span></div>
-            <details class="more" style="border-top:0;padding-top:0">
-              <summary>How to set up Ollama</summary>
-              <div class="inner">
-                <ol class="steps">
-                  <li>Install <a href="https://ollama.com/download" target="_blank" rel="noopener">Ollama</a> (it supports AMD Radeon cards).</li>
-                  <li>Open a terminal and download a model, for example <code>ollama pull qwen3:8b</code>. Browse more at <a href="https://ollama.com/library" target="_blank" rel="noopener">ollama.com/library</a>.</li>
-                  <li>Let this app connect: run <code>setx OLLAMA_ORIGINS "*"</code> in a terminal, then quit Ollama from the system tray and start it again.</li>
-                  <li>Press <b>Check</b> above and pick your model.</li>
-                </ol>
-              </div>
-            </details>
+            <div class="links-row"><button type="button" class="link-btn" data-help="help-ollama">How to set up Ollama</button></div>
           </div>
           <label class="toggle"><input type="checkbox" id="freeVram" checked>
-            <span>Free graphics memory for videos<small>Unloads the chat and image models while ComfyUI makes a video, so it has the whole GPU. They reload when needed.</small></span>
+            <span>Free graphics memory for videos</span>
           </label>
           <label class="field" for="aiPersona"><span class="label">Custom instructions (optional)</span>
             <textarea id="aiPersona" class="input" rows="3" placeholder="For example: Keep answers short. Call me Cian."></textarea>
@@ -480,7 +491,6 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
             </button>
           </div>
           <textarea id="prompt" placeholder="An old fisherman mending nets on a wooden dock at golden hour"></textarea>
-          <p class="hint">Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to generate.</p>
         </div>
 
         <div class="field" id="startField" hidden>
@@ -497,7 +507,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
         </div>
 
         <div class="field" id="vmodeField" hidden>
-          <span class="label" id="vmodeLabel">Video type</span>
+          <span class="label" id="vmodeLabel">Video type <button type="button" class="help-btn" data-help="help-long" aria-label="Help: long videos" title="Help: long videos">?</button></span>
           <div class="chips" id="vmodes" role="radiogroup" aria-labelledby="vmodeLabel"></div>
         </div>
 
@@ -507,7 +517,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
           <span class="label" id="vmethodLabel" style="margin-top:8px">How to build it</span>
           <div class="chips" id="vmethods" role="radiogroup" aria-labelledby="vmethodLabel"></div>
           <label class="toggle" id="picFirstField" style="margin-top:6px"><input type="checkbox" id="picFirst" checked>
-            <span>Make a picture for each shot first<small>Sharper, more consistent shots. Uses your Image engine, then animates each picture.</small></span>
+            <span>Make a picture for each shot first</span>
           </label>
           <p class="hint" id="longHint"></p>
         </div>
@@ -528,21 +538,19 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
         </div>
 
         <div class="field" id="vmodelField" hidden>
-          <label class="label" for="vmodelSel">Video model</label>
+          <span class="label"><label for="vmodelSel">Video model</label> <button type="button" class="help-btn" data-help="help-video-models" aria-label="Help: video models" title="Help: video models">?</button></span>
           <select id="vmodelSel"></select>
           <p class="hint" id="vmodelHint"></p>
         </div>
 
         <div class="field" id="vqField" hidden>
-          <span class="label" id="vqLabel">Video quality</span>
+          <span class="label" id="vqLabel">Video quality <button type="button" class="help-btn" data-help="help-speed" aria-label="Help: faster videos" title="Help: faster videos">?</button></span>
           <div class="chips" id="vquality" role="radiogroup" aria-labelledby="vqLabel"></div>
-          <p class="hint">Draft is about twice as fast as Quick: good for trying out prompts.</p>
         </div>
 
         <div class="field" id="vspeedField" hidden>
-          <span class="label" id="vspeedLabel">Speed</span>
+          <span class="label" id="vspeedLabel">Speed <button type="button" class="help-btn" data-help="help-speed" aria-label="Help: faster videos" title="Help: faster videos">?</button></span>
           <div class="chips" id="vspeeds" role="radiogroup" aria-labelledby="vspeedLabel"></div>
-          <p class="hint">Faster and Fastest use fewer steps and reuse work between steps, for roughly 2 to 3 times the speed with a small loss of detail.</p>
         </div>
 
         <div class="field" id="countField">
@@ -573,19 +581,19 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
           <div class="engines" role="radiogroup" aria-label="Image engine">
             <label class="engine"><input type="radio" name="engine" value="local" id="engine-local">
               <b>This PC <span class="tag best">Private · unlimited</span></b>
-              <small>Runs Z-Image Turbo on your own graphics card in this browser. No account, no limits, nothing leaves your computer. One-time 6 GB download.</small></label>
+              <small>Your GPU, inside the app (Chrome/Edge)</small></label>
             <label class="engine"><input type="radio" name="engine" value="comfy" id="engine-comfy">
               <b>ComfyUI on this PC <span class="tag">Any browser</span></b>
-              <small>Runs Z-Image Turbo in ComfyUI on your graphics card. Faster than This PC, and works in Firefox too. Unlimited and private.</small></label>
+              <small>Your GPU, via ComfyUI. Fastest</small></label>
             <label class="engine"><input type="radio" name="engine" value="free" id="engine-free">
               <b>Free online, no sign-up</b>
-              <small>Works on any device right away. Basic realism, up to 768 px, small watermark, one image every 45 seconds.</small></label>
+              <small>No setup. Basic, one image every 45 s</small></label>
             <label class="engine"><input type="radio" name="engine" value="pollinations" id="engine-pollinations">
               <b>Pollinations account</b>
-              <small>Online, free daily allowance. Lifelike models at full size, no watermark. Needs a free key.</small></label>
+              <small>Online, free daily allowance, needs a key</small></label>
             <label class="engine"><input type="radio" name="engine" value="openai" id="engine-openai">
               <b>OpenAI <span class="tag">Paid</span></b>
-              <small>GPT Image models, billed to your OpenAI account, roughly 1 to 20 cents an image.</small></label>
+              <small>Online, paid per image</small></label>
           </div>
 
           <div class="keybox" id="localBox" hidden>
@@ -599,7 +607,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
               <button type="button" class="btn small" id="localCancel" hidden>Pause download</button>
               <button type="button" class="btn small ghost danger" id="localDelete" hidden>Delete model</button>
             </div>
-            <p class="hint">Needs Chrome or Edge on a PC with a modern graphics card. The model is stored by your browser for this site, so it only downloads once. The first image after opening the page takes longer while the model loads onto your GPU.</p>
+            <div class="links-row"><button type="button" class="link-btn" data-help="help-thispc">About This PC</button></div>
           </div>
 
           <div class="keybox" id="comfyImgBox" hidden>
@@ -607,22 +615,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
             <div class="keyrow"><input class="input" id="comfyUrlImg" type="url" autocomplete="off" placeholder="http://127.0.0.1:8000"><button type="button" class="btn small" id="comfyImgCheck">Check</button></div>
             <div class="status-line" id="comfyImgStatus" data-s="idle"><i></i><span id="comfyImgStatusText">Not checked yet.</span></div>
             <ul class="checklist" id="comfyImgChecklist" hidden></ul>
-            <details class="more" style="border-top:0;padding-top:0">
-              <summary>How to set up (one time)</summary>
-              <div class="inner">
-                <ol class="steps">
-                  <li>Set up ComfyUI and its CORS setting as described in the Video tab (Video engine → How to set up ComfyUI). It's the same ComfyUI for images and video.</li>
-                  <li>Download these 3 files (about 21 GB) into your ComfyUI <code>models</code> folder:
-                    <ul class="checklist" style="margin-top:6px">
-                      <li><a href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors" target="_blank" rel="noopener">z_image_turbo_bf16.safetensors</a>&nbsp;→ <code>models/diffusion_models</code></li>
-                      <li><a href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors" target="_blank" rel="noopener">qwen_3_4b.safetensors</a>&nbsp;→ <code>models/text_encoders</code></li>
-                      <li><a href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors" target="_blank" rel="noopener">ae.safetensors</a>&nbsp;→ <code>models/vae</code></li>
-                    </ul>
-                  </li>
-                  <li>Press <b>Check</b>. You want three green ticks.</li>
-                </ol>
-              </div>
-            </details>
+            <div class="links-row"><button type="button" class="link-btn" data-help="help-image-comfy">Files needed</button><button type="button" class="link-btn" data-help="help-comfy">Set up ComfyUI</button></div>
           </div>
 
           <div class="field" id="zQualityField" hidden>
@@ -668,7 +661,6 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
       <details class="more" id="videoDetails" hidden>
         <summary>Video engine <span class="sum" id="videoSummary">ComfyUI on this PC</span></summary>
         <div class="inner">
-          <p class="hint" style="font-size:13.5px;color:var(--ink)">Videos are made by <b>ComfyUI</b> running on your PC with the <b>Wan 2.2</b> video model. This page sends it your prompt and shows the result.</p>
           <div class="field">
             <label class="label" for="comfyUrl">ComfyUI address</label>
             <div class="keyrow"><input class="input" id="comfyUrl" type="url" autocomplete="off" placeholder="http://127.0.0.1:8000"><button type="button" class="btn small" id="comfyCheck">Check</button></div>
@@ -677,33 +669,11 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
             <div class="status-line" id="comfyStatus" data-s="idle"><i></i><span id="comfyStatusText">Not checked yet.</span></div>
             <ul class="checklist" id="comfyChecklist" hidden></ul>
           </div>
-          <details class="more" id="phoneHelp" style="border-top:0;padding-top:0">
-            <summary>Use from your phone</summary>
-            <div class="inner">
-              <p class="hint" style="color:var(--ink)">Make videos (and ComfyUI images) on your phone, powered by your PC, at home or away. Uses <b>Tailscale</b>, a free app that links your devices privately and gives your PC a secure address.</p>
-              <ol class="steps">
-                <li>On your PC: install <a href="https://tailscale.com/download" target="_blank" rel="noopener">Tailscale</a> and sign in.</li>
-                <li>On your iPhone: install <b>Tailscale</b> from the App Store and sign in with the same account. Leave it switched on.</li>
-                <li>In the <a href="https://login.tailscale.com/admin/dns" target="_blank" rel="noopener">Tailscale admin page</a> (DNS section), turn on <b>MagicDNS</b> and <b>HTTPS Certificates</b>.</li>
-                <li>On your PC, open Command Prompt and run (use your ComfyUI port, e.g. 8188 or 8000):<br><code>tailscale serve --bg 8188</code><br>It shows an address like <code>https://your-pc.tail1234.ts.net</code>.</li>
-                <li>On your phone, open Daydream in Safari (Share → Add to Home Screen for an app icon), go to <b>Video → Video engine</b>, enter that <b>https://</b> address as the ComfyUI address and press <b>Check</b>.</li>
-              </ol>
-              <p class="hint">Your PC must be on with ComfyUI running. On the phone, choose <b>Image engine → ComfyUI on this PC</b> to make images on your PC too. Videos and images you make on the phone are saved in the phone's gallery.</p>
-            </div>
-          </details>
-          <details class="more" id="comfyHelp" style="border-top:0;padding-top:0">
-            <summary>How to set up ComfyUI (one time)</summary>
-            <div class="inner">
-              <ol class="steps">
-                <li>Install <a href="https://www.comfy.org/download" target="_blank" rel="noopener">ComfyUI Desktop</a> for Windows. When it asks for your GPU, pick <b>AMD (ROCm)</b>. If AMD recommends a driver during setup, install it.</li>
-                <li><span id="vfileTotal"></span>
-                  <ul class="checklist" id="vfileList" style="margin-top:6px"></ul>
-                </li>
-                <li>Let this page talk to ComfyUI: in ComfyUI Desktop open <b>Settings → Server Config</b> and set <b>Enable CORS header</b> to <code>*</code>, then restart ComfyUI. (Portable or manual installs: start ComfyUI with <code>--enable-cors-header "*"</code>.)</li>
-                <li>Copy the address ComfyUI shows (Desktop usually uses <code>http://127.0.0.1:8000</code>, manual installs <code>http://127.0.0.1:8188</code>) into the box above and press <b>Check</b>. If the browser asks to allow access to devices on your local network, choose <b>Allow</b>.</li>
-              </ol>
-            </div>
-          </details>
+          <div class="links-row">
+            <button type="button" class="link-btn" data-help="help-comfy">Set up ComfyUI</button>
+            <button type="button" class="link-btn" data-help="help-video-models">Model files</button>
+            <button type="button" class="link-btn" data-help="help-phone">Use on your phone</button>
+          </div>
         </div>
       </details>
     </section>
@@ -755,6 +725,102 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     </div>
   </div>
 </div>
+
+<dialog class="sheet-dialog help-dialog" id="helpDialog" aria-labelledby="helpTitle">
+  <div class="dlg">
+    <div class="help-head"><h2 id="helpTitle">Help</h2><button type="button" class="btn small" id="helpClose">Close</button></div>
+    <nav class="help-nav" aria-label="Help topics">
+      <button type="button" data-help="help-comfy">Set up ComfyUI</button>
+      <button type="button" data-help="help-video-models">Video models</button>
+      <button type="button" data-help="help-speed">Faster videos</button>
+      <button type="button" data-help="help-long">Long videos</button>
+      <button type="button" data-help="help-image-comfy">ComfyUI images</button>
+      <button type="button" data-help="help-thispc">This PC images</button>
+      <button type="button" data-help="help-ollama">Ollama chat</button>
+      <button type="button" data-help="help-phone">Use on your phone</button>
+      <button type="button" data-help="help-chat">Memory &amp; characters</button>
+    </nav>
+    <div class="help-body" id="helpBody">
+      <section class="help-sec" id="help-comfy">
+        <h3>Set up ComfyUI</h3>
+        <p>Videos (and the fastest images) are made by ComfyUI running on your PC. This app sends it your prompt and shows the result.</p>
+        <ol class="steps">
+          <li>Install <a href="https://www.comfy.org/download" target="_blank" rel="noopener">ComfyUI Desktop</a>. When it asks about your graphics card, pick <b>AMD (ROCm)</b> (or NVIDIA if you have one).</li>
+          <li>Let this app talk to ComfyUI. In Comfy Desktop's instance settings → <b>Startup Args</b>, add <code>--enable-cors-header</code>. For AMD cards also add <code>--use-pytorch-cross-attention</code> (faster). Then restart ComfyUI. Manual installs: start ComfyUI with the same flags.</li>
+          <li>Download the model files for the video model you want (see <button type="button" class="link-btn" data-help="help-video-models">Video models</button>).</li>
+          <li>In the Video tab → Video engine, enter ComfyUI's address (Desktop: usually <code>http://127.0.0.1:8188</code> or <code>:8000</code>) and press <b>Check</b>. If the browser asks about devices on your local network, choose <b>Allow</b>.</li>
+        </ol>
+        <p class="hint">Your models folder: in Comfy Desktop's instance settings → <b>Storage</b> (for you: <code>D:\Comfy-Desktop\ComfyUI-Shared\models</code>).</p>
+      </section>
+      <section class="help-sec" id="help-video-models">
+        <h3>Video models</h3>
+        <p><b>Wan 2.2 5B</b>: quicker to set up (about 18 GB), 24 frames per second. <b>Wan 2.2 14B</b>: the best quality that fits a 16 GB card, better motion and prompt following, 16 frames per second, already in a fast 4-step mode. It needs about 62 GB of files, and 32 GB of RAM is recommended.</p>
+        <p id="vfileTotal"></p>
+        <ul class="checklist" id="vfileList"></ul>
+        <p class="hint">Keep file names exactly as they are. If a file shows as missing or broken, check it finished downloading (no <code>.part</code> or <code>.crdownload</code> left) and that it wasn't renamed with a <code>(1)</code>.</p>
+      </section>
+      <section class="help-sec" id="help-speed">
+        <h3>Faster videos</h3>
+        <ul class="checklist">
+          <li><b>Draft</b> quality is about twice as fast as Quick: use it to try prompts, then make keepers in Quick or Full 720p.</li>
+          <li><b>Speed</b> (5B): Faster and Fastest use fewer steps and reuse work between steps, about 2 to 3 times faster with a small loss of detail.</li>
+          <li>The <b>14B</b> already runs in its 4-step mode; for more speed use Draft or Quick and shorter clips.</li>
+          <li>Keep ComfyUI open between videos: the first one after starting loads the models and is slower.</li>
+          <li>Close games and heavy apps; if Task Manager shows the GPU's memory full and "shared" memory climbing, it's spilling into RAM and slowing down.</li>
+        </ul>
+      </section>
+      <section class="help-sec" id="help-long">
+        <h3>Long videos</h3>
+        <p>Video models make about 5 seconds at a time, so long videos are built from many 5-second clips joined into one file.</p>
+        <ul class="checklist">
+          <li><b>Storyboard</b>: the AI plans a shot list from your idea. With <b>Make a picture for each shot first</b>, each shot is drawn first and then animated, for sharper, more consistent results.</li>
+          <li><b>Extend</b>: one continuous shot; each clip continues from the last frame of the one before. Details slowly drift over long lengths.</li>
+          <li>Progress is saved after every clip. Press Stop any time, even close the app, and press <b>Resume</b> later in the Video tab. Long videos suit an overnight run.</li>
+        </ul>
+      </section>
+      <section class="help-sec" id="help-image-comfy">
+        <h3>ComfyUI images</h3>
+        <p>Runs the same Z-Image Turbo model natively in ComfyUI: faster than This PC and works in any browser. Needs ComfyUI set up (see <button type="button" class="link-btn" data-help="help-comfy">Set up ComfyUI</button>) and these files (about 21 GB) in your models folder:</p>
+        <ul class="checklist">
+          <li><a href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors" target="_blank" rel="noopener">z_image_turbo_bf16.safetensors</a> → <code>models/diffusion_models</code></li>
+          <li><a href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors" target="_blank" rel="noopener">qwen_3_4b.safetensors</a> → <code>models/text_encoders</code></li>
+          <li><a href="https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors" target="_blank" rel="noopener">ae.safetensors</a> → <code>models/vae</code></li>
+        </ul>
+      </section>
+      <section class="help-sec" id="help-thispc">
+        <h3>This PC images</h3>
+        <p>Runs Z-Image Turbo inside the app on your graphics card: private and unlimited. Needs Chrome or Edge (not Firefox) on a PC with a modern graphics card. The model (5.6 GB) downloads once and is stored by your browser. The first image after opening the app is slower while the model loads onto your GPU.</p>
+      </section>
+      <section class="help-sec" id="help-ollama">
+        <h3>Ollama chat</h3>
+        <p>Use any chat model you like, including bigger or less restricted ones, through the free Ollama app.</p>
+        <ol class="steps">
+          <li>Install <a href="https://ollama.com/download" target="_blank" rel="noopener">Ollama</a> (it supports AMD Radeon cards).</li>
+          <li>In Command Prompt, download a model, for example <code>ollama pull qwen3:14b</code>. Browse models at <a href="https://ollama.com/search" target="_blank" rel="noopener">ollama.com/search</a>.</li>
+          <li>Let this app connect: run <code>setx OLLAMA_ORIGINS "*"</code>, then quit Ollama from the system tray and start it again.</li>
+          <li>In Chat → AI model → <b>Ollama</b>, press <b>Check</b> and pick your model.</li>
+        </ol>
+      </section>
+      <section class="help-sec" id="help-phone">
+        <h3>Use on your phone</h3>
+        <p>Make videos and ComfyUI images on your phone, powered by your PC, at home or away. Uses <b>Tailscale</b>, a free app that links your devices privately and gives your PC a secure address.</p>
+        <ol class="steps">
+          <li>Install <a href="https://tailscale.com/download" target="_blank" rel="noopener">Tailscale</a> on your PC and on your iPhone, signed in to the same account.</li>
+          <li>In the <a href="https://login.tailscale.com/admin/dns" target="_blank" rel="noopener">Tailscale admin page</a> (DNS), turn on <b>MagicDNS</b> and <b>HTTPS Certificates</b>.</li>
+          <li>On your PC, in Command Prompt, run <code>tailscale serve --bg 8188</code> (your ComfyUI port). It shows an address like <code>https://your-pc.tail1234.ts.net</code>.</li>
+          <li>On your phone, open this app in Safari (Share → Add to Home Screen), go to Video → Video engine, enter that <b>https://</b> address and press <b>Check</b>.</li>
+        </ol>
+        <p class="hint">Your PC must be on with ComfyUI running. Things you make on the phone are saved in the phone's gallery.</p>
+      </section>
+      <section class="help-sec" id="help-chat">
+        <h3>Memory &amp; characters</h3>
+        <p><b>Memory</b>: when you mention something lasting (your name, likes, projects), the AI saves it and uses it in future chats with every character. Manage it under Memory in the Chat sidebar.</p>
+        <p><b>Characters</b>: AI personalities with their own avatar, personality, greeting and voice. Create one with <b>+ New</b>; they can send pictures of themselves if they have an appearance.</p>
+        <p><b>Free graphics memory for videos</b>: unloads the chat and image models while ComfyUI makes a video, so it has the whole GPU. A message sent meanwhile waits until the video's done.</p>
+      </section>
+    </div>
+  </div>
+</dialog>
 
 <dialog class="sheet-dialog" id="botDialog" aria-labelledby="botDlgTitle">
   <form class="dlg" id="botForm" method="dialog">
@@ -957,7 +1023,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
       const sf = st.vmodel === "14b" ? 1 : VSPEEDS[st.vspeed].factor;
       const n = Math.round(Number(st.vtotal) / CLIP_SECONDS), [a, b] = vmodelOf(st.vmodel).minutes[st.vq].map((x) => x * sf);
       const fmt = (m) => (m >= 90 ? `${Math.round(m / 60)} h` : `${Math.round(m)} min`);
-      $("#longHint").textContent = `${n} clips of ${CLIP_SECONDS} seconds. Rough time on your PC: ${fmt(n * a)} to ${fmt(n * b)}. You can stop and resume later, even after closing the app.`;
+      $("#longHint").textContent = `${n} clips · roughly ${fmt(n * a)} to ${fmt(n * b)} · stop and resume any time`;
     }
   }
 
@@ -973,7 +1039,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
 
   function renderSuggest() {
     const box = $("#suggest"); box.innerHTML = "";
-    for (const s of SUGGEST[st.mode]) {
+    for (const s of SUGGEST[st.mode].slice(0, 4)) {
       const b = document.createElement("button"); b.type = "button"; b.textContent = s;
       b.addEventListener("click", () => { setPrompt(s); promptEl.focus(); });
       box.append(b);
@@ -1690,9 +1756,9 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
       // A browser may save a re-download as "name (1).safetensors" or "name(1).safetensors".
       const stem = f.want.replace(/\.safetensors$/i, "").toLowerCase();
       const near = !found && opts.find((o) => { const b = base(o).toLowerCase(); return b !== f.want.toLowerCase() && b.endsWith(".safetensors") && b.startsWith(stem) && /^\s*\(\d+\)$/.test(b.slice(stem.length, -12)); });
-      const li = document.createElement("li"); li.className = found ? "ok" : "bad";
-      li.textContent = found ? f.want
-        : near ? `Found "${base(near)}" in ${f.folder}, but the name must be exactly "${f.want}". Rename it (remove the number in brackets), then press Check again.`
+      if (found) continue; // only list what still needs doing
+      const li = document.createElement("li"); li.className = "bad";
+      li.textContent = near ? `Found "${base(near)}" in ${f.folder}, but the name must be exactly "${f.want}". Rename it (remove the number in brackets), then press Check again.`
         : `${f.want} is missing. Put it in ${f.folder}, then press Check again.`;
       listEl.append(li);
       if (!found) missing.push(f.want);
@@ -1728,7 +1794,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
       } else ms = { files, ok: missing.length === 0 };
       comfyState.models[vmId] = ms;
       if (!ui) return ms.ok;
-      list.hidden = false;
+      list.hidden = !list.children.length;
       comfyState.checked = true; comfyState.ok = ms.ok;
       if (vmId === "14b" && ms.ok && !(ms.t2v && ms.i2v)) {
         comfyStatus("warn", ms.t2v
@@ -1744,7 +1810,6 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
       comfyStatus("bad", e && e.user ? e.message : "Couldn't talk to ComfyUI.");
       $("#videoSummary").textContent = "ComfyUI · not connected";
       $("#videoDetails").open = true;
-      if (!quiet) $("#comfyHelp").open = true;
       return false;
     } finally { btn.disabled = false; }
   }
@@ -1756,9 +1821,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     for (const [id, m] of Object.entries(VIDEO_MODELS)) { const o = document.createElement("option"); o.value = id; o.textContent = m.label; sel.append(o); }
     sel.value = st.vmodel;
     const hint = () => {
-      $("#vmodelHint").textContent = st.vmodel === "14b"
-        ? "The biggest open video model that fits your card: better motion and prompt following. Already runs in its fast 4-step mode at 16 frames per second; for more speed pick Draft or Quick and a shorter length. About 62 GB of files, so it needs plenty of disk space and RAM."
-        : "Smaller and quicker to set up (about 18 GB). Good results at 720p, 24 frames per second.";
+      $("#vmodelHint").textContent = st.vmodel === "14b" ? "Best quality. About 62 GB of model files." : "Quicker to set up. About 18 GB of model files.";
     };
     sel.addEventListener("change", () => {
       st.vmodel = sel.value; ls.set("dd.vmodel", st.vmodel);
@@ -1783,7 +1846,7 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     const list = $("#comfyImgChecklist"); list.hidden = true;
     try {
       const { gpu, missing } = await comfyFileCheck(ZIMG_FILES, list, comfyImgState.files);
-      list.hidden = false;
+      list.hidden = !list.children.length;
       comfyImgState.checked = true; comfyImgState.ok = missing.length === 0;
       if (comfyImgState.ok) comfyImgStatus("ok", `Connected. ${gpu}. Ready to make images.`);
       else comfyImgStatus("warn", `Connected (${gpu}), but some files are missing. See How to set up below.`);
@@ -3596,6 +3659,27 @@ Only do this for new facts. Never mention or explain this.`;
     });
     window.addEventListener("appinstalled", () => { $("#installBtn").hidden = true; });
     if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
+  })();
+
+  // ---------- help panel ----------
+  (() => {
+    const dlg = $("#helpDialog");
+    function openHelp(id) {
+      if (!dlg.open) dlg.showModal();
+      const sec = id && document.getElementById(id);
+      if (sec) {
+        sec.scrollIntoView({ block: "start" });
+        sec.classList.remove("flash"); void sec.offsetWidth; sec.classList.add("flash");
+      } else $("#helpBody").scrollTop = 0;
+    }
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-help]");
+      if (!b) return;
+      e.preventDefault(); e.stopPropagation(); // don't toggle a <summary> the button sits in
+      openHelp(b.dataset.help);
+    }, true);
+    $("#helpClose").addEventListener("click", () => dlg.close());
+    dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
   })();
 
   // ---------- light / dark mode ----------

@@ -98,6 +98,8 @@ You can also ask a character in Chat for a long video ("make me a 2 minute video
 
 ## Other features
 
+- **Help**: setup guides and tips live in one Help panel (header button, or the small **?** next to a setting opens the matching section)
+
 - **Light, dark or auto theme**: the button in the header switches between Auto (follows Windows), Light and Dark
 
 - **Look presets** and an **Extra realism** switch for photographic results
