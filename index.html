@@ -971,9 +971,15 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
       if (st.engine !== "local") return;
       status("idle", "Checking your graphics card…");
       const ok = await checkGpu();
-      if (!ok) { status("bad", gpuInfo); buttons({}); return; }
       if (dlCtl) return; // a download is running and owns the UI
       const have = await downloadedBytes();
+      if (!ok) {
+        // Still let people delete a copy they downloaded in this browser.
+        progress(false);
+        if (have > 0) { status("bad", `${gpuInfo} The ${fmtGB(have)} already downloaded in this browser can be deleted to free space.`); buttons({ del: true }); }
+        else { status("bad", gpuInfo); buttons({}); }
+        return;
+      }
       if (have >= TOTAL) {
         status("ok", sessions ? `Ready. Model loaded on your GPU. ${gpuInfo}.` : `Model downloaded. ${gpuInfo}.`);
         buttons({ del: true }); progress(false);
@@ -2019,9 +2025,14 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
       updateBadge();
       if (kind !== "builtin" || loading) return;
       if (engine && engineModel === modelEl.value) { status("ok", `${modelName()} is loaded and ready.`); btns({ unload: true, del: true }); progress(false); return; }
-      if (!(await local.checkGpu())) { status("bad", local.gpuInfo()); btns({}); return; }
       let cached = false;
       try { cached = await (await lib()).hasModelInCache(modelEl.value); } catch {}
+      if (!(await local.checkGpu())) {
+        // Still let people delete a copy they downloaded in this browser.
+        status("bad", `${local.gpuInfo()} ${cached ? `You can delete the copy of ${modelName()} downloaded in this browser to free space.` : `If you started downloading ${modelName()} in this browser, Delete download frees that space.`}`);
+        btns({ del: true });
+        return;
+      }
       if (cached) { status("ok", `${modelName()} is downloaded. It loads onto your GPU when you send a message.`); btns({ load: true, del: true }); $("#aiLoad").textContent = "Load now"; }
       else { status("warn", `${modelName()} needs a one-time download (${sizeOf()}). It starts when you send your first message.`); btns({ load: true }); $("#aiLoad").textContent = `Download now (${sizeOf()})`; }
     }
