@@ -1777,10 +1777,20 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
     })).blob;
   }
 
-  async function genVideo({ prompt, shape, seed, signal, onStatus, startImage = st.startImage, vq = st.vq, vlen = st.vlen, wantLastFrame = false }) {
+  // Running video jobs, so the chat can wait for the GPU instead of fighting ComfyUI for it.
+  let videoJobs = 0;
+  const videoWaiters = [];
+  const videoIdle = () => new Promise((res) => { if (!videoJobs) res(); else videoWaiters.push(res); });
+  async function genVideo(opts) {
+    videoJobs++;
+    try { return await genVideoInner(opts); }
+    finally { videoJobs--; if (!videoJobs) videoWaiters.splice(0).forEach((f) => f()); }
+  }
+  async function genVideoInner({ prompt, shape, seed, signal, onStatus, startImage = st.startImage, vq = st.vq, vlen = st.vlen, wantLastFrame = false }) {
     if (!comfyState.ok && !(await comfyCheck(false))) throw new GenError("ComfyUI isn't ready yet. Open the Video tab, then Video engine, and follow the setup steps.");
     const q = VQ[vq], [width, height] = q.sizes[shape], frames = LENGTHS[vlen].frames;
     if ($("#freeVram").checked) {
+      if (ai && ai.streaming()) { onStatus("Waiting for the chat reply to finish…"); await ai.whenIdle(); }
       onStatus("Freeing graphics memory for the video…");
       try { await local.release(); } catch {}
       try { if (ai) await ai.unload(); } catch {}
@@ -2006,10 +2016,15 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
   $("#lbFav").addEventListener("click", async () => { if (lbItem) { await toggleFav(lbItem); $("#lbFav").textContent = lbItem.fav ? "★ Favourite" : "☆ Favourite"; } });
 
   // ---------- results sheet ----------
-  function makeCard(w, h) {
+  function makeCard(w, h, { onCancel } = {}) {
     const card = document.createElement("div"); card.className = "shot";
     const pic = document.createElement("div"); pic.className = "pic"; pic.style.aspectRatio = `${w} / ${h}`;
     pic.innerHTML = '<div class="develop"><span class="spin" aria-hidden="true"></span><span class="lbl">Starting…</span><div class="bar-track" hidden><div class="bar-fill"></div></div><span class="t">0s</span></div><div class="shimmer"></div>';
+    if (onCancel) {
+      const c = document.createElement("button"); c.type = "button"; c.className = "btn small"; c.textContent = "Cancel"; c.style.position = "relative"; c.style.zIndex = "1";
+      c.addEventListener("click", () => { c.disabled = true; c.textContent = "Cancelling…"; onCancel(); });
+      pic.querySelector(".develop").append(c);
+    }
     const bar = document.createElement("div"); bar.className = "bar"; bar.hidden = true;
     card.append(pic, bar);
     const start = Date.now();
@@ -2560,7 +2575,14 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
       refresh();
     }
 
+    let streams = 0;
+    const idleWaiters = [];
     async function stream(messages, signal, onDelta) {
+      streams++;
+      try { return await streamInner(messages, signal, onDelta); }
+      finally { streams--; if (!streams) idleWaiters.splice(0).forEach((f) => f()); }
+    }
+    async function streamInner(messages, signal, onDelta) {
       if (kind === "ollama") return olStream(messages, signal, onDelta);
       await ensure();
       const extra = /^Qwen3/i.test(engineModel) ? { extra_body: { enable_thinking: false } } : {};
@@ -2655,7 +2677,10 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
       refresh();
     });
 
-    return { label, isReady, ensure, stream, complete, unload, refresh, kind: () => kind, budget: () => (kind === "ollama" ? 24000 : 9000) };
+    return {
+      label, isReady, ensure, stream, complete, unload, refresh, kind: () => kind, budget: () => (kind === "ollama" ? 24000 : 9000),
+      streaming: () => streams > 0, whenIdle: () => new Promise((res) => { if (!streams) res(); else idleWaiters.push(res); }),
+    };
   })();
 
   // =====================================================================
@@ -2937,8 +2962,9 @@ Only do this for new facts. Never mention or explain this.`;
         const opts = parts.join(" ").toLowerCase();
         const shape = /\bwide\b/.test(opts) ? "wide" : /\btall\b/.test(opts) ? "tall" : /\bsquare\b/.test(opts) ? "square" : kind === "image" ? "square" : "wide";
         if (!prompt) continue;
-        if (kind === "longvideo") media.push({ kind, prompt, shape, total: String(nearestTotal(opts)), status: "offer" });
-        else media.push({ kind, prompt, shape, animate: kind === "video" && /\banimate\b/.test(opts), status: "pending" });
+        const mid = "md" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        if (kind === "longvideo") media.push({ mid, kind, prompt, shape, total: String(nearestTotal(opts)), status: "offer" });
+        else media.push({ mid, kind, prompt, shape, animate: kind === "video" && /\banimate\b/.test(opts), status: "pending" });
       }
       return { media: media.slice(0, 4), remember: remember.slice(0, 5) };
     }
@@ -2970,7 +2996,11 @@ Only do this for new facts. Never mention or explain this.`;
 
     function setBusy(on) { busy = on; $("#chatSend").hidden = on; $("#chatStop").hidden = !on; }
     function scrollDown() { box.scrollTop = box.scrollHeight; }
-    function save() { return cur && cur.messages.length ? ChatDB.put(cur) : Promise.resolve(); }
+    function save(convo = cur) { return convo && convo.messages.length ? ChatDB.put(convo) : Promise.resolve(); }
+    // Pictures and videos made from chat run in the background; these track the ones in progress,
+    // so their cards keep updating even after switching conversations and back.
+    const activeMedia = new Map(); // mid -> AbortController
+    const liveCards = new Map();   // mid -> card currently on screen
 
     // ----- characters in the sidebar and header -----
     function renderBots() {
@@ -3120,6 +3150,12 @@ Only do this for new facts. Never mention or explain this.`;
       for (const md_ of m.media || []) {
         if (md_.kind === "longvideo") { media.append(longOffer(md_)); continue; }
         const [w, h] = cardSize(md_);
+        if (md_.status === "pending" && activeMedia.has(md_.mid)) {
+          const card = makeCard(w, h, { onCancel: () => { const c = activeMedia.get(md_.mid); if (c) c.abort(); } });
+          card.status(md_.kind === "video" ? "Making the video…" : "Developing your image…");
+          media.append(card.el); liveCards.set(md_.mid, card);
+          continue;
+        }
         const card = makeCard(w, h); media.append(card.el);
         const item = md_.galleryId && saved.find((x) => x.id === md_.galleryId);
         if (md_.status === "done" && item) card.done(item);
@@ -3161,49 +3197,49 @@ Only do this for new facts. Never mention or explain this.`;
       return [{ role: "system", content: systemPrompt(curBot()) }, ...out];
     }
 
-    function lastImageBlob() {
-      for (let i = cur.messages.length - 1; i >= 0; i--) {
-        for (const m of [...(cur.messages[i].media || [])].reverse()) {
+    function lastImageBlob(convo = cur) {
+      for (let i = convo.messages.length - 1; i >= 0; i--) {
+        for (const m of [...(convo.messages[i].media || [])].reverse()) {
           if (m.kind === "image" && m.status === "done") { const it = saved.find((x) => x.id === m.galleryId); if (it) return it.blob; }
         }
       }
       return null;
     }
 
-    async function runMedia(reply, row, signal) {
-      const holder = row.querySelector(".chat-media");
-      holder.innerHTML = "";
-      const cards = reply.media.map((m) => {
-        if (m.kind === "longvideo") { holder.append(longOffer(m)); return null; }
-        const [w, h] = cardSize(m); const c = makeCard(w, h); holder.append(c.el);
-        c.status(m.kind === "video" ? "Waiting to make the video…" : "Waiting…"); return c;
-      });
-      scrollDown();
-      for (let i = 0; i < reply.media.length; i++) {
-        const m = reply.media[i], card = cards[i];
-        if (!card) continue;
-        if (signal.aborted) { m.status = "error"; m.error = "Stopped."; card.fail("Stopped."); continue; }
+    // Makes the pictures/videos a reply asked for, one after another, in the background.
+    async function runMedia(reply, convo) {
+      for (const m of reply.media) {
+        if (m.kind === "longvideo" || m.status !== "pending") continue;
+        const ctl_ = activeMedia.get(m.mid) || new AbortController();
+        activeMedia.set(m.mid, ctl_);
+        const signal = ctl_.signal;
+        const card = () => liveCards.get(m.mid) && liveCards.get(m.mid).el.isConnected ? liveCards.get(m.mid) : null;
         const seed = m.kind === "video" ? Math.floor(Math.random() * 2 ** 48) : randSeed();
         try {
           let item;
           if (m.kind === "image") {
-            card.status("Developing your image…");
-            const blob = await ENGINES[st.engine]({ prompt: m.prompt, shape: m.shape, seed, signal, onWait: (l) => card.wait(l), onStatus: (t, f) => card.status(t, f) });
+            if (card()) card().status("Developing your image…");
+            const blob = await ENGINES[st.engine]({ prompt: m.prompt, shape: m.shape, seed, signal, onWait: (l) => card() && card().wait(l), onStatus: (t, f) => card() && card().status(t, f) });
             item = { id: newId(), kind: "image", prompt: m.prompt, engine: engineName(), shape: m.shape, seed, blob, ts: Date.now() };
           } else {
-            const startImage = m.animate ? lastImageBlob() : null;
-            card.status("Connecting to ComfyUI…");
-            const { blob } = await genVideo({ prompt: m.prompt, shape: m.shape, seed, signal, onStatus: (t, f) => card.status(t, f), startImage, vq: st.vq, vlen: st.vlen });
+            const startImage = m.animate ? lastImageBlob(convo) : null;
+            if (card()) card().status("Connecting to ComfyUI…");
+            const { blob } = await genVideo({ prompt: m.prompt, shape: m.shape, seed, signal, onStatus: (t, f) => card() && card().status(t, f), startImage, vq: st.vq, vlen: st.vlen });
             item = { id: newId(), kind: "video", prompt: m.prompt, engine: `Wan 2.2 via ComfyUI · ${LENGTHS[st.vlen].label}`, shape: m.shape, seed, blob, ts: Date.now() };
           }
           await DB.put(item); saved.unshift(item); renderGallery();
-          card.done(item); m.status = "done"; m.galleryId = item.id;
+          m.status = "done"; m.galleryId = item.id;
+          if (card()) card().done(item);
         } catch (e) {
-          const msg = signal.aborted ? "Stopped." : e && e.user ? e.message : `Something went wrong: ${e && e.message ? e.message : e}`;
+          const msg = signal.aborted ? "Cancelled." : e && e.user ? e.message : `Something went wrong: ${e && e.message ? e.message : e}`;
           if (!signal.aborted) console.error(e);
-          card.fail(msg); m.status = "error"; m.error = msg;
+          m.status = "error"; m.error = msg;
+          if (card()) card().fail(msg);
+        } finally {
+          activeMedia.delete(m.mid); liveCards.delete(m.mid);
+          await save(convo);
+          if (cur === convo) scrollDown();
         }
-        save(); scrollDown();
       }
     }
 
@@ -3225,8 +3261,15 @@ Only do this for new facts. Never mention or explain this.`;
       setBusy(true);
       ctl = new AbortController();
       const signal = ctl.signal;
+      const think = (txt) => { const t = bubble.querySelector(".thinking .t"); if (t) t.textContent = txt; };
       try {
-        await ai.ensure((txt) => { const t = bubble.querySelector(".thinking .t"); if (t) t.textContent = txt; });
+        // While ComfyUI makes a video, the built-in AI is unloaded to give it the GPU. Wait for it rather than fight over memory.
+        if (videoJobs > 0 && ai.kind() === "builtin" && $("#freeVram").checked && !ai.isReady()) {
+          think("A video is using your graphics card, so I'll reply as soon as it's finished. To chat during videos, untick “Free graphics memory for videos” under AI model (videos then run a bit slower).");
+          await Promise.race([videoIdle(), new Promise((_, rej) => signal.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError")), { once: true }))]);
+          think("Starting the AI…");
+        }
+        await ai.ensure(think);
         let queued = false;
         await ai.stream(buildHistory(), signal, (full) => {
           reply.content = full;
@@ -3238,6 +3281,7 @@ Only do this for new facts. Never mention or explain this.`;
       if (!reply.content.trim() && !reply.error) reply.error = signal.aborted ? "Stopped." : "The AI didn't reply. Try again.";
       const tags = signal.aborted ? { media: [], remember: [] } : parseTags(reply.content);
       if (tags.media.length) reply.media = tags.media;
+      for (const m of tags.media) if (m.status === "pending") activeMedia.set(m.mid, new AbortController());
       if (memory.auto() && tags.remember.length) {
         const added = tags.remember.filter((f) => memory.add(f));
         if (added.length) reply.remembered = added;
@@ -3246,10 +3290,12 @@ Only do this for new facts. Never mention or explain this.`;
       save(); renderList(); updateBadge();
       const bot = curBot();
       if (!signal.aborted && !reply.error && voiceOn && bot.voice) voice.speak(visible(reply.content), bot.voice);
-      if (tags.media.some((m) => m.kind !== "longvideo")) await runMedia(reply, fresh, signal);
-      await save();
+      const convo = cur;
+      await save(convo);
       setBusy(false); ctl = null;
       input.focus();
+      // Pictures and videos carry on in the background, so you can keep chatting.
+      if (tags.media.some((m) => m.status === "pending")) runMedia(reply, convo);
     }
 
     function autosize() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 200) + "px"; }
