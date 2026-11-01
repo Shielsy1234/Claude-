@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daydream Studio</title>
+<meta name="description" content="Type what you're picturing and get a realistic image, or a page of ideas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: composer column on the left, results "contact sheet" on the right, saved-photo gallery as a band below. Stacks on phones. */
+:root {
+  --paper: #EDF0F6; --surface: #FFFFFF; --sunken: #E2E7F0; --ink: #171E2D; --muted: #586379;
+  --line: #D3DAE6; --accent: #3446D4; --accent-soft: #E3E6FB; --accent-ink: #FFFFFF;
+  --spark: #E8962A; --good: #23935F; --danger: #B93A26;
+  --shadow: 0 1px 2px rgba(23,30,45,.06), 0 8px 28px rgba(23,30,45,.08);
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Instrument Sans", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 14px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0F131B; --surface: #171D29; --sunken: #121722; --ink: #E6E9F2; --muted: #98A2B8;
+    --line: #283043; --accent: #8E9AFF; --accent-soft: #232A4A; --accent-ink: #0D1120;
+    --spark: #F3B04E; --good: #4CC48A; --danger: #F07D69;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: max(24px, env(safe-area-inset-top, 0px)) max(48px, env(safe-area-inset-bottom, 0px));
+}
+[hidden] { display: none !important; }
+img { max-width: 100%; }
+a { color: var(--accent); }
+button, input, textarea, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.brand h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(28px, 4.2vw, 42px); letter-spacing: -0.02em; line-height: 1.05; margin: 0; }
+.brand h1 span { color: var(--accent); }
+.brand p { margin: 2px 0 0; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font: 500 12px/1.2 var(--f-mono); color: var(--muted); }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+
+.main { display: grid; grid-template-columns: minmax(0, 410px) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 880px) { .main { grid-template-columns: minmax(0, 1fr); } }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 18px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.modes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--sunken); border-radius: 11px; }
+.modes button { border: 0; background: transparent; padding: 9px 10px; border-radius: 8px; cursor: pointer; font-weight: 600; color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 8px; }
+.modes button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.modes svg { width: 16px; height: 16px; }
+
+.field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.label { font: 500 11px/1 var(--f-mono); text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+.label-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+textarea#prompt { width: 100%; min-height: 120px; resize: vertical; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--paper); font-size: 16px; line-height: 1.45; }
+textarea#prompt:focus, .input:focus, select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.input, select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--paper); font-size: 15px; min-width: 0; }
+.hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+.hint kbd { font: 500 11px var(--f-mono); padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { position: relative; }
+.chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.chip span { display: inline-block; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); font-size: 13px; font-weight: 500; background: var(--surface); cursor: pointer; }
+.chip input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chip input:focus-visible + span { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+.chip span:hover { border-color: var(--accent); }
+.chip input:disabled + span { opacity: .4; cursor: not-allowed; }
+.chip input:disabled { cursor: not-allowed; }
+
+.toggle { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; cursor: pointer; }
+.toggle input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+.toggle small { display: block; color: var(--muted); font-size: 12.5px; }
+
+.engines { display: flex; flex-direction: column; gap: 8px; }
+.engine { position: relative; display: block; border: 1.5px solid var(--line); border-radius: 12px; padding: 11px 12px 11px 40px; cursor: pointer; background: var(--surface); }
+.engine input { position: absolute; left: 13px; top: 14px; width: 17px; height: 17px; margin: 0; accent-color: var(--accent); }
+.engine b { display: block; font-weight: 600; font-size: 14.5px; }
+.engine small { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.4; margin-top: 2px; }
+.engine:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.engine .tag { font: 500 10px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 2px; background: var(--sunken); color: var(--muted); }
+.engine .tag.best { background: var(--accent); color: var(--accent-ink); }
+.keybox { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: var(--sunken); }
+.keyrow { display: flex; gap: 6px; }
+.keyrow .input { flex: 1; font-family: var(--f-mono); font-size: 13px; }
+
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 9px 14px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; color: var(--ink); white-space: nowrap; }
+.btn:hover { border-color: var(--accent); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn svg { width: 16px; height: 16px; flex: none; }
+.btn.primary { flex: 1; background: var(--accent); border-color: var(--accent); color: var(--accent-ink); padding: 13px 16px; font-family: var(--f-display); font-size: 16px; font-weight: 700; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 6px 10px; font-size: 13px; border-radius: 8px; }
+.actions { display: flex; gap: 8px; }
+
+details.more { border-top: 1px dashed var(--line); padding-top: 14px; }
+details.more summary { cursor: pointer; font-weight: 600; font-size: 14px; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+details.more summary::-webkit-details-marker { display: none; }
+details.more summary::after { content: "+"; font: 500 18px var(--f-mono); color: var(--muted); }
+details.more[open] summary::after { content: "−"; }
+details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-top: 14px; }
+.try .chips button { border: 1px dashed var(--line); background: transparent; padding: 5px 10px; border-radius: 999px; font-size: 13px; color: var(--muted); cursor: pointer; text-align: left; }
+.try .chips button:hover { color: var(--ink); border-color: var(--accent); border-style: solid; }
+
+/* Results */
+.stage { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.stage-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 12px; }
+.stage-head h2 { font-family: var(--f-display); font-weight: 700; font-size: 20px; margin: 0; line-height: 1.25; overflow-wrap: anywhere; min-width: 0; }
+.stage-head .meta { font: 400 12px var(--f-mono); color: var(--muted); }
+.sheet { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; }
+.sheet.one { grid-template-columns: minmax(0, 1fr); }
+.shot { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; min-width: 0; }
+.shot .pic { position: relative; background: var(--sunken); display: grid; place-items: center; overflow: hidden; max-width: 100%; }
+.shot .pic img { display: block; width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; }
+.sheet.one .shot .pic img { object-fit: contain; max-height: 72vh; }
+.shot .bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; justify-content: space-between; align-items: center; }
+.shot .bar .meta { font: 400 11.5px var(--f-mono); color: var(--muted); }
+.shot .bar .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.develop { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--muted); font-size: 13.5px; text-align: center; padding: 20px; }
+.develop .spin { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--accent-soft); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+.develop .t { font: 500 12px var(--f-mono); font-variant-numeric: tabular-nums; }
+.shimmer { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--surface) 55%, transparent) 50%, transparent 70%); background-size: 200% 100%; animation: shimmer 1.6s linear infinite; pointer-events: none; }
+.failed { color: var(--danger); padding: 20px; text-align: center; font-size: 14px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.empty { border: 1.5px dashed var(--line); border-radius: var(--r); padding: 40px 20px; text-align: center; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.empty svg { width: 48px; height: 48px; opacity: .55; }
+.empty b { color: var(--ink); font-family: var(--f-display); font-size: 18px; }
+.final-prompt { font: 400 12px/1.5 var(--f-mono); color: var(--muted); background: var(--sunken); border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; margin: 0; }
+.msg { margin: 0; padding: 10px 14px; border-radius: 10px; font-size: 14px; background: var(--accent-soft); }
+.msg.err { background: color-mix(in srgb, var(--danger) 13%, var(--surface)); border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent); }
+
+/* Ideas */
+.ideas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
+.idea { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.idea .n { font: 500 11px var(--f-mono); color: var(--spark); letter-spacing: .06em; }
+.idea h3 { font-family: var(--f-display); font-weight: 700; font-size: 17px; line-height: 1.25; margin: 0; }
+.idea p { margin: 0; color: var(--muted); font-size: 14px; flex: 1; }
+.idea .row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.skeleton { height: 10px; border-radius: 4px; background: var(--sunken); }
+
+/* Gallery */
+.gallery { display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--line); padding-top: 22px; }
+.gallery-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+.gallery-head h2 { font-family: var(--f-display); font-weight: 700; font-size: 22px; margin: 0; }
+.gallery-head .count { font: 400 12px var(--f-mono); color: var(--muted); margin-left: 8px; }
+.thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; list-style: none; margin: 0; padding: 0; }
+@media (max-width: 480px) { .thumbs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.thumb { position: relative; min-width: 0; }
+.thumb button.open { display: block; width: 100%; padding: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; cursor: zoom-in; background: var(--sunken); aspect-ratio: 1 / 1; max-width: 100%; }
+.thumb button.open img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb .del { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: grid; place-items: center; opacity: 0; }
+.thumb:hover .del, .thumb .del:focus-visible { opacity: 1; }
+@media (hover: none) { .thumb .del { opacity: 1; } }
+.thumb .del svg { width: 14px; height: 14px; }
+.confirm { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.fineprint { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+/* Lightbox */
+.lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(8,10,16,.92); display: flex; flex-direction: column; padding: max(14px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) max(14px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px)); gap: 12px; }
+.lightbox .lb-img { flex: 1; min-height: 0; display: grid; place-items: center; }
+.lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+.lightbox .lb-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; color: #E6E9F2; }
+.lightbox .lb-bar p { margin: 0; font-size: 13.5px; flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; max-height: 4.5em; overflow: auto; }
+.lightbox .btn { background: #1E2433; border-color: #333B50; color: #E6E9F2; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Daydream <span>Studio</span></h1>
+      <p>Type what you're picturing. Get a realistic image, or a page of ideas.</p>
+    </div>
+    <div class="pill" id="engineBadge"><i></i><span id="engineBadgeText">Free engine</span></div>
+  </header>
+
+  <main class="main">
+    <section class="panel" aria-label="Make something">
+      <div class="modes" role="group" aria-label="What to make">
+        <button type="button" id="modeImage" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Image
+        </button>
+        <button type="button" id="modeIdeas" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/></svg>Ideas
+        </button>
+      </div>
+
+      <form id="form" class="field" style="gap:18px" novalidate>
+        <div class="field">
+          <div class="label-row">
+            <label class="label" for="prompt" id="promptLabel">Describe your image</label>
+            <button type="button" class="btn small ghost" id="enhance" title="Rewrite your prompt with photographic detail">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8Z"/><path d="M19 15v4M17 17h4"/></svg>Improve prompt
+            </button>
+          </div>
+          <textarea id="prompt" placeholder="An old fisherman mending nets on a wooden dock at golden hour"></textarea>
+          <p class="hint">Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to generate.</p>
+        </div>
+
+        <div class="field" id="lookField">
+          <span class="label" id="lookLabel">Look</span>
+          <div class="chips" id="looks" role="radiogroup" aria-labelledby="lookLabel"></div>
+        </div>
+
+        <div class="field" id="shapeField">
+          <span class="label" id="shapeLabel">Shape</span>
+          <div class="chips" id="shapes" role="radiogroup" aria-labelledby="shapeLabel"></div>
+        </div>
+
+        <div class="field" id="countField">
+          <span class="label" id="countLabel">How many</span>
+          <div class="chips" id="counts" role="radiogroup" aria-labelledby="countLabel"></div>
+          <p class="hint" id="countNote" hidden>The free engine makes one image at a time. Add a Pollinations key under Image engine to make several at once.</p>
+        </div>
+
+        <label class="toggle" id="realField"><input type="checkbox" id="realism" checked>
+          <span>Extra realism<small>Adds camera and lighting details so results look like real photos.</small></span>
+        </label>
+
+        <div class="actions">
+          <button type="submit" class="btn primary" id="go">Generate image</button>
+          <button type="button" class="btn" id="stop" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>Stop</button>
+        </div>
+      </form>
+
+      <div class="try field">
+        <span class="label">Need a spark? Try one</span>
+        <div class="chips" id="suggest"></div>
+      </div>
+
+      <details class="more" id="engineDetails">
+        <summary>Image engine: <span id="engineSummary" style="margin-left:auto;margin-right:8px;font-weight:500;color:var(--muted)"></span></summary>
+        <div class="inner">
+          <div class="engines" role="radiogroup" aria-label="Image engine">
+            <label class="engine"><input type="radio" name="engine" value="free" id="engine-free">
+              <b>Free, no sign-up</b>
+              <small>Works right away. Decent realism, up to 768 px, small watermark. Good for trying ideas.</small></label>
+            <label class="engine"><input type="radio" name="engine" value="pollinations" id="engine-pollinations">
+              <b>Pollinations account <span class="tag best">More realistic</span></b>
+              <small>Free account with a daily allowance. Sharper, far more lifelike models (Z-Image Turbo, FLUX) at full resolution, no watermark.</small></label>
+            <label class="engine"><input type="radio" name="engine" value="openai" id="engine-openai">
+              <b>OpenAI <span class="tag">Paid</span></b>
+              <small>GPT Image models. Excellent detail and text in images. Billed to your OpenAI account, roughly 1 to 20 cents an image.</small></label>
+          </div>
+
+          <div class="keybox" id="polBox" hidden>
+            <label class="label" for="polKey">Pollinations key</label>
+            <div class="keyrow"><input class="input" id="polKey" type="password" autocomplete="off" placeholder="pk_… or sk_…"><button type="button" class="btn small" id="polKeyShow">Show</button></div>
+            <label class="label" for="polModel">Model</label>
+            <select id="polModel"></select>
+            <p class="hint">Get a free key at <a href="https://enter.pollinations.ai" target="_blank" rel="noopener">enter.pollinations.ai</a> (sign in, then create a key). Models marked "paid" use purchased credits.</p>
+          </div>
+
+          <div class="keybox" id="oaBox" hidden>
+            <label class="label" for="oaKey">OpenAI API key</label>
+            <div class="keyrow"><input class="input" id="oaKey" type="password" autocomplete="off" placeholder="sk-…"><button type="button" class="btn small" id="oaKeyShow">Show</button></div>
+            <label class="label" for="oaModel">Model</label>
+            <select id="oaModel">
+              <option value="gpt-image-2">gpt-image-2</option>
+              <option value="gpt-image-1.5">gpt-image-1.5</option>
+              <option value="gpt-image-1">gpt-image-1</option>
+              <option value="gpt-image-1-mini">gpt-image-1-mini (cheapest)</option>
+            </select>
+            <label class="label" for="oaQuality">Quality</label>
+            <select id="oaQuality">
+              <option value="low">Low (fastest, cheapest)</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High (best, slowest)</option>
+            </select>
+            <p class="hint">Create a key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>.</p>
+          </div>
+          <p class="fineprint">Keys are saved only in this browser and are sent only to the provider you pick.</p>
+        </div>
+      </details>
+    </section>
+
+    <section class="stage" aria-live="polite">
+      <div id="imageView" class="stage">
+        <div class="stage-head">
+          <h2 id="batchTitle">Your images will appear here</h2>
+          <span class="meta" id="batchMeta"></span>
+        </div>
+        <div class="sheet" id="sheet"></div>
+        <p class="final-prompt" id="finalPrompt" hidden></p>
+      </div>
+
+      <div id="ideasView" class="stage" hidden>
+        <div class="stage-head"><h2 id="ideasTitle">Ideas will appear here</h2></div>
+        <ul class="ideas" id="ideas"></ul>
+      </div>
+
+      <p class="msg" id="msg" hidden></p>
+    </section>
+  </main>
+
+  <section class="gallery" aria-labelledby="galleryTitle">
+    <div class="gallery-head">
+      <h2 id="galleryTitle">Saved images<span class="count" id="galleryCount"></span></h2>
+      <div id="clearArea"></div>
+    </div>
+    <ul class="thumbs" id="thumbs"></ul>
+    <p class="fineprint" id="galleryNote">Every image you make is saved here, in this browser only. Use Download to keep a copy.</p>
+  </section>
+</div>
+
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Image viewer">
+  <div class="lb-img"><img id="lbImg" alt=""></div>
+  <div class="lb-bar">
+    <p id="lbText"></p>
+    <div class="actions">
+      <a class="btn" id="lbDownload" download>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Download</a>
+      <button type="button" class="btn" id="lbReuse">Use prompt</button>
+      <button type="button" class="btn" id="lbClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (s) => document.querySelector(s);
+  const ls = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+
+  // ---------- options ----------
+  const LOOKS = {
+    photo:     { label: "Natural photo", add: "candid photograph, natural light, true-to-life colors" },
+    portrait:  { label: "Portrait", add: "portrait photograph, 85mm lens, f/1.8, shallow depth of field, soft window light, detailed skin texture" },
+    cinematic: { label: "Cinematic", add: "cinematic film still, anamorphic lens, dramatic lighting, color graded, 35mm film grain" },
+    landscape: { label: "Landscape", add: "landscape photograph, wide angle, golden hour, high dynamic range, crisp detail to the horizon" },
+    product:   { label: "Product shot", add: "studio product photograph, softbox lighting, clean seamless background, crisp reflections" },
+    night:     { label: "Night", add: "night photograph, long exposure, glowing city lights, reflections on wet surfaces" },
+    none:      { label: "No preset", add: "" },
+  };
+  const REAL = "ultra-realistic photograph, sharp focus, highly detailed, realistic textures and lighting, shot on a full-frame DSLR";
+  const SHAPES = {
+    square: { label: "Square", w: 1024, h: 1024, oa: "1024x1024" },
+    wide:   { label: "Wide", w: 1344, h: 768, oa: "1536x1024" },
+    tall:   { label: "Tall", w: 768, h: 1344, oa: "1024x1536" },
+  };
+  const COUNTS = { 1: { label: "1" }, 2: { label: "2" }, 4: { label: "4" } };
+  const SUGGEST = {
+    image: [
+      "An old fisherman mending nets on a wooden dock at golden hour",
+      "A red fox in fresh snow, early morning mist",
+      "A cozy Paris café on a rainy evening",
+      "A golden retriever puppy asleep on a knitted blanket",
+      "Snow-capped mountains reflected in a still alpine lake",
+      "A bowl of steaming ramen on a dark wooden table",
+    ],
+    ideas: [
+      "Names for a cozy coffee shop",
+      "A theme for a 7-year-old's birthday party",
+      "Photo shoot ideas for a rainy day",
+      "Weekend trips within 3 hours of Dublin",
+      "Gift ideas for someone who loves hiking",
+      "Characters for a fantasy short story",
+    ],
+  };
+  const FALLBACK_MODELS = [
+    { id: "zimage", label: "Z-Image Turbo · free tier" },
+    { id: "flux", label: "FLUX.1 Schnell · free tier" },
+    { id: "klein", label: "FLUX.2 Klein 4B · free tier" },
+  ];
+
+  // ---------- state ----------
+  const st = {
+    mode: "image",
+    look: ls.get("dd.look", "photo"),
+    shape: ls.get("dd.shape", "square"),
+    count: String(ls.get("dd.count", "1")),
+    engine: ls.get("dd.engine", "free"),
+    busy: false,
+    ctl: null,
+  };
+  if (!LOOKS[st.look]) st.look = "photo";
+  if (!SHAPES[st.shape]) st.shape = "square";
+  if (!COUNTS[st.count]) st.count = "1";
+  if (!["free", "pollinations", "openai"].includes(st.engine)) st.engine = "free";
+
+  // ---------- controls ----------
+  function radios(box, name, opts, cur, onChange) {
+    box.innerHTML = "";
+    for (const [k, o] of Object.entries(opts)) {
+      const lab = document.createElement("label"); lab.className = "chip";
+      const i = document.createElement("input"); i.type = "radio"; i.name = name; i.value = k; i.id = name + "-" + k; i.checked = k === cur;
+      i.addEventListener("change", () => onChange(k));
+      const s = document.createElement("span"); s.textContent = o.label;
+      lab.append(i, s); box.append(lab);
+    }
+  }
+  radios($("#looks"), "look", LOOKS, st.look, (k) => { st.look = k; ls.set("dd.look", k); });
+  radios($("#shapes"), "shape", SHAPES, st.shape, (k) => { st.shape = k; ls.set("dd.shape", k); });
+  radios($("#counts"), "count", COUNTS, st.count, (k) => { st.count = k; ls.set("dd.count", k); });
+
+  const realEl = $("#realism");
+  realEl.checked = ls.get("dd.real", true);
+  realEl.addEventListener("change", () => ls.set("dd.real", realEl.checked));
+
+  const promptEl = $("#prompt");
+  promptEl.value = ls.get("dd.draft", "");
+  promptEl.addEventListener("input", () => ls.set("dd.draft", promptEl.value));
+  promptEl.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); submit(); } });
+  function setPrompt(t) { promptEl.value = t; ls.set("dd.draft", t); }
+
+  function renderSuggest() {
+    const box = $("#suggest"); box.innerHTML = "";
+    for (const s of SUGGEST[st.mode]) {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = s;
+      b.addEventListener("click", () => { setPrompt(s); promptEl.focus(); });
+      box.append(b);
+    }
+  }
+
+  function setMode(m) {
+    st.mode = m;
+    $("#modeImage").setAttribute("aria-pressed", String(m === "image"));
+    $("#modeIdeas").setAttribute("aria-pressed", String(m === "ideas"));
+    for (const id of ["#lookField", "#shapeField", "#countField", "#realField", "#enhance"]) $(id).hidden = m !== "image";
+    $("#imageView").hidden = m !== "image";
+    $("#ideasView").hidden = m !== "ideas";
+    $("#promptLabel").textContent = m === "image" ? "Describe your image" : "What do you need ideas for?";
+    promptEl.placeholder = m === "image" ? "An old fisherman mending nets on a wooden dock at golden hour" : "Names for a cozy coffee shop by the sea";
+    updateGo(); renderSuggest(); hideMsg();
+  }
+  $("#modeImage").addEventListener("click", () => setMode("image"));
+  $("#modeIdeas").addEventListener("click", () => setMode("ideas"));
+
+  function updateGo() {
+    $("#go").textContent = st.busy ? (st.mode === "image" ? "Generating…" : "Thinking…") : (st.mode === "image" ? "Generate image" : "Generate ideas");
+    $("#go").disabled = st.busy;
+    $("#enhance").disabled = st.busy;
+    $("#stop").hidden = !st.busy;
+  }
+
+  function showMsg(t, err) { const m = $("#msg"); m.textContent = t; m.hidden = false; m.classList.toggle("err", !!err); }
+  function hideMsg() { $("#msg").hidden = true; }
+
+  // ---------- engine settings ----------
+  const polKey = $("#polKey"), oaKey = $("#oaKey"), polModel = $("#polModel"), oaModel = $("#oaModel"), oaQuality = $("#oaQuality");
+  polKey.value = ls.get("dd.polKey", "");
+  oaKey.value = ls.get("dd.oaKey", "");
+  oaModel.value = ls.get("dd.oaModel", "gpt-image-1.5");
+  if (!oaModel.value) oaModel.value = "gpt-image-1.5";
+  oaQuality.value = ls.get("dd.oaQuality", "medium");
+  polKey.addEventListener("input", () => { ls.set("dd.polKey", polKey.value.trim()); updateEngineUI(); });
+  oaKey.addEventListener("input", () => { ls.set("dd.oaKey", oaKey.value.trim()); updateEngineUI(); });
+  polModel.addEventListener("change", () => { ls.set("dd.polModel", polModel.value); updateEngineUI(); });
+  oaModel.addEventListener("change", () => { ls.set("dd.oaModel", oaModel.value); updateEngineUI(); });
+  oaQuality.addEventListener("change", () => ls.set("dd.oaQuality", oaQuality.value));
+  for (const [btn, inp] of [["#polKeyShow", polKey], ["#oaKeyShow", oaKey]]) {
+    $(btn).addEventListener("click", (e) => { const show = inp.type === "password"; inp.type = show ? "text" : "password"; e.currentTarget.textContent = show ? "Hide" : "Show"; });
+  }
+  document.querySelectorAll('input[name="engine"]').forEach((r) => {
+    r.checked = r.value === st.engine;
+    r.addEventListener("change", () => { st.engine = r.value; ls.set("dd.engine", r.value); updateEngineUI(); if (r.value === "pollinations") loadPolModels(); });
+  });
+
+  function fillPolModels(list) {
+    const want = ls.get("dd.polModel", "zimage");
+    polModel.innerHTML = "";
+    for (const m of list) { const o = document.createElement("option"); o.value = m.id; o.textContent = m.label; polModel.append(o); }
+    polModel.value = list.some((m) => m.id === want) ? want : list[0].id;
+  }
+  fillPolModels(FALLBACK_MODELS);
+  let modelsLoaded = false;
+  async function loadPolModels() {
+    if (modelsLoaded) return;
+    modelsLoaded = true;
+    try {
+      const r = await fetch("https://gen.pollinations.ai/image/models");
+      if (!r.ok) throw 0;
+      const data = await r.json();
+      const list = data
+        .filter((m) => m && (m.output_modalities || []).includes("image") && !m.community && !String(m.name).startsWith("community/"))
+        .map((m) => ({ id: (m.aliases && m.aliases[0]) || m.name, label: `${m.title || m.name} · ${m.paid_only ? "paid" : "free tier"}`, paid: !!m.paid_only }))
+        .sort((a, b) => (a.paid - b.paid) || a.label.localeCompare(b.label));
+      if (list.length) fillPolModels(list);
+    } catch { modelsLoaded = false; }
+    updateEngineUI();
+  }
+
+  function engineName() {
+    if (st.engine === "pollinations") return "Pollinations · " + (polModel.selectedOptions[0] ? polModel.selectedOptions[0].textContent.split(" · ")[0] : polModel.value);
+    if (st.engine === "openai") return "OpenAI · " + oaModel.value;
+    return "Free engine";
+  }
+  function updateEngineUI() {
+    $("#polBox").hidden = st.engine !== "pollinations";
+    $("#oaBox").hidden = st.engine !== "openai";
+    $("#engineSummary").textContent = engineName();
+    $("#engineBadgeText").textContent = engineName();
+    $("#countField").classList.toggle("locked", st.engine === "free");
+    $("#countNote").hidden = st.engine !== "free";
+    document.querySelectorAll('input[name="count"]').forEach((r) => { r.disabled = st.engine === "free" && r.value !== "1"; });
+  }
+  if (st.engine === "pollinations") loadPolModels();
+  updateEngineUI();
+
+  // ---------- prompt building ----------
+  function buildPrompt(text) {
+    const parts = [text.trim().replace(/[.\s]+$/, "")];
+    const add = LOOKS[st.look].add;
+    if (add) parts.push(add);
+    if (realEl.checked) parts.push(REAL);
+    return parts.join(", ");
+  }
+
+  // ---------- image engines ----------
+  class GenError extends Error { constructor(msg) { super(msg); this.user = true; } }
+
+  async function readError(r) {
+    let detail = "";
+    try { const j = await r.clone().json(); detail = (j.error && (j.error.message || j.error)) || j.message || ""; } catch { try { detail = (await r.text()).slice(0, 200); } catch {} }
+    return String(detail || "");
+  }
+
+  function sleep(ms, signal) {
+    return new Promise((res, rej) => {
+      const t = setTimeout(res, ms);
+      if (signal) signal.addEventListener("abort", () => { clearTimeout(t); rej(new DOMException("aborted", "AbortError")); }, { once: true });
+    });
+  }
+
+  // The free service allows about one request every 45 seconds per person.
+  // When it says "wait", count down and try again (at most a few times).
+  async function freeFetch(url, signal, onWait) {
+    for (let attempt = 0; ; attempt++) {
+      const r = await fetch(url, { signal });
+      if (r.ok || attempt >= 3 || ![402, 429, 502, 503].includes(r.status)) return r;
+      let wait = 6;
+      const ra = Number(r.headers.get("Retry-After"));
+      if (ra > 0) wait = ra;
+      else if (r.status === 402 || r.status === 429) {
+        const d = await readError(r);
+        const m = d.match(/retry after\s+(\d+)/i);
+        wait = m ? Number(m[1]) : 45;
+      }
+      wait = Math.min(Math.max(wait, 3), 90) + 1;
+      for (let left = wait; left > 0; left--) { if (onWait) onWait(left); await sleep(1000, signal); }
+      if (onWait) onWait(0);
+    }
+  }
+
+  async function genFree(prompt, shape, seed, signal, onWait) {
+    const s = SHAPES[shape];
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${s.w}&height=${s.h}&seed=${seed}&nologo=true&private=true`;
+    const r = await freeFetch(url, signal, onWait);
+    if (r.status === 402 || r.status === 429) throw new GenError("The free engine only allows one image every 45 seconds. Wait a moment and try again, or add a free Pollinations key for unlimited images.");
+    if (!r.ok) throw new GenError(`The free engine is busy right now (error ${r.status}). Try again in a minute.`);
+    const b = await r.blob();
+    if (!b.type.startsWith("image/")) throw new GenError("The free engine sent back something that isn't an image. Try again.");
+    return b;
+  }
+
+  async function genPollinations(prompt, shape, seed, signal) {
+    const key = polKey.value.trim();
+    if (!key) throw new GenError("Add your Pollinations key under Image engine first. It's free at enter.pollinations.ai.");
+    const s = SHAPES[shape];
+    const url = `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?model=${encodeURIComponent(polModel.value)}&width=${s.w}&height=${s.h}&seed=${seed}&nologo=true&private=true&enhance=false`;
+    const r = await fetch(url, { signal, headers: { Authorization: "Bearer " + key } });
+    if (r.status === 401 || r.status === 403) throw new GenError("Pollinations didn't accept that key. Check it under Image engine.");
+    if (r.status === 402) throw new GenError("Your Pollinations allowance for this model is used up. Pick a free-tier model, or try again tomorrow.");
+    if (r.status === 429) throw new GenError("Pollinations is rate limiting you. Wait a moment, then try again.");
+    if (!r.ok) { const d = await readError(r); throw new GenError(`Pollinations couldn't make this image${d ? ": " + d : ` (error ${r.status})`}.`); }
+    const b = await r.blob();
+    if (!b.type.startsWith("image/")) throw new GenError("Pollinations sent back something that isn't an image. Try again.");
+    return b;
+  }
+
+  async function genOpenAI(prompt, shape, seed, signal) {
+    const key = oaKey.value.trim();
+    if (!key) throw new GenError("Add your OpenAI API key under Image engine first.");
+    const r = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST", signal,
+      headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: oaModel.value, prompt, size: SHAPES[shape].oa, quality: oaQuality.value, n: 1 }),
+    });
+    if (!r.ok) {
+      const d = await readError(r);
+      if (r.status === 401) throw new GenError("OpenAI didn't accept that API key. Check it under Image engine.");
+      if (r.status === 429) throw new GenError("OpenAI says you're out of credit or sending too many requests. " + d);
+      throw new GenError("OpenAI couldn't make this image: " + (d || `error ${r.status}`));
+    }
+    const j = await r.json();
+    const item = j.data && j.data[0];
+    if (item && item.b64_json) {
+      const bin = atob(item.b64_json); const u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      return new Blob([u8], { type: "image/png" });
+    }
+    if (item && item.url) { const ir = await fetch(item.url, { signal }); return await ir.blob(); }
+    throw new GenError("OpenAI returned no image. Try again.");
+  }
+
+  const ENGINES = { free: genFree, pollinations: genPollinations, openai: genOpenAI };
+
+  // ---------- gallery storage (IndexedDB) ----------
+  const DB = (() => {
+    let p = null;
+    function open() {
+      if (p) return p;
+      p = new Promise((res, rej) => {
+        try {
+          const req = indexedDB.open("daydream-studio", 1);
+          req.onupgradeneeded = () => req.result.createObjectStore("images", { keyPath: "id" });
+          req.onsuccess = () => res(req.result);
+          req.onerror = () => rej(req.error);
+        } catch (e) { rej(e); }
+      });
+      return p;
+    }
+    async function tx(mode, fn) {
+      const db = await open();
+      return new Promise((res, rej) => {
+        const t = db.transaction("images", mode); const s = t.objectStore("images");
+        const out = fn(s);
+        t.oncomplete = () => res(out && out.result !== undefined ? out.result : undefined);
+        t.onerror = () => rej(t.error);
+      });
+    }
+    return {
+      put: (v) => tx("readwrite", (s) => s.put(v)).catch(() => {}),
+      del: (id) => tx("readwrite", (s) => s.delete(id)).catch(() => {}),
+      clear: () => tx("readwrite", (s) => s.clear()).catch(() => {}),
+      all: () => tx("readonly", (s) => s.getAll()).then((x) => (x || []).sort((a, b) => b.ts - a.ts)).catch(() => []),
+    };
+  })();
+
+  let saved = [];
+  const urls = new Map();
+  function urlFor(item) { if (!urls.has(item.id)) urls.set(item.id, URL.createObjectURL(item.blob)); return urls.get(item.id); }
+  function extFor(blob) { return blob.type.includes("png") ? "png" : blob.type.includes("webp") ? "webp" : "jpg"; }
+  function slug(s) { return (s || "image").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "image"; }
+  function fileName(item) { return `${slug(item.prompt)}-${item.seed || ""}.${extFor(item.blob)}`.replace("-.", "."); }
+
+  async function loadGallery() { saved = await DB.all(); renderGallery(); }
+
+  function renderGallery() {
+    const ul = $("#thumbs"); ul.innerHTML = "";
+    $("#galleryCount").textContent = saved.length ? `${saved.length} image${saved.length === 1 ? "" : "s"}` : "";
+    $("#galleryNote").textContent = saved.length ? "Saved in this browser only. Use Download to keep a copy." : "Nothing saved yet. Every image you make will collect here.";
+    for (const it of saved) {
+      const li = document.createElement("li"); li.className = "thumb";
+      const b = document.createElement("button"); b.type = "button"; b.className = "open"; b.setAttribute("aria-label", "View " + it.prompt);
+      const img = document.createElement("img"); img.src = urlFor(it); img.alt = ""; img.loading = "lazy";
+      b.append(img); b.addEventListener("click", () => openLightbox(it));
+      const del = document.createElement("button"); del.type = "button"; del.className = "del"; del.setAttribute("aria-label", "Delete " + it.prompt);
+      del.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+      del.addEventListener("click", async () => { await DB.del(it.id); saved = saved.filter((x) => x.id !== it.id); renderGallery(); });
+      li.append(b, del); ul.append(li);
+    }
+    renderClear(false);
+  }
+
+  function renderClear(confirming) {
+    const area = $("#clearArea"); area.innerHTML = "";
+    if (!saved.length) return;
+    if (!confirming) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "btn small ghost"; b.textContent = "Delete all";
+      b.addEventListener("click", () => renderClear(true)); area.append(b); return;
+    }
+    const w = document.createElement("span"); w.className = "confirm"; w.append(`Delete all ${saved.length} images?`);
+    const yes = document.createElement("button"); yes.type = "button"; yes.className = "btn small"; yes.textContent = "Delete all"; yes.style.color = "var(--danger)";
+    yes.addEventListener("click", async () => { await DB.clear(); saved = []; renderGallery(); });
+    const no = document.createElement("button"); no.type = "button"; no.className = "btn small ghost"; no.textContent = "Cancel";
+    no.addEventListener("click", () => renderClear(false));
+    w.append(yes, no); area.append(w); yes.focus();
+  }
+
+  // ---------- lightbox ----------
+  let lbItem = null;
+  function openLightbox(it) {
+    lbItem = it;
+    $("#lbImg").src = urlFor(it); $("#lbImg").alt = it.prompt;
+    $("#lbText").textContent = it.prompt + (it.engine ? `  ·  ${it.engine}` : "");
+    $("#lbDownload").href = urlFor(it); $("#lbDownload").download = fileName(it);
+    $("#lightbox").hidden = false; $("#lbClose").focus();
+    document.body.style.overflow = "hidden";
+  }
+  function closeLightbox() { $("#lightbox").hidden = true; document.body.style.overflow = ""; lbItem = null; }
+  $("#lbClose").addEventListener("click", closeLightbox);
+  $("#lightbox").addEventListener("click", (e) => { if (e.target.id === "lightbox" || e.target.classList.contains("lb-img")) closeLightbox(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#lightbox").hidden) closeLightbox(); });
+  $("#lbReuse").addEventListener("click", () => { if (lbItem) { setMode("image"); setPrompt(lbItem.prompt); closeLightbox(); promptEl.focus(); } });
+
+  // ---------- results sheet ----------
+  function makeCard(shape) {
+    const s = SHAPES[shape];
+    const card = document.createElement("div"); card.className = "shot";
+    const pic = document.createElement("div"); pic.className = "pic"; pic.style.aspectRatio = `${s.w} / ${s.h}`;
+    pic.innerHTML = '<div class="develop"><span class="spin" aria-hidden="true"></span><span>Developing your image…</span><span class="t">0s</span></div><div class="shimmer"></div>';
+    const bar = document.createElement("div"); bar.className = "bar"; bar.hidden = true;
+    card.append(pic, bar);
+    const start = Date.now();
+    let waiting = 0;
+    const timer = setInterval(() => { const t = pic.querySelector(".t"); if (t && !waiting) t.textContent = Math.round((Date.now() - start) / 1000) + "s"; }, 500);
+    return {
+      el: card,
+      wait(left) {
+        waiting = left;
+        const label = pic.querySelector(".develop span:nth-child(2)"), t = pic.querySelector(".t");
+        if (!label || !t) return;
+        if (left > 0) { label.textContent = "The free engine needs a short break between images. Starting in"; t.textContent = left + "s"; }
+        else { label.textContent = "Developing your image…"; }
+      },
+      done(item) {
+        clearInterval(timer);
+        pic.innerHTML = "";
+        const img = document.createElement("img"); img.src = urlFor(item); img.alt = item.prompt;
+        img.addEventListener("click", () => openLightbox(item));
+        pic.append(img);
+        bar.hidden = false;
+        bar.innerHTML = "";
+        const meta = document.createElement("span"); meta.className = "meta"; meta.textContent = `${Math.round((Date.now() - start) / 1000)}s · seed ${item.seed}`;
+        const btns = document.createElement("div"); btns.className = "btns";
+        const dl = document.createElement("a"); dl.className = "btn small"; dl.href = urlFor(item); dl.download = fileName(item);
+        dl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Download';
+        const view = document.createElement("button"); view.type = "button"; view.className = "btn small ghost"; view.textContent = "View";
+        view.addEventListener("click", () => openLightbox(item));
+        btns.append(view, dl); bar.append(meta, btns);
+      },
+      fail(text) {
+        clearInterval(timer);
+        pic.innerHTML = ""; const f = document.createElement("div"); f.className = "failed"; f.textContent = text; pic.append(f);
+      },
+    };
+  }
+
+  function showEmpty() {
+    const sheet = $("#sheet"); sheet.className = "sheet one"; sheet.innerHTML = "";
+    const d = document.createElement("div"); d.className = "empty";
+    d.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="4"/></svg><b>Describe a scene and press Generate</b><span>Or tap one of the suggestions to see what it can do.</span>';
+    sheet.append(d);
+  }
+
+  async function makeImages(text) {
+    const shape = st.shape, engine = st.engine;
+    const n = engine === "free" ? 1 : Number(st.count);
+    const full = buildPrompt(text);
+    const gen = ENGINES[engine];
+    const label = engineName();
+    st.ctl = new AbortController(); const signal = st.ctl.signal;
+    st.busy = true; updateGo(); hideMsg();
+    $("#batchTitle").textContent = text;
+    $("#batchMeta").textContent = `${label} · ${SHAPES[shape].label}`;
+    $("#finalPrompt").hidden = false; $("#finalPrompt").textContent = "Prompt sent: " + full;
+    const sheet = $("#sheet"); sheet.className = "sheet" + (n === 1 ? " one" : ""); sheet.innerHTML = "";
+    const cards = Array.from({ length: n }, () => { const c = makeCard(shape); sheet.append(c.el); return c; });
+    let ok = 0, firstErr = null;
+    // Free engine allows one request at a time, others run in parallel.
+    const runOne = async (i) => {
+      const seed = Math.floor(Math.random() * 2147483647);
+      try {
+        const blob = await gen(full, shape, seed, signal, (left) => cards[i].wait(left));
+        const item = { id: "img" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), prompt: text, fullPrompt: full, engine: label, shape, seed, blob, ts: Date.now() };
+        await DB.put(item); saved.unshift(item); renderGallery();
+        cards[i].done(item); ok++;
+      } catch (e) {
+        if (signal.aborted) { cards[i].fail("Stopped."); return; }
+        const m = e && e.user ? e.message : "Couldn't reach the image service. Check your connection and try again.";
+        if (!firstErr) firstErr = m;
+        cards[i].fail(m);
+      }
+    };
+    try {
+      if (engine === "free") { for (let i = 0; i < n; i++) { if (signal.aborted) { cards[i].fail("Stopped."); continue; } await runOne(i); } }
+      else await Promise.all(cards.map((_, i) => runOne(i)));
+      if (firstErr) showMsg(firstErr, true);
+      else if (ok && engine === "free") showMsg("Want sharper, more lifelike results? Open Image engine below the form and add a free Pollinations key.");
+    } finally {
+      st.busy = false; st.ctl = null; updateGo();
+    }
+  }
+
+  // ---------- text helpers (free Pollinations text API) ----------
+  async function askText(prompt, signal, onWait) {
+    const seed = Math.floor(Math.random() * 1e9);
+    const key = polKey.value.trim();
+    let r;
+    if (key) {
+      r = await fetch("https://gen.pollinations.ai/text/" + encodeURIComponent(prompt) + "?seed=" + seed, { signal, headers: { Authorization: "Bearer " + key } });
+      if (r.ok) return (await r.text()).trim();
+    }
+    r = await freeFetch("https://text.pollinations.ai/" + encodeURIComponent(prompt) + "?seed=" + seed + "&private=true", signal, onWait);
+    if (r.status === 402 || r.status === 429) throw new GenError("The free text service needs a short break. Wait about a minute and try again.");
+    if (!r.ok) throw new GenError(`The text service had a problem (error ${r.status}). Try again.`);
+    return (await r.text()).trim();
+  }
+
+  $("#enhance").addEventListener("click", async () => {
+    const text = promptEl.value.trim();
+    if (!text) { showMsg("Type a short idea first, then press Improve prompt."); promptEl.focus(); return; }
+    const btn = $("#enhance"); btn.disabled = true; const old = btn.innerHTML; btn.textContent = "Improving…";
+    try {
+      const out = await askText(`Rewrite this image idea as one vivid, specific prompt for a photorealistic image generator. Describe the subject, setting, lighting, camera angle and mood in under 60 words. Reply with only the prompt, no quotes or preamble.\n\nIdea: ${text}`, undefined, (left) => { if (left > 0) showMsg(`The free service needs a short break. Trying again in ${left}s…`); else hideMsg(); });
+      const clean = out.replace(/^["'\s]+|["'\s]+$/g, "").replace(/^prompt:\s*/i, "");
+      if (clean) { setPrompt(clean); showMsg("Prompt improved. Edit it if you like, then press Generate."); }
+    } catch (e) { showMsg(e && e.user ? e.message : "Couldn't reach the text service. Try again.", true); }
+    finally { btn.innerHTML = old; btn.disabled = st.busy; }
+  });
+
+  function parseJsonArray(text) {
+    try { const v = JSON.parse(text); if (Array.isArray(v)) return v; if (v && Array.isArray(v.ideas)) return v.ideas; } catch {}
+    const a = text.indexOf("["), b = text.lastIndexOf("]");
+    if (a >= 0 && b > a) { try { return JSON.parse(text.slice(a, b + 1)); } catch {} }
+    return null;
+  }
+
+  function renderIdeasLoading(text) {
+    $("#ideasTitle").textContent = "Ideas for: " + text;
+    const ul = $("#ideas"); ul.innerHTML = "";
+    for (let i = 0; i < 6; i++) {
+      const li = document.createElement("li"); li.className = "idea"; li.style.opacity = ".55";
+      li.innerHTML = `<span class="n">IDEA ${String(i + 1).padStart(2, "0")}</span><div class="skeleton" style="width:70%;height:14px"></div><div class="skeleton"></div><div class="skeleton" style="width:85%"></div>`;
+      ul.append(li);
+    }
+  }
+
+  function renderIdeas(prompt, items) {
+    $("#ideasTitle").textContent = "Ideas for: " + prompt;
+    const ul = $("#ideas"); ul.innerHTML = "";
+    items.forEach((idea, i) => {
+      const li = document.createElement("li"); li.className = "idea";
+      const n = document.createElement("span"); n.className = "n"; n.textContent = "IDEA " + String(i + 1).padStart(2, "0");
+      const h = document.createElement("h3"); h.textContent = idea.title;
+      const p = document.createElement("p"); p.textContent = idea.pitch;
+      const row = document.createElement("div"); row.className = "row";
+      const draw = document.createElement("button"); draw.type = "button"; draw.className = "btn small"; draw.textContent = "Picture this";
+      draw.addEventListener("click", () => { setMode("image"); setPrompt(idea.imagePrompt || idea.title); submit(); window.scrollTo({ top: 0, behavior: "smooth" }); });
+      const more = document.createElement("button"); more.type = "button"; more.className = "btn small ghost"; more.textContent = "More like this";
+      more.addEventListener("click", () => { setPrompt(`More ideas like "${idea.title}" for: ${prompt}`); submit(); });
+      row.append(draw, more); li.append(n, h, p, row); ul.append(li);
+    });
+  }
+
+  async function makeIdeas(text) {
+    st.ctl = new AbortController(); const signal = st.ctl.signal;
+    st.busy = true; updateGo(); hideMsg(); renderIdeasLoading(text);
+    try {
+      const out = await askText(`Brainstorm 6 fresh, specific and varied ideas for: "${text}". Mix crowd-pleasers with a couple of surprising ones. Reply with only a JSON array of 6 objects with keys "title" (max 7 words), "pitch" (1-2 sentences) and "imagePrompt" (one vivid sentence describing a realistic photo that shows the idea). No markdown.`, signal, (left) => { if (left > 0) showMsg(`The free service needs a short break. Trying again in ${left}s…`); else hideMsg(); });
+      const arr = parseJsonArray(out);
+      const items = (arr || []).filter((x) => x && (x.title || x.pitch)).map((x) => ({ title: String(x.title || "Idea"), pitch: String(x.pitch || ""), imagePrompt: String(x.imagePrompt || x.title || "") }));
+      if (!items.length) throw new GenError("The ideas came back jumbled. Press Generate to try again.");
+      renderIdeas(text, items);
+    } catch (e) {
+      $("#ideas").innerHTML = "";
+      if (signal.aborted) showMsg("Stopped.");
+      else showMsg(e && e.user ? e.message : "Couldn't reach the text service. Try again.", true);
+    } finally { st.busy = false; st.ctl = null; updateGo(); }
+  }
+
+  // ---------- submit ----------
+  function submit() {
+    if (st.busy) return;
+    const text = promptEl.value.trim();
+    if (!text) { showMsg(st.mode === "image" ? "Type what you'd like to see first." : "Type what you need ideas for first."); promptEl.focus(); return; }
+    if (st.mode === "image") makeImages(text); else makeIdeas(text);
+  }
+  $("#form").addEventListener("submit", (e) => { e.preventDefault(); submit(); });
+  $("#stop").addEventListener("click", () => st.ctl && st.ctl.abort());
+
+  // ---------- boot ----------
+  setMode("image");
+  showEmpty();
+  loadGallery();
+})();
+</script>
+</body>
+</html>
