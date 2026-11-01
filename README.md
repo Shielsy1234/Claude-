@@ -1,8 +1,25 @@
 # Daydream Studio
 
-Type what you're picturing and get a realistic image, a video, or a page of ideas.
+Your private AI on your own PC: chat with a local AI model, and create realistic images and videos, in one installable app.
 
-Everything is in one file, `index.html`. Host it with GitHub Pages (recommended) or any static web server. The **This PC** engine needs the page to be opened from a web address (`https://…` or `http://localhost`), not by double-clicking the file.
+The app is `index.html` plus `manifest.webmanifest`, `sw.js` and `icons/`. Host it with GitHub Pages (recommended) or any static web server. It must be opened from a web address (`https://…` or `http://localhost`), not by double-clicking the file.
+
+## Install it as a PC app
+
+Open the site in **Edge or Chrome** and press **Install app** in the header (or use the browser menu: *Apps → Install Daydream Studio*). It then has its own window, a Start menu and desktop shortcut, and opens without the browser around it. After the first run, the app and its downloaded AI models work **offline**.
+
+## Chat
+
+The **Chat** tab talks to an AI running on your PC. Ask it to make a picture or a video and it creates one inside the conversation ("draw me…", "make a 3 second video of…", "now animate it").
+
+| Source | Notes |
+| --- | --- |
+| **Built in** (default) | Runs in the app on your GPU with [WebLLM](https://github.com/mlc-ai/web-llm). Models: Qwen 3.5 9B (6.4 GB), Qwen 3.5 4B (3.9 GB), Hermes 3 8B (4.9 GB), Llama 3.1 8B (5 GB). One-time download. |
+| **Ollama** | Uses any model installed with [Ollama](https://ollama.com). Run `ollama pull <model>`, then `setx OLLAMA_ORIGINS "*"` and restart Ollama so the app can connect. |
+
+Conversations are saved on your PC. **Custom instructions** let you set how the AI behaves. With **Free graphics memory for videos** on, the chat and image models are unloaded while ComfyUI makes a video so it gets the whole GPU.
+
+When a local AI is loaded, **Ideas** and **Improve prompt** use it too instead of the online text service.
 
 ## Image engines
 

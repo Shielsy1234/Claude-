@@ -4,7 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Daydream Studio</title>
-<meta name="description" content="Type what you're picturing and get a realistic image, a video, or a page of ideas.">
+<meta name="description" content="Your private AI: chat, realistic images and video, running on your own PC.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#3446D4">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -205,6 +209,57 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
 .lightbox .lb-bar p { margin: 0; font-size: 13.5px; flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; max-height: 4.5em; overflow: auto; }
 .lightbox .btn { background: #1E2433; border-color: #333B50; color: #E6E9F2; }
 
+/* Header navigation */
+.top-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.nav { display: grid; grid-template-columns: repeat(4, auto); gap: 4px; padding: 4px; background: var(--sunken); border-radius: 12px; }
+.nav button { border: 0; background: transparent; padding: 9px 14px; border-radius: 9px; cursor: pointer; font-weight: 600; color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 7px; }
+.nav button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.nav svg { width: 16px; height: 16px; flex: none; }
+@media (max-width: 700px) { .nav { grid-template-columns: repeat(4, 1fr); width: 100%; order: 3; } .nav button { padding: 9px 6px; } }
+
+/* Chat */
+.chat { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 900px) { .chat { grid-template-columns: minmax(0, 1fr); } }
+.chat-side { gap: 14px; }
+.convos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; max-height: 260px; overflow: auto; }
+.convos li { display: flex; align-items: center; gap: 4px; border-radius: 8px; }
+.convos li.active { background: var(--accent-soft); }
+.convos button.open { flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; padding: 8px 10px; cursor: pointer; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 8px; }
+.convos button.open:hover { background: var(--sunken); }
+.convos button.x { border: 0; background: transparent; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; color: var(--muted); display: grid; place-items: center; flex: none; opacity: .6; }
+.convos button.x:hover { opacity: 1; background: var(--sunken); }
+.convos button.x svg { width: 13px; height: 13px; }
+.chat-main { padding: 0; gap: 0; height: calc(100dvh - 190px); min-height: 520px; overflow: hidden; }
+.messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 18px; min-height: 0; }
+.msg-row { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.msg-row.user { align-items: flex-end; }
+.bubble { max-width: min(680px, 100%); overflow-wrap: anywhere; line-height: 1.6; }
+.msg-row.user .bubble { background: var(--accent); color: var(--accent-ink); padding: 10px 14px; border-radius: 16px 16px 4px 16px; white-space: pre-wrap; }
+.msg-row.ai .bubble { padding: 2px 0; }
+.bubble p { margin: 0 0 10px; } .bubble p:last-child { margin-bottom: 0; }
+.bubble ul, .bubble ol { margin: 0 0 10px; padding-left: 22px; }
+.bubble pre { background: var(--sunken); border-radius: 10px; padding: 10px 12px; overflow-x: auto; font: 13px/1.5 var(--f-mono); margin: 0 0 10px; }
+.bubble code { font-size: 13px; }
+.bubble pre code { background: none; padding: 0; }
+.who { font: 500 11px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.thinking { color: var(--muted); font-size: 13.5px; display: inline-flex; gap: 8px; align-items: center; }
+.thinking .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--accent-soft); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+.chat-media { display: grid; gap: 10px; max-width: min(560px, 100%); }
+.chat-media .shot .pic { max-height: 60vh; }
+.chat-media .shot .pic img, .chat-media .shot .pic video { object-fit: contain; max-height: 60vh; }
+.welcome { margin: auto; text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; padding: 20px; max-width: 560px; }
+.welcome h2 { font-family: var(--f-display); font-size: clamp(22px, 3vw, 30px); margin: 0; }
+.welcome p { margin: 0; color: var(--muted); }
+.welcome .chips { justify-content: center; }
+.welcome .chips button { border: 1px solid var(--line); background: var(--surface); padding: 8px 12px; border-radius: 12px; font-size: 13.5px; cursor: pointer; text-align: left; }
+.welcome .chips button:hover { border-color: var(--accent); }
+.composer { display: flex; gap: 8px; align-items: flex-end; padding: 12px; border-top: 1px solid var(--line); background: var(--surface); }
+.composer textarea { flex: 1; min-width: 0; resize: none; max-height: 200px; padding: 11px 14px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--paper); font-size: 15.5px; line-height: 1.45; }
+.composer textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.composer .btn { padding: 11px 16px; }
+.chat-foot { margin: 0; padding: 0 14px 10px; font-size: 12px; color: var(--muted); background: var(--surface); }
+.note-card { border: 1px solid var(--line); background: var(--paper); border-radius: 12px; padding: 12px 14px; font-size: 14px; display: flex; flex-direction: column; gap: 8px; max-width: min(560px, 100%); }
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition: none !important; } }
 </style>
 </head>
@@ -213,25 +268,111 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   <header class="top">
     <div class="brand">
       <h1>Daydream <span>Studio</span></h1>
-      <p>Type what you're picturing. Get a realistic image, a video, or a page of ideas.</p>
+      <p>Your private AI: chat, realistic images and video, all on your PC.</p>
     </div>
-    <div class="pill" id="engineBadge"><i></i><span id="engineBadgeText">Free engine</span></div>
+    <nav class="nav" aria-label="Sections">
+      <button type="button" id="modeChat" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg>Chat
+      </button>
+      <button type="button" id="modeImage" aria-pressed="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Image
+      </button>
+      <button type="button" id="modeVideo" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="14" height="14" rx="2"/><path d="m16 10 6-3v10l-6-3"/></svg>Video
+      </button>
+      <button type="button" id="modeIdeas" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/></svg>Ideas
+      </button>
+    </nav>
+    <div class="top-right">
+      <button type="button" class="btn small accent" id="installBtn" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/></svg>Install app</button>
+      <div class="pill" id="engineBadge"><i></i><span id="engineBadgeText">Free engine</span></div>
+    </div>
   </header>
 
-  <main class="main">
-    <section class="panel" aria-label="Make something">
-      <div class="modes" role="group" aria-label="What to make">
-        <button type="button" id="modeImage" aria-pressed="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Image
-        </button>
-        <button type="button" id="modeVideo" aria-pressed="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="14" height="14" rx="2"/><path d="m16 10 6-3v10l-6-3"/></svg>Video
-        </button>
-        <button type="button" id="modeIdeas" aria-pressed="false">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/></svg>Ideas
-        </button>
+  <!-- Chat with the built-in AI -->
+  <section class="chat" id="chatView" hidden aria-label="Chat">
+    <aside class="panel chat-side">
+      <button type="button" class="btn accent" id="newChat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New chat</button>
+      <div class="field">
+        <span class="label">Conversations</span>
+        <ul class="convos" id="convos"></ul>
+        <p class="hint" id="convosEmpty">Your chats are saved on this PC.</p>
       </div>
+      <details class="more" id="aiDetails">
+        <summary>AI model <span class="sum" id="aiSummary"></span></summary>
+        <div class="inner">
+          <div class="engines" role="radiogroup" aria-label="AI model source">
+            <label class="engine"><input type="radio" name="aiKind" value="builtin" id="aiKind-builtin">
+              <b>Built in <span class="tag best">No install</span></b>
+              <small>Runs inside this app on your graphics card. One-time download, then works offline.</small></label>
+            <label class="engine"><input type="radio" name="aiKind" value="ollama" id="aiKind-ollama">
+              <b>Ollama</b>
+              <small>Use any model you've installed with the free Ollama app on your PC.</small></label>
+          </div>
+          <div class="keybox" id="aiBuiltinBox">
+            <label class="label" for="aiModel">Model</label>
+            <select id="aiModel">
+              <option value="Qwen3.5-9B-q4f16_1-MLC">Qwen 3.5 9B · smartest · 6.4 GB</option>
+              <option value="Qwen3.5-4B-q4f16_1-MLC">Qwen 3.5 4B · faster · 3.9 GB</option>
+              <option value="Hermes-3-Llama-3.1-8B-q4f16_1-MLC">Hermes 3 8B · follows instructions closely · 4.9 GB</option>
+              <option value="Llama-3.1-8B-Instruct-q4f16_1-MLC">Llama 3.1 8B · 5 GB</option>
+            </select>
+            <div class="status-line" id="aiStatus" data-s="idle"><i></i><span id="aiStatusText">Not loaded.</span></div>
+            <div id="aiProgress" hidden>
+              <div class="bar-track"><div class="bar-fill" id="aiBar"></div></div>
+              <p class="hint" id="aiProgressText" style="margin-top:6px"></p>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn small accent" id="aiLoad">Load model</button>
+              <button type="button" class="btn small" id="aiUnload" hidden>Unload</button>
+              <button type="button" class="btn small ghost danger" id="aiDelete" hidden>Delete download</button>
+            </div>
+          </div>
+          <div class="keybox" id="aiOllamaBox" hidden>
+            <label class="label" for="olUrl">Ollama address</label>
+            <div class="keyrow"><input class="input" id="olUrl" type="url" autocomplete="off" placeholder="http://127.0.0.1:11434"><button type="button" class="btn small" id="olCheck">Check</button></div>
+            <label class="label" for="olModel">Model</label>
+            <select id="olModel"><option value="">Press Check to list your models</option></select>
+            <div class="status-line" id="olStatus" data-s="idle"><i></i><span id="olStatusText">Not checked yet.</span></div>
+            <details class="more" style="border-top:0;padding-top:0">
+              <summary>How to set up Ollama</summary>
+              <div class="inner">
+                <ol class="steps">
+                  <li>Install <a href="https://ollama.com/download" target="_blank" rel="noopener">Ollama</a> (it supports AMD Radeon cards).</li>
+                  <li>Open a terminal and download a model, for example <code>ollama pull qwen3:8b</code>. Browse more at <a href="https://ollama.com/library" target="_blank" rel="noopener">ollama.com/library</a>.</li>
+                  <li>Let this app connect: run <code>setx OLLAMA_ORIGINS "*"</code> in a terminal, then quit Ollama from the system tray and start it again.</li>
+                  <li>Press <b>Check</b> above and pick your model.</li>
+                </ol>
+              </div>
+            </details>
+          </div>
+          <label class="toggle"><input type="checkbox" id="freeVram" checked>
+            <span>Free graphics memory for videos<small>Unloads the chat and image models while ComfyUI makes a video, so it has the whole GPU. They reload when needed.</small></span>
+          </label>
+          <label class="field" for="aiPersona"><span class="label">Custom instructions (optional)</span>
+            <textarea id="aiPersona" class="input" rows="3" placeholder="For example: Keep answers short. Call me Cian."></textarea>
+          </label>
+        </div>
+      </details>
+    </aside>
+    <div class="panel chat-main">
+      <div class="messages" id="messages" aria-live="polite"></div>
+      <form class="composer" id="chatForm">
+        <textarea id="chatInput" rows="1" placeholder="Message Daydream…"></textarea>
+        <button type="submit" class="btn accent" id="chatSend" aria-label="Send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <button type="button" class="btn" id="chatStop" hidden aria-label="Stop">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
+      </form>
+      <p class="chat-foot" id="chatFoot">Runs on your PC. Pictures use your Image engine setting; videos use ComfyUI.</p>
+    </div>
+  </section>
 
+  <main class="main" id="createView">
+    <section class="panel" aria-label="Make something">
       <form id="form" class="field" style="gap:18px" novalidate>
         <div class="field">
           <div class="label-row">
@@ -539,6 +680,8 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   if (!LENGTHS[st.vlen]) st.vlen = "3";
   if (!VQ[st.vq]) st.vq = "quick";
   if (!["local", "free", "pollinations", "openai"].includes(st.engine)) st.engine = "free";
+  // Chat modules are created further down; declared here so earlier code can check them safely.
+  let ai = null, chat = null, galleryReady = Promise.resolve();
 
   // ---------- controls ----------
   function radios(box, name, opts, cur, onChange) {
@@ -583,7 +726,11 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   };
   function setMode(m) {
     st.mode = m;
-    for (const [id, mm] of [["#modeImage", "image"], ["#modeVideo", "video"], ["#modeIdeas", "ideas"]]) $(id).setAttribute("aria-pressed", String(m === mm));
+    ls.set("dd.mode", m);
+    for (const [id, mm] of [["#modeChat", "chat"], ["#modeImage", "image"], ["#modeVideo", "video"], ["#modeIdeas", "ideas"]]) $(id).setAttribute("aria-pressed", String(m === mm));
+    $("#chatView").hidden = m !== "chat";
+    $("#createView").hidden = m === "chat";
+    if (m === "chat") { updateBadge(); chat.show(); return; }
     const isImg = m === "image", isVid = m === "video";
     $("#lookField").hidden = !isImg;
     $("#realField").hidden = !isImg;
@@ -602,11 +749,13 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     updateGo(); renderSuggest(); hideMsg(); updateBadge();
     if (isVid && !comfyState.checked) comfyCheck(true);
   }
+  $("#modeChat").addEventListener("click", () => setMode("chat"));
   $("#modeImage").addEventListener("click", () => setMode("image"));
   $("#modeVideo").addEventListener("click", () => setMode("video"));
   $("#modeIdeas").addEventListener("click", () => setMode("ideas"));
 
   function updateGo() {
+    if (!MODE_TEXT[st.mode]) return;
     $("#go").textContent = st.busy ? MODE_TEXT[st.mode].busy : MODE_TEXT[st.mode].go;
     $("#go").disabled = st.busy;
     $("#enhance").disabled = st.busy;
@@ -671,7 +820,11 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     return "Free online engine";
   }
   function updateBadge() {
-    $("#engineBadgeText").textContent = st.mode === "video" ? "Video · ComfyUI on this PC" : st.mode === "ideas" ? "Ideas · free text service" : engineName();
+    const t = st.mode === "chat" ? "Chat · " + (ai ? ai.label() : "built-in AI")
+      : st.mode === "video" ? "Video · ComfyUI on this PC"
+      : st.mode === "ideas" ? "Ideas · " + (ai && ai.isReady() ? ai.label() : "free text service")
+      : engineName();
+    $("#engineBadgeText").textContent = t;
   }
   function updateEngineUI() {
     $("#localBox").hidden = st.engine !== "local";
@@ -877,9 +1030,11 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     }
 
     async function release() {
+      if (loadingPromise && !sessions) { try { await loadingPromise; } catch {} }
       if (!sessions) return;
       for (const s of Object.values(sessions)) { try { await s.release(); } catch {} }
       sessions = null; loadingPromise = null;
+      refreshStatus();
     }
 
     function loadScript(src) {
@@ -1051,7 +1206,15 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
       b.dataset.confirm = ""; b.textContent = "Delete model"; remove();
     });
 
-    return { refreshStatus, generate, isDownloaded, checkGpu, gpuInfo: () => gpuInfo };
+    // One GPU job at a time, even when Chat and the Image tab both ask for pictures.
+    let queue = Promise.resolve();
+    function generateQueued(opts) {
+      const run = queue.then(() => generate(opts));
+      queue = run.catch(() => {});
+      return run;
+    }
+
+    return { refreshStatus, generate: generateQueued, release, isDownloaded, checkGpu, gpuInfo: () => gpuInfo, loaded: () => !!sessions };
   })();
 
   // ---------- online image engines ----------
@@ -1239,14 +1402,19 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
     return e.message;
   }
 
-  async function genVideo({ prompt, shape, seed, signal, onStatus }) {
-    if (!comfyState.ok && !(await comfyCheck(false))) throw new GenError("ComfyUI isn't ready yet. Open Video engine below the form and follow the setup steps.");
-    const q = VQ[st.vq], [width, height] = q.sizes[shape], frames = LENGTHS[st.vlen].frames;
+  async function genVideo({ prompt, shape, seed, signal, onStatus, startImage = st.startImage, vq = st.vq, vlen = st.vlen }) {
+    if (!comfyState.ok && !(await comfyCheck(false))) throw new GenError("ComfyUI isn't ready yet. Open the Video tab, then Video engine, and follow the setup steps.");
+    const q = VQ[vq], [width, height] = q.sizes[shape], frames = LENGTHS[vlen].frames;
+    if ($("#freeVram").checked) {
+      onStatus("Freeing graphics memory for the video…");
+      try { await local.release(); } catch {}
+      try { if (ai) await ai.unload(); } catch {}
+    }
     let startName = null;
-    if (st.startImage) {
+    if (startImage) {
       onStatus("Sending your start image to ComfyUI…");
       const fd = new FormData();
-      fd.append("image", st.startImage, "daydream-start.png");
+      fd.append("image", startImage, "daydream-start.png");
       fd.append("overwrite", "true");
       const up = await comfyJson("/upload/image", { method: "POST", body: fd, signal });
       startName = up.subfolder ? `${up.subfolder}/${up.name}` : up.name;
@@ -1367,36 +1535,42 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   }
 
   // ---------- gallery storage (IndexedDB) ----------
-  const DB = (() => {
-    let p = null;
-    function open() {
-      if (p) return p;
-      p = new Promise((res, rej) => {
-        try {
-          const req = indexedDB.open("daydream-studio", 1);
-          req.onupgradeneeded = () => req.result.createObjectStore("images", { keyPath: "id" });
-          req.onsuccess = () => res(req.result);
-          req.onerror = () => rej(req.error);
-        } catch (e) { rej(e); }
-      });
-      return p;
-    }
-    async function tx(mode, fn) {
-      const db = await open();
-      return new Promise((res, rej) => {
-        const t = db.transaction("images", mode); const s = t.objectStore("images");
-        const out = fn(s);
-        t.oncomplete = () => res(out && out.result !== undefined ? out.result : undefined);
-        t.onerror = () => rej(t.error);
-      });
-    }
+  function makeStore(storeName) {
     return {
-      put: (v) => tx("readwrite", (s) => s.put(v)).catch(() => {}),
-      del: (id) => tx("readwrite", (s) => s.delete(id)).catch(() => {}),
-      clear: () => tx("readwrite", (s) => s.clear()).catch(() => {}),
-      all: () => tx("readonly", (s) => s.getAll()).then((x) => (x || []).sort((a, b) => b.ts - a.ts)).catch(() => []),
+      put: (v) => idbTx(storeName, "readwrite", (s) => s.put(v)).catch(() => {}),
+      del: (id) => idbTx(storeName, "readwrite", (s) => s.delete(id)).catch(() => {}),
+      clear: () => idbTx(storeName, "readwrite", (s) => s.clear()).catch(() => {}),
+      all: () => idbTx(storeName, "readonly", (s) => s.getAll()).then((x) => (x || []).sort((a, b) => b.ts - a.ts)).catch(() => []),
     };
-  })();
+  }
+  let idbOpen = null;
+  function idbDb() {
+    if (idbOpen) return idbOpen;
+    idbOpen = new Promise((res, rej) => {
+      try {
+        const req = indexedDB.open("daydream-studio", 2);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains("images")) db.createObjectStore("images", { keyPath: "id" });
+          if (!db.objectStoreNames.contains("chats")) db.createObjectStore("chats", { keyPath: "id" });
+        };
+        req.onsuccess = () => res(req.result);
+        req.onerror = () => rej(req.error);
+      } catch (e) { rej(e); }
+    });
+    return idbOpen;
+  }
+  async function idbTx(storeName, mode, fn) {
+    const db = await idbDb();
+    return new Promise((res, rej) => {
+      const t = db.transaction(storeName, mode); const s = t.objectStore(storeName);
+      const out = fn(s);
+      t.oncomplete = () => res(out && out.result !== undefined ? out.result : undefined);
+      t.onerror = () => rej(t.error);
+    });
+  }
+  const DB = makeStore("images");
+  const ChatDB = makeStore("chats");
 
   let saved = [];
   const urls = new Map();
@@ -1602,6 +1776,11 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
 
   // ---------- text helpers (Pollinations text API) ----------
   async function askText(prompt, signal, onWait) {
+    // Prefer the AI running on this PC when it's already loaded.
+    if (ai && ai.isReady()) {
+      try { return (await ai.complete(prompt, signal)).trim(); }
+      catch (e) { if (signal && signal.aborted) throw e; console.warn("Local AI failed, using the online text service", e); }
+    }
     const seed = Math.floor(Math.random() * 1e9);
     const key = polKey.value.trim();
     let r;
@@ -1690,11 +1869,486 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
   $("#form").addEventListener("submit", (e) => { e.preventDefault(); submit(); });
   $("#stop").addEventListener("click", () => st.ctl && st.ctl.abort());
 
+  // =====================================================================
+  //  AI model for Chat: built in (WebLLM on WebGPU) or Ollama on this PC
+  // =====================================================================
+  ai = (() => {
+    const WEBLLM_SRC = "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.86/+esm";
+    const modelEl = $("#aiModel"), olUrl = $("#olUrl"), olModel = $("#olModel");
+    let kind = ls.get("dd.aiKind", "builtin"); if (!["builtin", "ollama"].includes(kind)) kind = "builtin";
+    modelEl.value = ls.get("dd.aiModel", "Qwen3.5-9B-q4f16_1-MLC"); if (!modelEl.value) modelEl.value = "Qwen3.5-9B-q4f16_1-MLC";
+    olUrl.value = ls.get("dd.olUrl", "http://127.0.0.1:11434");
+    let webllm = null, engine = null, engineModel = null, loading = null, olOk = false;
+
+    const modelName = () => (modelEl.selectedOptions[0] ? modelEl.selectedOptions[0].textContent.split(" · ")[0] : modelEl.value);
+    const sizeOf = () => { const m = (modelEl.selectedOptions[0] || {}).textContent; const g = m && m.match(/([\d.]+ GB)/); return g ? g[1] : "a few GB"; };
+    const label = () => (kind === "ollama" ? "Ollama · " + (olModel.value || "no model") : modelName());
+    const isReady = () => (kind === "ollama" ? olOk && !!olModel.value : !!engine && engineModel === modelEl.value);
+
+    function status(s, t) { $("#aiStatus").dataset.s = s; $("#aiStatusText").textContent = t; }
+    function olStatus(s, t) { $("#olStatus").dataset.s = s; $("#olStatusText").textContent = t; }
+    function progress(on, frac, text) {
+      $("#aiProgress").hidden = !on;
+      if (on) { $("#aiBar").style.width = (Math.max(0, Math.min(1, frac)) * 100).toFixed(1) + "%"; $("#aiProgressText").textContent = text || ""; }
+    }
+    function btns({ load = false, unload = false, del = false } = {}) { $("#aiLoad").hidden = !load; $("#aiUnload").hidden = !unload; $("#aiDelete").hidden = !del; }
+    async function lib() {
+      if (!webllm) {
+        try { webllm = await import(WEBLLM_SRC); }
+        catch { throw new GenError("Couldn't load the AI runtime. Check your internet connection (it's needed the first time)."); }
+      }
+      return webllm;
+    }
+
+    async function refresh() {
+      $("#aiBuiltinBox").hidden = kind !== "builtin";
+      $("#aiOllamaBox").hidden = kind !== "ollama";
+      $("#aiSummary").textContent = label();
+      updateBadge();
+      if (kind !== "builtin" || loading) return;
+      if (engine && engineModel === modelEl.value) { status("ok", `${modelName()} is loaded and ready.`); btns({ unload: true, del: true }); progress(false); return; }
+      if (!(await local.checkGpu())) { status("bad", local.gpuInfo()); btns({}); return; }
+      let cached = false;
+      try { cached = await (await lib()).hasModelInCache(modelEl.value); } catch {}
+      if (cached) { status("ok", `${modelName()} is downloaded. It loads onto your GPU when you send a message.`); btns({ load: true, del: true }); $("#aiLoad").textContent = "Load now"; }
+      else { status("warn", `${modelName()} needs a one-time download (${sizeOf()}). It starts when you send your first message.`); btns({ load: true }); $("#aiLoad").textContent = `Download now (${sizeOf()})`; }
+    }
+
+    async function ensure(onProgress) {
+      if (kind === "ollama") {
+        if (!olOk && !(await olCheck())) throw new GenError("Ollama isn't connected. Open AI model in the sidebar and follow the Ollama steps.");
+        if (!olModel.value) throw new GenError("Pick an Ollama model under AI model in the sidebar.");
+        return;
+      }
+      if (engine && engineModel === modelEl.value) return;
+      if (loading) return loading;
+      loading = (async () => {
+        if (!(await local.checkGpu())) throw new GenError(local.gpuInfo());
+        const L = await lib();
+        if (engine) { try { await engine.unload(); } catch {} engine = null; engineModel = null; }
+        const id = modelEl.value, name = modelName();
+        btns({});
+        try { if (navigator.storage.persist) await navigator.storage.persist(); } catch {}
+        const report = (p) => {
+          const frac = typeof p.progress === "number" ? p.progress : 0, pct = Math.round(frac * 100);
+          const txt = /fetch/i.test(p.text || "") ? `Downloading ${name} (one time)… ${pct}%` : `Loading ${name} onto your GPU… ${pct}%`;
+          progress(true, frac, txt); status("idle", txt); if (onProgress) onProgress(txt, frac);
+        };
+        report({ progress: 0, text: "Loading" });
+        try {
+          engine = await L.CreateMLCEngine(id, { initProgressCallback: report });
+          engineModel = id;
+        } catch (e) {
+          engine = null; engineModel = null;
+          const msg = String(e && e.message || e);
+          if (/quota|space/i.test(msg)) throw new GenError("Not enough disk space to store the AI model. Free up space and try again.");
+          if (/memory|OOM|allocate/i.test(msg)) throw new GenError("Your graphics card ran out of memory loading the AI. Try the smaller 4B model, or close other apps using the GPU.");
+          throw new GenError("Couldn't load the AI model: " + msg.slice(0, 200));
+        } finally { progress(false); }
+      })();
+      try { await loading; } finally { loading = null; refresh(); }
+    }
+
+    async function unload() {
+      if (loading) { try { await loading; } catch {} }
+      if (engine) { try { await engine.unload(); } catch {} engine = null; engineModel = null; }
+      refresh();
+    }
+
+    async function stream(messages, signal, onDelta) {
+      if (kind === "ollama") return olStream(messages, signal, onDelta);
+      await ensure();
+      const extra = /^Qwen3/i.test(engineModel) ? { extra_body: { enable_thinking: false } } : {};
+      const onAbort = () => { try { engine.interruptGenerate(); } catch {} };
+      if (signal) signal.addEventListener("abort", onAbort, { once: true });
+      let full = "";
+      try {
+        const chunks = await engine.chat.completions.create({ messages, stream: true, temperature: 0.7, max_tokens: 1200, ...extra });
+        for await (const c of chunks) {
+          const d = (c.choices && c.choices[0] && c.choices[0].delta && c.choices[0].delta.content) || "";
+          if (d) { full += d; onDelta(full); }
+        }
+      } finally { if (signal) signal.removeEventListener("abort", onAbort); }
+      return full;
+    }
+
+    async function complete(prompt, signal) {
+      const out = await stream([{ role: "user", content: prompt }], signal, () => {});
+      return out.replace(/<think>[\s\S]*?<\/think>/gi, "");
+    }
+
+    // ----- Ollama -----
+    function olBase() { let u = (olUrl.value || "").trim() || "http://127.0.0.1:11434"; if (!/^https?:\/\//i.test(u)) u = "http://" + u; return u.replace(/\/+$/, ""); }
+    async function olCheck() {
+      olStatus("idle", "Connecting to Ollama…");
+      try {
+        let r;
+        try { r = await fetch(olBase() + "/api/tags"); }
+        catch { throw new GenError(`Can't reach Ollama at ${olBase()}. Check that Ollama is running and that you set OLLAMA_ORIGINS (see the steps below).`); }
+        if (!r.ok) throw new GenError(`Ollama returned error ${r.status}.`);
+        const j = await r.json();
+        const models = (j.models || []).map((m) => m.name || m.model).filter(Boolean);
+        const want = ls.get("dd.olModel", "");
+        olModel.innerHTML = "";
+        if (!models.length) {
+          const o = document.createElement("option"); o.value = ""; o.textContent = "No models installed yet"; olModel.append(o);
+          olOk = false; olStatus("warn", "Connected, but no models are installed. Run ollama pull qwen3:8b in a terminal, then press Check.");
+          return false;
+        }
+        for (const m of models) { const o = document.createElement("option"); o.value = m; o.textContent = m; olModel.append(o); }
+        olModel.value = models.includes(want) ? want : models[0];
+        olOk = true; olStatus("ok", `Connected. ${models.length} model${models.length === 1 ? "" : "s"} available.`);
+        return true;
+      } catch (e) {
+        olOk = false; olStatus("bad", e && e.user ? e.message : "Couldn't talk to Ollama.");
+        $("#aiDetails").open = true;
+        return false;
+      } finally { refresh(); }
+    }
+    async function olStream(messages, signal, onDelta) {
+      let r;
+      try {
+        r = await fetch(olBase() + "/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: olModel.value, messages, stream: true }), signal });
+      } catch (e) { if (signal && signal.aborted) throw e; olOk = false; throw new GenError(`Can't reach Ollama at ${olBase()}. Is it still running?`); }
+      if (!r.ok) { const d = await readError(r); throw new GenError(`Ollama couldn't answer${d ? ": " + d : ` (error ${r.status})`}.`); }
+      const reader = r.body.getReader(), dec = new TextDecoder();
+      let buf = "", full = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let i;
+        while ((i = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+          if (!line) continue;
+          let j; try { j = JSON.parse(line); } catch { continue; }
+          if (j.error) throw new GenError("Ollama: " + j.error);
+          const d = (j.message && j.message.content) || "";
+          if (d) { full += d; onDelta(full); }
+        }
+      }
+      return full;
+    }
+
+    // ----- wiring -----
+    document.querySelectorAll('input[name="aiKind"]').forEach((r) => {
+      r.checked = r.value === kind;
+      r.addEventListener("change", () => { kind = r.value; ls.set("dd.aiKind", kind); refresh(); if (kind === "ollama" && !olOk) olCheck(); });
+    });
+    modelEl.addEventListener("change", () => { ls.set("dd.aiModel", modelEl.value); refresh(); });
+    olModel.addEventListener("change", () => { ls.set("dd.olModel", olModel.value); refresh(); });
+    olUrl.addEventListener("change", () => { ls.set("dd.olUrl", olUrl.value.trim()); olOk = false; });
+    $("#olCheck").addEventListener("click", () => { ls.set("dd.olUrl", olUrl.value.trim()); olCheck(); });
+    $("#aiLoad").addEventListener("click", () => ensure().catch((e) => status("bad", e && e.user ? e.message : String(e))));
+    $("#aiUnload").addEventListener("click", () => unload());
+    $("#aiDelete").addEventListener("click", async (e) => {
+      const b = e.currentTarget;
+      if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "Press again to delete"; setTimeout(() => { b.dataset.confirm = ""; b.textContent = "Delete download"; }, 4000); return; }
+      b.dataset.confirm = ""; b.textContent = "Delete download";
+      await unload();
+      try { await (await lib()).deleteModelAllInfoInCache(modelEl.value); } catch {}
+      refresh();
+    });
+
+    return { label, isReady, ensure, stream, complete, unload, refresh, kind: () => kind, budget: () => (kind === "ollama" ? 24000 : 9000) };
+  })();
+
+  // =====================================================================
+  //  Chat: conversations with the AI, which can also make images/videos
+  // =====================================================================
+  chat = (() => {
+    const box = $("#messages"), input = $("#chatInput"), persona = $("#aiPersona");
+    let convos = [], cur = null, busy = false, ctl = null, loaded = false;
+    persona.value = ls.get("dd.persona", "");
+    persona.addEventListener("input", () => ls.set("dd.persona", persona.value));
+
+    const SYSTEM = `You are Daydream, a friendly, capable AI assistant running privately on the user's own PC inside the Daydream Studio app. You answer directly and helpfully.
+
+Daydream Studio can create images and videos for you. Use this ability whenever the user wants a picture or video made:
+- For an image, write one short sentence, then on its own line write:
+[[image: a detailed visual description of the image for an image generator]]
+- For a video, write one short sentence, then on its own line write:
+[[video: a detailed description of the scene, the motion and the camera movement]]
+You may add "| wide" or "| tall" before the closing brackets to choose the shape. To animate the most recent image from this conversation, add "| animate" to a video tag.
+Write the description in English, rich in concrete detail (subject, setting, lighting, style). Never explain the tags or show them as code. Only use them when the user wants something made.`;
+    const TAG_RE = /\[\[\s*(image|video)\s*:\s*([\s\S]*?)\]\]/gi;
+
+    function visible(text) {
+      let t = String(text || "").replace(/<think>[\s\S]*?<\/think>/gi, "");
+      const open = t.search(/<think>/i); if (open >= 0) t = t.slice(0, open);
+      t = t.replace(TAG_RE, "");
+      const partial = t.lastIndexOf("[[");
+      if (partial >= 0 && t.indexOf("]]", partial) < 0) t = t.slice(0, partial);
+      return t.trim();
+    }
+    const thinkingNow = (text) => /<think>(?![\s\S]*<\/think>)/i.test(text || "");
+    function parseTags(text) {
+      const t = String(text || "").replace(/<think>[\s\S]*?<\/think>/gi, "");
+      const out = []; let m;
+      TAG_RE.lastIndex = 0;
+      while ((m = TAG_RE.exec(t))) {
+        const kind = m[1].toLowerCase();
+        const parts = m[2].split("|").map((s) => s.trim()).filter(Boolean);
+        const prompt = parts.shift() || "";
+        const opts = parts.join(" ").toLowerCase();
+        const shape = /\bwide\b/.test(opts) ? "wide" : /\btall\b/.test(opts) ? "tall" : /\bsquare\b/.test(opts) ? "square" : kind === "video" ? "wide" : "square";
+        if (prompt) out.push({ kind, prompt, shape, animate: kind === "video" && /\banimate\b/.test(opts) });
+      }
+      return out.slice(0, 4);
+    }
+
+    const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    function inline(s) {
+      return s
+        .replace(/^#{1,6}\s+(.*)$/, "<strong>$1</strong>")
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,!?:;]|$)/g, "$1<em>$2</em>");
+    }
+    function md(src) {
+      let html = "";
+      String(src).split("```").forEach((b, i) => {
+        if (i % 2 === 1) { html += `<pre><code>${esc(b.replace(/^[\w+-]*\n/, "").replace(/\n$/, ""))}</code></pre>`; return; }
+        for (const p of b.split(/\n{2,}/)) {
+          if (!p.trim()) continue;
+          const lines = p.split("\n").filter((l) => l.trim());
+          const isList = lines.every((l) => /^\s*([-*•]|\d+[.)])\s+/.test(l));
+          if (isList) {
+            const ordered = /^\s*\d/.test(lines[0]), tag = ordered ? "ol" : "ul";
+            html += `<${tag}>` + lines.map((l) => `<li>${inline(esc(l.replace(/^\s*([-*•]|\d+[.)])\s+/, "")))}</li>`).join("") + `</${tag}>`;
+          } else html += `<p>${lines.map((l) => inline(esc(l))).join("<br>")}</p>`;
+        }
+      });
+      return html;
+    }
+
+    function setBusy(on) { busy = on; $("#chatSend").hidden = on; $("#chatStop").hidden = !on; }
+    function scrollDown() { box.scrollTop = box.scrollHeight; }
+    function save() { return cur && cur.messages.length ? ChatDB.put(cur) : Promise.resolve(); }
+
+    function renderList() {
+      const ul = $("#convos"); ul.innerHTML = "";
+      $("#convosEmpty").hidden = convos.length > 0;
+      for (const c of convos) {
+        const li = document.createElement("li"); if (cur && c.id === cur.id) li.className = "active";
+        const b = document.createElement("button"); b.type = "button"; b.className = "open"; b.textContent = c.title || "New chat"; b.title = c.title || "";
+        b.addEventListener("click", () => { if (!busy) openConvo(c.id); });
+        const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.setAttribute("aria-label", "Delete chat " + (c.title || ""));
+        x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+        x.addEventListener("click", async () => {
+          if (x.dataset.confirm !== "1") { x.dataset.confirm = "1"; x.style.width = "auto"; x.textContent = "Delete?"; setTimeout(() => renderList(), 3000); return; }
+          if (busy && cur && cur.id === c.id) return;
+          await ChatDB.del(c.id); convos = convos.filter((v) => v.id !== c.id);
+          if (cur && cur.id === c.id) { cur = null; renderMessages(); }
+          renderList();
+        });
+        li.append(b, x); ul.append(li);
+      }
+    }
+
+    function welcome() {
+      const w = document.createElement("div"); w.className = "welcome";
+      w.innerHTML = "<h2>What can I help with?</h2><p>Chat with an AI that runs on your own PC. Ask it for a picture or a short video and it will make one right here.</p>";
+      const chips = document.createElement("div"); chips.className = "chips";
+      for (const s of [
+        "Make a photo of a cozy log cabin in the snow at night",
+        "Write a short story about a lighthouse keeper",
+        "Make a 3 second video of waves rolling onto a beach at sunset",
+        "Give me 5 ideas for a fantasy book cover, then draw the best one",
+      ]) {
+        const b = document.createElement("button"); b.type = "button"; b.textContent = s;
+        b.addEventListener("click", () => send(s));
+        chips.append(b);
+      }
+      w.append(chips);
+      return w;
+    }
+
+    function cardSize(m) {
+      if (m.kind === "video") return VQ[st.vq].sizes[m.shape] || [832, 480];
+      if (st.engine === "local") return (LOCAL_Q[localQuality.value] || LOCAL_Q.standard).sizes[m.shape];
+      return [SHAPES[m.shape].w, SHAPES[m.shape].h];
+    }
+
+    function paint(bubble, content, final) {
+      const vis = visible(content);
+      if (!vis && !final) {
+        bubble.innerHTML = `<span class="thinking"><span class="spin" aria-hidden="true"></span><span class="t">${thinkingNow(content) ? "Thinking…" : "Writing…"}</span></span>`;
+        return;
+      }
+      bubble.innerHTML = md(vis);
+      bubble.hidden = !vis;
+    }
+
+    function msgEl(m) {
+      const row = document.createElement("div"); row.className = "msg-row " + (m.role === "user" ? "user" : "ai");
+      if (m.role === "user") {
+        const b = document.createElement("div"); b.className = "bubble"; b.textContent = m.content; row.append(b);
+        return row;
+      }
+      const who = document.createElement("span"); who.className = "who"; who.textContent = "Daydream";
+      const b = document.createElement("div"); b.className = "bubble";
+      row.append(who, b);
+      paint(b, m.content, true);
+      const media = document.createElement("div"); media.className = "chat-media"; row.append(media);
+      for (const md_ of m.media || []) {
+        const [w, h] = cardSize(md_);
+        const card = makeCard(w, h); media.append(card.el);
+        const item = md_.galleryId && saved.find((x) => x.id === md_.galleryId);
+        if (md_.status === "done" && item) card.done(item);
+        else if (md_.status === "done") card.fail("This was deleted from your gallery.");
+        else card.fail(md_.error || "This wasn't finished. Ask again to retry.");
+      }
+      if (m.error) { const n = document.createElement("div"); n.className = "note-card"; n.textContent = m.error; row.append(n); }
+      return row;
+    }
+
+    function renderMessages() {
+      box.innerHTML = "";
+      if (!cur || !cur.messages.length) { box.append(welcome()); return; }
+      for (const m of cur.messages) box.append(msgEl(m));
+      scrollDown();
+    }
+
+    function openConvo(id) { cur = convos.find((c) => c.id === id) || null; renderMessages(); renderList(); input.focus(); }
+
+    function buildHistory() {
+      const budget = ai.budget();
+      const msgs = cur.messages.filter((m) => m.content && m.content.trim()).map((m) => ({
+        role: m.role,
+        content: m.role === "assistant" ? m.content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim() : m.content,
+      }));
+      const out = []; let used = 0;
+      for (let i = msgs.length - 1; i >= 0; i--) {
+        used += msgs[i].content.length;
+        if (used > budget && out.length) break;
+        out.unshift(msgs[i]);
+      }
+      while (out.length && out[0].role !== "user") out.shift();
+      const extra = persona.value.trim();
+      return [{ role: "system", content: SYSTEM + (extra ? `\n\nThe user's custom instructions:\n${extra}` : "") }, ...out];
+    }
+
+    function lastImageBlob() {
+      for (let i = cur.messages.length - 1; i >= 0; i--) {
+        for (const m of [...(cur.messages[i].media || [])].reverse()) {
+          if (m.kind === "image" && m.status === "done") { const it = saved.find((x) => x.id === m.galleryId); if (it) return it.blob; }
+        }
+      }
+      return null;
+    }
+
+    async function runMedia(reply, row, signal) {
+      const holder = row.querySelector(".chat-media");
+      holder.innerHTML = "";
+      const cards = reply.media.map((m) => { const [w, h] = cardSize(m); const c = makeCard(w, h); holder.append(c.el); c.status(m.kind === "video" ? "Waiting to make the video…" : "Waiting…"); return c; });
+      scrollDown();
+      for (let i = 0; i < reply.media.length; i++) {
+        const m = reply.media[i], card = cards[i];
+        if (signal.aborted) { m.status = "error"; m.error = "Stopped."; card.fail("Stopped."); continue; }
+        const seed = m.kind === "video" ? Math.floor(Math.random() * 2 ** 48) : randSeed();
+        try {
+          let item;
+          if (m.kind === "image") {
+            card.status("Developing your image…");
+            const blob = await ENGINES[st.engine]({ prompt: m.prompt, shape: m.shape, seed, signal, onWait: (l) => card.wait(l), onStatus: (t, f) => card.status(t, f) });
+            item = { id: newId(), kind: "image", prompt: m.prompt, engine: engineName(), shape: m.shape, seed, blob, ts: Date.now() };
+          } else {
+            const startImage = m.animate ? lastImageBlob() : null;
+            card.status("Connecting to ComfyUI…");
+            const { blob } = await genVideo({ prompt: m.prompt, shape: m.shape, seed, signal, onStatus: (t, f) => card.status(t, f), startImage, vq: st.vq, vlen: st.vlen });
+            item = { id: newId(), kind: "video", prompt: m.prompt, engine: `Wan 2.2 via ComfyUI · ${LENGTHS[st.vlen].label}`, shape: m.shape, seed, blob, ts: Date.now() };
+          }
+          await DB.put(item); saved.unshift(item); renderGallery();
+          card.done(item); m.status = "done"; m.galleryId = item.id;
+        } catch (e) {
+          const msg = signal.aborted ? "Stopped." : e && e.user ? e.message : `Something went wrong: ${e && e.message ? e.message : e}`;
+          if (!signal.aborted) console.error(e);
+          card.fail(msg); m.status = "error"; m.error = msg;
+        }
+        save(); scrollDown();
+      }
+    }
+
+    async function send(text) {
+      text = String(text || "").trim();
+      if (busy || !text) return;
+      if (!cur) { cur = { id: "c" + Date.now().toString(36), title: text.slice(0, 60), ts: Date.now(), messages: [] }; convos.unshift(cur); }
+      cur.messages.push({ role: "user", content: text });
+      const reply = { role: "assistant", content: "" };
+      cur.messages.push(reply);
+      cur.ts = Date.now();
+      convos.sort((a, b) => b.ts - a.ts);
+      input.value = ""; autosize();
+      renderMessages(); renderList();
+      const row = box.lastElementChild, bubble = row.querySelector(".bubble");
+      bubble.hidden = false;
+      bubble.innerHTML = `<span class="thinking"><span class="spin" aria-hidden="true"></span><span class="t">${ai.isReady() ? "Thinking…" : "Starting the AI…"}</span></span>`;
+      setBusy(true);
+      ctl = new AbortController();
+      const signal = ctl.signal;
+      try {
+        await ai.ensure((txt) => { const t = bubble.querySelector(".thinking .t"); if (t) t.textContent = txt; });
+        let queued = false;
+        await ai.stream(buildHistory(), signal, (full) => {
+          reply.content = full;
+          if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; paint(bubble, reply.content, false); scrollDown(); }); }
+        });
+      } catch (e) {
+        if (!signal.aborted) { console.error(e); reply.error = e && e.user ? e.message : "The AI stopped with an error: " + (e && e.message ? e.message : e); }
+      }
+      if (!reply.content.trim() && !reply.error) reply.error = signal.aborted ? "Stopped." : "The AI didn't reply. Try again.";
+      const tags = signal.aborted ? [] : parseTags(reply.content);
+      if (tags.length) reply.media = tags.map((t) => ({ ...t, status: "pending" }));
+      const fresh = msgEl(reply); row.replaceWith(fresh); scrollDown();
+      save(); renderList(); updateBadge();
+      if (tags.length) await runMedia(reply, fresh, signal);
+      await save();
+      setBusy(false); ctl = null;
+      input.focus();
+    }
+
+    function autosize() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 200) + "px"; }
+    input.addEventListener("input", autosize);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(input.value); } });
+    $("#chatForm").addEventListener("submit", (e) => { e.preventDefault(); send(input.value); });
+    $("#chatStop").addEventListener("click", () => ctl && ctl.abort());
+    $("#newChat").addEventListener("click", () => { if (busy) return; cur = null; renderMessages(); renderList(); input.focus(); });
+
+    async function show() {
+      if (!loaded) {
+        loaded = true;
+        await galleryReady;
+        convos = await ChatDB.all();
+        cur = null;
+        renderList(); renderMessages();
+      }
+      ai.refresh();
+      setTimeout(() => input.focus(), 0);
+    }
+    return { show, send };
+  })();
+
+  // ---------- installable app (PWA) ----------
+  (() => {
+    let deferred = null;
+    const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+    window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; if (!standalone) $("#installBtn").hidden = false; });
+    $("#installBtn").addEventListener("click", async () => {
+      if (!deferred) return;
+      deferred.prompt();
+      try { await deferred.userChoice; } catch {}
+      deferred = null; $("#installBtn").hidden = true;
+    });
+    window.addEventListener("appinstalled", () => { $("#installBtn").hidden = true; });
+    if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
+  })();
+
   // ---------- boot ----------
   updateEngineUI();
-  setMode("image");
   showEmpty();
-  loadGallery();
+  galleryReady = loadGallery();
+  setMode(["chat", "image", "video", "ideas"].includes(ls.get("dd.mode", "chat")) ? ls.get("dd.mode", "chat") : "chat");
   if (st.engine === "local") local.refreshStatus();
 })();
 </script>
