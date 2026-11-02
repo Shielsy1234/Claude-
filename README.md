@@ -17,6 +17,10 @@ The **PC / Phone** switch at the top picks which version you see. It's chosen au
 
 Each mode remembers its own engine, video model and chat choices, so switching back to PC restores your PC setup.
 
+## One-click start on the PC
+
+`tools/Start-Daydream.cmd` (also under **Help → One-click start**) starts Ollama and ComfyUI with the right settings, waits until both answer, and opens Daydream in its own window. The first run adds a **Daydream** shortcut to the desktop and Start menu. Press **S** in its window to shut both down and free the graphics card.
+
 ## Install it as a PC app
 
 Open the site in **Edge or Chrome** and press **Install app** in the header (or use the browser menu: *Apps → Install Daydream Studio*). It then has its own window, a Start menu and desktop shortcut, and opens without the browser around it. After the first run, the app and its downloaded AI models work **offline**.

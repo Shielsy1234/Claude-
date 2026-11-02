@@ -457,6 +457,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
       <button type="button" class="sb-item" id="chatSettingsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>AI &amp; memory</button>
       <button type="button" class="sb-item" id="helpBtn" data-help="" title="Help and setup guides"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01"/></svg>Help</button>
       <button type="button" class="sb-item" id="themeBtn" title="Switch between light and dark mode"></button>
+      <button type="button" class="sb-item pc-only" data-help="help-launcher" title="Start Ollama, ComfyUI and Daydream with one click"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l14 9-14 9V3Z"/></svg>One-click PC start</button>
       <button type="button" class="sb-item" id="installBtn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16"/></svg>Install app</button>
       <div class="sb-device">
       <div class="seg" id="deviceSeg" role="group" aria-label="Show options for">
@@ -862,6 +863,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
   <div class="dlg">
     <div class="help-head"><h2 id="helpTitle">Help</h2><button type="button" class="btn small" id="helpClose">Close</button></div>
     <nav class="help-nav" aria-label="Help topics">
+      <button type="button" data-help="help-launcher">One-click start</button>
       <button type="button" data-help="help-comfy">Set up ComfyUI</button>
       <button type="button" data-help="help-video-models">Video models</button>
       <button type="button" data-help="help-free-video">Free online / Phone</button>
@@ -875,6 +877,16 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
       <button type="button" data-help="help-chat">Memory &amp; characters</button>
     </nav>
     <div class="help-body" id="helpBody">
+      <section class="help-sec" id="help-launcher">
+        <h3>One-click start on your PC</h3>
+        <p>The Daydream launcher starts Ollama and ComfyUI with the right settings, waits until they're ready, and opens Daydream in its own window. When you're done, press <b>S</b> in its window to shut both down and free your graphics card.</p>
+        <ol class="steps">
+          <li><a href="tools/Start-Daydream.cmd" download="Start-Daydream.cmd">Download the launcher</a> (Windows). If Edge says it isn't commonly downloaded, open the downloads list, then <b>…</b> → <b>Keep</b>.</li>
+          <li>Double-click <b>Start-Daydream</b>. The first time, Windows may show "Windows protected your PC": press <b>More info</b> → <b>Run anyway</b>.</li>
+          <li>It adds a <b>Daydream</b> shortcut to your desktop and Start menu. Use that from then on; you can delete the downloaded file.</li>
+        </ol>
+        <p class="hint">It expects ComfyUI Desktop on port 8000 (it also tries 8188) and Ollama in its usual place. It's a plain text file: right-click → Edit to see exactly what it does or change the settings at the top.</p>
+      </section>
       <section class="help-sec" id="help-comfy">
         <h3>Set up ComfyUI</h3>
         <p>Videos (and the fastest images) are made by ComfyUI running on your PC. This app sends it your prompt and shows the result.</p>
