@@ -4,6 +4,15 @@ Your private AI on your own PC: chat with a local AI model, and create realistic
 
 The app is `index.html` plus `manifest.webmanifest`, `sw.js` and `icons/`. Host it with GitHub Pages (recommended) or any static web server. It must be opened from a web address (`https://…` or `http://localhost`), not by double-clicking the file.
 
+## PC or Phone
+
+The **PC / Phone** switch at the top picks which version you see. It's chosen automatically the first time (phones get Phone) and you can change it any time.
+
+- **PC**: everything, including what runs on your own graphics card (This PC images, ComfyUI video, built-in and Ollama chat).
+- **Phone**: only what works without your PC: Free online HD images, free online video (LTX Video, Wan 2.2 14B Fast) and Free online chat.
+
+Each mode remembers its own engine, video model and chat choices, so switching back to PC restores your PC setup.
+
 ## Install it as a PC app
 
 Open the site in **Edge or Chrome** and press **Install app** in the header (or use the browser menu: *Apps → Install Daydream Studio*). It then has its own window, a Start menu and desktop shortcut, and opens without the browser around it. After the first run, the app and its downloaded AI models work **offline**.
@@ -14,6 +23,7 @@ The **Chat** tab talks to an AI running on your PC. Ask it to make a picture or 
 
 | Source | Notes |
 | --- | --- |
+| **Free online** | Works anywhere, including phones, with nothing to install. Uses the free [Pollinations](https://pollinations.ai) text service (an open model). Not private: messages go to that service. |
 | **Built in** (default) | Runs in the app on your GPU with [WebLLM](https://github.com/mlc-ai/web-llm). Models: Qwen 3.5 9B (6.4 GB), Qwen 3.5 4B (3.9 GB), Hermes 3 8B (4.9 GB), Llama 3.1 8B (5 GB). One-time download. |
 | **Ollama** | Uses any model installed with [Ollama](https://ollama.com). Run `ollama pull <model>`, then `setx OLLAMA_ORIGINS "*"` and restart Ollama so the app can connect. |
 
@@ -33,7 +43,8 @@ When a local AI is loaded, **Ideas** and **Improve prompt** use it too instead o
 | --- | --- | --- | --- |
 | **This PC** | Your graphics card, in the browser (WebGPU) | Free, unlimited | Z-Image Turbo, highly realistic. One-time 5.6 GB download, stored by the browser. Private: prompts and images never leave your PC. No safety checker. Chrome or Edge only. |
 | **ComfyUI on this PC** | Your graphics card, in ComfyUI | Free, unlimited | The same Z-Image Turbo model running natively in ComfyUI: faster, and works in any browser including Firefox. Needs the 3 Z-Image files ([diffusion model](https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors), [text encoder](https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors), [VAE](https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors)) and the CORS setting described under Video. |
-| Free online | Pollinations | Free | Basic quality, 768 px, watermark, one image every 45 seconds |
+| **Free online HD** (default) | Hugging Face's free shared GPUs | Free daily allowance | The same realistic Z-Image Turbo model as This PC, at 1024 px (1280×720 wide), via the public [mrfakename/Z-Image-Turbo](https://huggingface.co/spaces/mrfakename/Z-Image-Turbo) demo, with the official [Tongyi-MAI/Z-Image-Turbo](https://huggingface.co/spaces/Tongyi-MAI/Z-Image-Turbo) demo as a backup. Works on phones. A free [Hugging Face token](https://huggingface.co/settings/tokens) gives more daily time; when the time runs out the app switches to Free online basic until it refills. |
+| Free online basic | Pollinations | Free | Basic quality, 768 px, watermark, one image every 45 seconds |
 | Pollinations account | Pollinations | Free daily allowance | Key from [enter.pollinations.ai](https://enter.pollinations.ai) |
 | OpenAI | OpenAI | Paid per image | Key from [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
 
@@ -81,7 +92,7 @@ Under **Video model → Free online** there are two models that run on Hugging F
 - **LTX Video** ([Lightricks/ltx-video-distilled](https://huggingface.co/spaces/Lightricks/ltx-video-distilled)): text-to-video or image-to-video, fast, short clips.
 - **Wan 2.2 14B Fast** ([zerogpu-aoti/wan2-2-fp8da-aoti-faster](https://huggingface.co/spaces/zerogpu-aoti/wan2-2-fp8da-aoti-faster)): animates a picture; with only a description, the app makes a picture first with your Image engine.
 
-There's a free daily GPU allowance: small without an account, more with a free [Hugging Face token](https://huggingface.co/settings/tokens) (Read access) pasted under **Video engine**. These are public demos, so they can be busy or change.
+No free video service is truly unlimited: free online video always runs on someone's shared GPUs with a daily allowance. The only unlimited option is your own PC (ComfyUI). There's a free daily GPU allowance (shared with Free online HD images, which use very little): small without an account, more with a free [Hugging Face token](https://huggingface.co/settings/tokens) (Read access) pasted under **Video engine**. These are public demos, so they can be busy or change.
 
 ### Use from your phone
 

@@ -331,6 +331,13 @@ dialog.sheet-dialog::backdrop { background: rgba(8,10,16,.6); }
 .shots li.done .pv { color: var(--good); }
 .resume { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
 
+/* PC / Phone switch */
+.seg { display: inline-grid; grid-auto-flow: column; gap: 2px; padding: 3px; background: var(--sunken); border-radius: 10px; }
+.seg button { border: 0; background: transparent; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 13px; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.seg button svg { width: 15px; height: 15px; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+:root[data-device="phone"] .pc-only { display: none !important; }
+
 /* Help */
 .help-btn { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--muted); font: 700 11px/1 var(--f-body); cursor: pointer; display: inline-grid; place-items: center; padding: 0; margin-left: 6px; vertical-align: 1px; flex: none; text-transform: none; letter-spacing: 0; }
 .help-btn:hover, .help-btn:focus-visible { border-color: var(--accent); color: var(--accent); }
@@ -359,7 +366,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
   <header class="top">
     <div class="brand">
       <h1>Daydream <span>Studio</span></h1>
-      <p>Your private AI: chat, realistic images and video, all on your PC.</p>
+      <p id="tagline">Your private AI: chat, realistic images and video, all on your PC.</p>
     </div>
     <nav class="nav" aria-label="Sections">
       <button type="button" id="modeChat" aria-pressed="false">
@@ -376,6 +383,12 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
       </button>
     </nav>
     <div class="top-right">
+      <div class="seg" id="deviceSeg" role="group" aria-label="Show options for">
+        <button type="button" data-device="pc" aria-pressed="true" title="Full version: everything, including what runs on your PC">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>PC</button>
+        <button type="button" data-device="phone" aria-pressed="false" title="Only what works on a phone, without your PC">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Phone</button>
+      </div>
       <button type="button" class="btn small" id="helpBtn" data-help="" title="Help and setup guides">Help</button>
       <button type="button" class="btn small" id="themeBtn" title="Switch between light and dark mode"></button>
       <button type="button" class="btn small accent" id="installBtn" hidden>
@@ -414,10 +427,13 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
         <summary>AI model <span class="sum" id="aiSummary"></span></summary>
         <div class="inner">
           <div class="engines" role="radiogroup" aria-label="AI model source">
-            <label class="engine"><input type="radio" name="aiKind" value="builtin" id="aiKind-builtin">
+            <label class="engine"><input type="radio" name="aiKind" value="online" id="aiKind-online">
+              <b>Free online</b>
+              <small>Works anywhere, no setup (replies may be filtered)</small></label>
+            <label class="engine pc-only"><input type="radio" name="aiKind" value="builtin" id="aiKind-builtin">
               <b>Built in <span class="tag best">No install</span></b>
               <small>Runs in this app on your GPU</small></label>
-            <label class="engine"><input type="radio" name="aiKind" value="ollama" id="aiKind-ollama">
+            <label class="engine pc-only"><input type="radio" name="aiKind" value="ollama" id="aiKind-ollama">
               <b>Ollama</b>
               <small>Any model from the Ollama app</small></label>
           </div>
@@ -448,7 +464,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
             <div class="status-line" id="olStatus" data-s="idle"><i></i><span id="olStatusText">Not checked yet.</span></div>
             <div class="links-row"><button type="button" class="link-btn" data-help="help-ollama">How to set up Ollama</button></div>
           </div>
-          <label class="toggle"><input type="checkbox" id="freeVram" checked>
+          <label class="toggle pc-only"><input type="checkbox" id="freeVram" checked>
             <span>Free graphics memory for videos</span>
           </label>
           <label class="field" for="aiPersona"><span class="label">Custom instructions (optional)</span>
@@ -476,7 +492,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
         <button type="button" class="btn" id="chatStop" hidden aria-label="Stop">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
       </form>
-      <p class="chat-foot" id="chatFoot">Runs on your PC. Pictures use your Image engine setting; videos use ComfyUI.</p>
+      <p class="chat-foot" id="chatFoot">Pictures use your Image engine setting; videos use your Video model setting.</p>
     </div>
   </section>
 
@@ -579,14 +595,17 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
         <summary>Image engine <span class="sum" id="engineSummary"></span></summary>
         <div class="inner">
           <div class="engines" role="radiogroup" aria-label="Image engine">
-            <label class="engine"><input type="radio" name="engine" value="local" id="engine-local">
+            <label class="engine pc-only"><input type="radio" name="engine" value="local" id="engine-local">
               <b>This PC <span class="tag best">Private · unlimited</span></b>
               <small>Your GPU, inside the app (Chrome/Edge)</small></label>
-            <label class="engine"><input type="radio" name="engine" value="comfy" id="engine-comfy">
+            <label class="engine pc-only"><input type="radio" name="engine" value="comfy" id="engine-comfy">
               <b>ComfyUI on this PC <span class="tag">Any browser</span></b>
               <small>Your GPU, via ComfyUI. Fastest</small></label>
+            <label class="engine"><input type="radio" name="engine" value="hf" id="engine-hf">
+              <b>Free online HD <span class="tag best">Realistic</span></b>
+              <small>Z-Image Turbo on Hugging Face's free GPUs</small></label>
             <label class="engine"><input type="radio" name="engine" value="free" id="engine-free">
-              <b>Free online, no sign-up</b>
+              <b>Free online basic</b>
               <small>No setup. Basic, one image every 45 s</small></label>
             <label class="engine"><input type="radio" name="engine" value="pollinations" id="engine-pollinations">
               <b>Pollinations account</b>
@@ -625,6 +644,13 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
               <option value="standard" selected>Standard: 1024 px, 8 steps</option>
               <option value="large">Large: about 1300 px, 9 steps (slower)</option>
             </select>
+          </div>
+
+          <div class="keybox" id="hfImgBox" hidden>
+            <label class="label" for="hfTokenImg">Hugging Face token (free, optional)</label>
+            <div class="keyrow"><input class="input" id="hfTokenImg" type="password" autocomplete="off" placeholder="hf_…"></div>
+            <p class="hint">Without a token you get a small free allowance per day; a free token gives you much more.</p>
+            <div class="links-row"><button type="button" class="link-btn" data-help="help-free-video">How free online works</button></div>
           </div>
 
           <div class="keybox" id="polBox" hidden>
@@ -740,7 +766,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     <nav class="help-nav" aria-label="Help topics">
       <button type="button" data-help="help-comfy">Set up ComfyUI</button>
       <button type="button" data-help="help-video-models">Video models</button>
-      <button type="button" data-help="help-free-video">Free online video</button>
+      <button type="button" data-help="help-free-video">Free online / Phone</button>
       <button type="button" data-help="help-speed">Faster videos</button>
       <button type="button" data-help="help-long">Long videos</button>
       <button type="button" data-help="help-image-comfy">ComfyUI images</button>
@@ -769,14 +795,14 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
         <p class="hint">Keep file names exactly as they are. If a file shows as missing or broken, check it finished downloading (no <code>.part</code> or <code>.crdownload</code> left) and that it wasn't renamed with a <code>(1)</code>.</p>
       </section>
       <section class="help-sec" id="help-free-video">
-        <h3>Free online video</h3>
-        <p>Pick a <b>Free online</b> model under Video model to make videos without your PC, for example on your phone. They run on Hugging Face's free shared GPUs.</p>
+        <h3>Free online (no PC needed)</h3>
+        <p>The <b>Phone</b> switch at the top shows only these. They run on free shared online services, so they work anywhere: <b>Free online HD</b> images (Z-Image Turbo, very realistic), the two <b>Free online</b> video models, and <b>Free online</b> chat.</p>
         <ul class="checklist">
           <li><b>LTX Video</b>: text-to-video or image-to-video. Fast; short clips (2 to 5 seconds).</li>
           <li><b>Wan 2.2 14B Fast</b>: higher quality. It animates a picture: your start image, or one the app makes first from your description (using your Image engine).</li>
-          <li><b>Free daily allowance</b>: without an account you get very little GPU time. With a free Hugging Face account and token you get noticeably more; it refills over the day. When it runs out you'll see a message; try again later.</li>
+          <li><b>Free daily allowance</b> (images and video share it; images use very little): without an account you get very little GPU time. With a free Hugging Face account and token you get noticeably more; it refills over the day. When it runs out you'll see a message; try again later.</li>
           <li><b>Get a token</b>: sign up at <a href="https://huggingface.co/join" target="_blank" rel="noopener">huggingface.co/join</a>, then go to <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">Settings → Access Tokens</a>, create a token with <b>Read</b> access, and paste it under Video engine. It's stored only in this browser.</li>
-          <li>These are public demos run by their creators, so they can be busy, change or go offline. For unlimited, private videos use ComfyUI on your PC.</li>
+          <li>These are public demos run by their creators, so they can be busy, change or go offline. For unlimited, private use, switch to <b>PC</b> and use your own GPU.</li>
         </ul>
       </section>
       <section class="help-sec" id="help-speed">
@@ -990,7 +1016,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     look: ls.get("dd.look", "photo"),
     shape: ls.get("dd.shape", "square"),
     count: String(ls.get("dd.count", "1")),
-    engine: ls.get("dd.engine", "free"),
+    engine: ls.get("dd.engine", "hf"),
     vlen: String(ls.get("dd.vlen", "3")),
     vq: ls.get("dd.vq", "quick"),
     vmode: ls.get("dd.vmode", "single"),
@@ -1012,9 +1038,10 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
   if (!VSPEEDS[st.vspeed]) st.vspeed = "fast";
   if (!VTOTALS[st.vtotal]) st.vtotal = "60";
   if (!VMETHODS[st.vmethod]) st.vmethod = "storyboard";
-  if (!["local", "comfy", "free", "pollinations", "openai"].includes(st.engine)) st.engine = "free";
+  if (!["local", "comfy", "hf", "free", "pollinations", "openai"].includes(st.engine)) st.engine = "hf";
   // Chat modules are created further down; declared here so earlier code can check them safely.
   let ai = null, chat = null, galleryReady = Promise.resolve();
+  let rebuildVideoOptions = () => {}, setVideoModel = () => {}, onEngineChosen = null;
 
   // ---------- controls ----------
   function radios(box, name, opts, cur, onChange) {
@@ -1177,6 +1204,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
   function engineName() {
     if (st.engine === "local") return "This PC · Z-Image Turbo";
     if (st.engine === "comfy") return "ComfyUI · Z-Image Turbo";
+    if (st.engine === "hf") return "Free online HD · Z-Image Turbo";
     if (st.engine === "pollinations") return "Pollinations · " + (polModel.selectedOptions[0] ? polModel.selectedOptions[0].textContent.split(" · ")[0] : polModel.value);
     if (st.engine === "openai") return "OpenAI · " + oaModel.value;
     return "Free online engine";
@@ -1191,11 +1219,13 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
   function updateEngineUI() {
     $("#localBox").hidden = st.engine !== "local";
     $("#comfyImgBox").hidden = st.engine !== "comfy";
+    $("#hfImgBox").hidden = st.engine !== "hf";
     $("#zQualityField").hidden = !(st.engine === "local" || st.engine === "comfy");
     $("#polBox").hidden = st.engine !== "pollinations";
     $("#oaBox").hidden = st.engine !== "openai";
     $("#engineSummary").textContent = engineName();
     $("#countNote").hidden = st.engine !== "free";
+    if (typeof onEngineChosen === "function") onEngineChosen(st.engine);
     document.querySelectorAll('input[name="count"]').forEach((r) => { r.disabled = st.engine === "free" && r.value !== "1"; });
     updateBadge();
   }
@@ -1667,7 +1697,18 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     return local.generate({ prompt, width, height, steps: q.steps, seed, signal, onStatus });
   }
 
-  const ENGINES = { free: genFree, pollinations: genPollinations, openai: genOpenAI, local: genLocal, comfy: (o) => genComfyImage(o) };
+  const ENGINES = { free: genFree, pollinations: genPollinations, openai: genOpenAI, local: genLocal, comfy: (o) => genComfyImage(o), hf: genHFOrFree };
+  // When the free Hugging Face time runs out, keep going with the basic free engine.
+  let hfFellBack = false;
+  async function genHFOrFree(o) {
+    try { return await genHFImage(o); }
+    catch (e) {
+      if ((o.signal && o.signal.aborted) || !/free Hugging Face GPU time/.test(e.message || "")) throw e;
+      if (!hfFellBack) { hfFellBack = true; showMsg("Free HD time is used up for now, so pictures are using Free online basic until it refills. A free Hugging Face token (Image engine settings) gives more HD time."); }
+      o.onStatus && o.onStatus("HD time used up; using Free online basic…");
+      return await genFree(o);
+    }
+  }
 
   // =====================================================================
   //  Video: ComfyUI on this PC (Wan 2.2 TI2V 5B)
@@ -1850,12 +1891,19 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
   // ----- video model picker -----
   (() => {
     const sel = $("#vmodelSel");
-    for (const [label, online] of [["On your PC (ComfyUI)", false], ["Free online (no PC needed)", true]]) {
-      const g = document.createElement("optgroup"); g.label = label;
-      for (const [id, m] of Object.entries(VIDEO_MODELS)) if (!!m.online === online) { const o = document.createElement("option"); o.value = id; o.textContent = m.label; g.append(o); }
-      sel.append(g);
-    }
-    sel.value = st.vmodel;
+    rebuildVideoOptions = () => {
+      sel.innerHTML = "";
+      const phone = document.documentElement.dataset.device === "phone";
+      for (const [label, online] of [["On your PC (ComfyUI)", false], ["Free online (no PC needed)", true]]) {
+        if (phone && !online) continue;
+        const g = document.createElement("optgroup"); g.label = label;
+        for (const [id, m] of Object.entries(VIDEO_MODELS)) if (!!m.online === online) { const o = document.createElement("option"); o.value = id; o.textContent = m.label; g.append(o); }
+        sel.append(g);
+      }
+      sel.value = st.vmodel;
+    };
+    rebuildVideoOptions();
+    setVideoModel = (id) => { if (sel.value !== id || st.vmodel !== id) { sel.value = id; sel.dispatchEvent(new Event("change")); } };
     const hint = () => {
       $("#vmodelHint").textContent = st.vmodel === "14b" ? "Best quality. About 62 GB of model files."
         : st.vmodel === "ltx" ? "Free, no PC needed. Text or picture to video."
@@ -1863,15 +1911,16 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
         : "Quicker to set up. About 18 GB of model files.";
     };
     sel.addEventListener("change", () => {
-      st.vmodel = sel.value; ls.set("dd.vmodel", st.vmodel);
+      st.vmodel = sel.value; ls.set("dd.vmodel", st.vmodel); ls.set("dd.vmodel." + (document.documentElement.dataset.device || "pc"), st.vmodel);
       comfyState.checked = false; comfyState.ok = false;
       hint(); renderVideoDownloads(); updateVideoFields(); updateBadge();
       if (!isOnlineVideo(st.vmodel)) comfyCheck(true);
     });
     hint(); renderVideoDownloads();
-    const hf = $("#hfToken");
-    hf.value = ls.get("dd.hfToken", "");
-    hf.addEventListener("input", () => ls.set("dd.hfToken", hf.value.trim()));
+    const hf = $("#hfToken"), hf2 = $("#hfTokenImg");
+    hf.value = hf2.value = ls.get("dd.hfToken", "");
+    hf.addEventListener("input", () => { ls.set("dd.hfToken", hf.value.trim()); hf2.value = hf.value; });
+    hf2.addEventListener("input", () => { ls.set("dd.hfToken", hf2.value.trim()); hf.value = hf2.value; });
     $("#hfTokenShow").addEventListener("click", (e) => { const show = hf.type === "password"; hf.type = show ? "text" : "password"; e.currentTarget.textContent = show ? "Hide" : "Show"; });
   })();
 
@@ -2108,7 +2157,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     let msg = "";
     try { const j = typeof raw === "string" ? JSON.parse(raw) : raw; msg = (j && (j.error || j.message || j.title)) || ""; } catch { msg = raw || ""; }
     msg = String(msg || "");
-    if (/quota|runs limit|exceeded/i.test(msg)) return new GenError("You've used up the free Hugging Face GPU time for now. Add a free Hugging Face token under Video engine for more, or try again later (it refills over the day).");
+    if (/quota|runs limit|exceeded/i.test(msg)) return new GenError("You've used up the free Hugging Face GPU time for now. Add a free Hugging Face token (in Video engine or Image engine settings) for more, or try again later (it refills over the day).");
     if (status === 401 || status === 403 || /token|unauthori/i.test(msg)) return new GenError("Hugging Face didn't accept your token. Check it under Video engine, or clear it to use the anonymous free allowance.");
     if (status === 404) return new GenError("This free online model isn't available right now (it may have moved or be offline). Try the other free model.");
     return new GenError(msg ? "The free online service had a problem: " + msg.slice(0, 200) : "The free online service is busy or had a problem. Try again in a minute.");
@@ -2196,6 +2245,34 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     if (!/^video\//.test(blob.type)) blob = new Blob([blob], { type: "video/mp4" });
     const lastFrame = wantLastFrame ? await lastFrameOf(blob) : null;
     return { blob, width, height, lastFrame };
+  }
+
+  // Free online HD images: Z-Image Turbo on Hugging Face (with the official demo as a backup).
+  const HF_IMG_SIZES = { square: [1024, 1024], wide: [1280, 720], tall: [720, 1280] };
+  const HF_IMG = { main: "https://mrfakename-z-image-turbo.hf.space", backup: "https://tongyi-mai-z-image-turbo.hf.space" };
+  const HF_IMG_RES = { square: "1024x1024 ( 1:1 )", wide: "1280x720 ( 16:9 )", tall: "720x1280 ( 9:16 )" };
+  async function genHFImage({ prompt, shape, seed, signal, onStatus }) {
+    const [w, h] = HF_IMG_SIZES[shape], s32 = seed % 2147483647, status = onStatus || (() => {});
+    const fetchImage = async (url) => {
+      status("Downloading the picture…", 1);
+      const r = await fetch(url, { signal });
+      if (!r.ok) throw new GenError(`Couldn't download the picture (error ${r.status}). Try again.`);
+      const b = await r.blob();
+      return /^image\//.test(b.type) ? b : new Blob([b], { type: "image/webp" });
+    };
+    try {
+      const out = await hfCall(HF_IMG.main, "generate_image", [prompt, h, w, 9, s32, false], signal, (t) => status(t.replace("video", "picture")));
+      const f = out && out[0], url = f && (f.url || (f.image && f.image.url));
+      if (!url) throw new GenError("No picture came back.");
+      return await fetchImage(url);
+    } catch (e) {
+      if ((signal && signal.aborted) || /free Hugging Face GPU time|token/.test(e.message || "")) throw e;
+      status("Trying the backup free server…");
+      const out = await hfCall(HF_IMG.backup, "generate", [prompt, HF_IMG_RES[shape], s32, 8, 3, false, []], signal, (t) => status(t.replace("video", "picture")));
+      const g = out && out[0] && out[0][0], url = g && ((g.image && g.image.url) || g.url);
+      if (!url) throw new GenError("The free image service didn't return a picture. Try again in a minute, or use Free online basic.");
+      return await fetchImage(url);
+    }
   }
 
   // Running video jobs, so the chat can wait for the GPU instead of fighting ComfyUI for it.
@@ -2527,6 +2604,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     st.busy = true; updateGo(); hideMsg();
     let w = SHAPES[shape].w, h = SHAPES[shape].h;
     if (engine === "local" || engine === "comfy") [w, h] = (LOCAL_Q[localQuality.value] || LOCAL_Q.standard).sizes[shape];
+    if (engine === "hf") [w, h] = HF_IMG_SIZES[shape];
     $("#batchTitle").textContent = text;
     $("#batchMeta").textContent = `${label} · ${SHAPES[shape].label}`;
     $("#finalPrompt").hidden = false; $("#finalPrompt").textContent = "Prompt sent: " + full;
@@ -2551,7 +2629,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     };
     try {
       // The free engine and This PC (one GPU) run one at a time; the others run in parallel.
-      if (engine === "free" || engine === "local") { for (let i = 0; i < n; i++) { if (signal.aborted) { cards[i].fail("Stopped."); continue; } await runOne(i); } }
+      if (engine === "free" || engine === "local" || engine === "hf") { for (let i = 0; i < n; i++) { if (signal.aborted) { cards[i].fail("Stopped."); continue; } await runOne(i); } }
       else await Promise.all(cards.map((_, i) => runOne(i)));
       if (firstErr) showMsg(firstErr, true);
       else if (ok && engine === "free") showMsg("Want sharper, more lifelike results with no limits? Open Image engine below the form and choose This PC.");
@@ -2926,15 +3004,15 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
   ai = (() => {
     const WEBLLM_SRC = "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.86/+esm";
     const modelEl = $("#aiModel"), olUrl = $("#olUrl"), olModel = $("#olModel");
-    let kind = ls.get("dd.aiKind", "builtin"); if (!["builtin", "ollama"].includes(kind)) kind = "builtin";
+    let kind = ls.get("dd.aiKind", "builtin"); if (!["builtin", "ollama", "online"].includes(kind)) kind = "builtin";
     modelEl.value = ls.get("dd.aiModel", "Qwen3.5-9B-q4f16_1-MLC"); if (!modelEl.value) modelEl.value = "Qwen3.5-9B-q4f16_1-MLC";
     olUrl.value = ls.get("dd.olUrl", "http://127.0.0.1:11434");
     let webllm = null, engine = null, engineModel = null, loading = null, olOk = false;
 
     const modelName = () => (modelEl.selectedOptions[0] ? modelEl.selectedOptions[0].textContent.split(" · ")[0] : modelEl.value);
     const sizeOf = () => { const m = (modelEl.selectedOptions[0] || {}).textContent; const g = m && m.match(/([\d.]+ GB)/); return g ? g[1] : "a few GB"; };
-    const label = () => (kind === "ollama" ? "Ollama · " + (olModel.value || "no model") : modelName());
-    const isReady = () => (kind === "ollama" ? olOk && !!olModel.value : !!engine && engineModel === modelEl.value);
+    const label = () => (kind === "online" ? "Free online AI" : kind === "ollama" ? "Ollama · " + (olModel.value || "no model") : modelName());
+    const isReady = () => (kind === "online" ? true : kind === "ollama" ? olOk && !!olModel.value : !!engine && engineModel === modelEl.value);
 
     function status(s, t) { $("#aiStatus").dataset.s = s; $("#aiStatusText").textContent = t; }
     function olStatus(s, t) { $("#olStatus").dataset.s = s; $("#olStatusText").textContent = t; }
@@ -2953,6 +3031,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
 
     async function refresh() {
       $("#aiBuiltinBox").hidden = kind !== "builtin";
+      if (kind === "online") { $("#aiSummary").textContent = label(); $("#aiOllamaBox").hidden = true; updateBadge(); return; }
       $("#aiOllamaBox").hidden = kind !== "ollama";
       $("#aiSummary").textContent = label();
       updateBadge();
@@ -2971,6 +3050,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     }
 
     async function ensure(onProgress) {
+      if (kind === "online") return;
       if (kind === "ollama") {
         if (!olOk && !(await olCheck())) throw new GenError("Ollama isn't connected. Open AI model in the sidebar and follow the Ollama steps.");
         if (!olModel.value) throw new GenError("Pick an Ollama model under AI model in the sidebar.");
@@ -3021,6 +3101,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
       finally { streams--; if (!streams) idleWaiters.splice(0).forEach((f) => f()); }
     }
     async function streamInner(messages, signal, onDelta) {
+      if (kind === "online") return onlineStream(messages, signal, onDelta);
       if (kind === "ollama") return olStream(messages, signal, onDelta);
       await ensure();
       const extra = /^Qwen3/i.test(engineModel) ? { extra_body: { enable_thinking: false } } : {};
@@ -3040,6 +3121,34 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     async function complete(prompt, signal) {
       const out = await stream([{ role: "user", content: prompt }], signal, () => {});
       return out.replace(/<think>[\s\S]*?<\/think>/gi, "");
+    }
+
+    // ----- Free online (Pollinations' free OpenAI-compatible text service) -----
+    async function onlineStream(messages, signal, onDelta) {
+      let r;
+      try {
+        r = await fetch("https://text.pollinations.ai/openai", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "openai", messages, stream: true, private: true }), signal });
+      } catch (e) { if (signal && signal.aborted) throw e; throw new GenError("Couldn't reach the free online AI. Check your internet connection."); }
+      if (r.status === 429 || r.status === 402) throw new GenError("The free online AI is busy. Wait a few seconds and send again.");
+      if (!r.ok) { const d = await readError(r); throw new GenError(`The free online AI had a problem${d ? ": " + d : ` (error ${r.status})`}.`); }
+      const reader = r.body.getReader(), dec = new TextDecoder();
+      let buf = "", full = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let i;
+        while ((i = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+          if (!line.startsWith("data:")) continue;
+          const data = line.slice(5).trim();
+          if (data === "[DONE]") return full;
+          let j; try { j = JSON.parse(data); } catch { continue; }
+          const d = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content;
+          if (d) { full += d; onDelta(full); }
+        }
+      }
+      return full;
     }
 
     // ----- Ollama -----
@@ -3099,7 +3208,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     // ----- wiring -----
     document.querySelectorAll('input[name="aiKind"]').forEach((r) => {
       r.checked = r.value === kind;
-      r.addEventListener("change", () => { kind = r.value; ls.set("dd.aiKind", kind); refresh(); if (kind === "ollama" && !olOk) olCheck(); });
+      r.addEventListener("change", () => { kind = r.value; ls.set("dd.aiKind", kind); ls.set("dd.aiKind." + (document.documentElement.dataset.device || "pc"), kind); refresh(); if (kind === "ollama" && !olOk) olCheck(); });
     });
     modelEl.addEventListener("change", () => { ls.set("dd.aiModel", modelEl.value); refresh(); });
     olModel.addEventListener("change", () => { ls.set("dd.olModel", olModel.value); refresh(); });
@@ -3117,8 +3226,9 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     });
 
     return {
-      label, isReady, ensure, stream, complete, unload, refresh, kind: () => kind, budget: () => (kind === "ollama" ? 40000 : 16000),
+      label, isReady, ensure, stream, complete, unload, refresh, kind: () => kind, budget: () => (kind === "builtin" ? 16000 : 40000),
       streaming: () => streams > 0, whenIdle: () => new Promise((res) => { if (!streams) res(); else idleWaiters.push(res); }),
+      setKind: (k) => { const r = document.getElementById("aiKind-" + k); if (r && kind !== k) { r.checked = true; r.dispatchEvent(new Event("change")); } },
     };
   })();
 
@@ -3510,7 +3620,7 @@ Only do this for new facts. Never mention or explain this.`;
       const b = curBot();
       const w = document.createElement("div"); w.className = "welcome";
       if (b.id === "daydream" && !b.greeting) {
-        w.innerHTML = "<h2>What can I help with?</h2><p>Chat with an AI that runs on your own PC. Ask it for a picture or a short video and it will make one right here.</p>";
+        w.innerHTML = "<h2>What can I help with?</h2><p>Chat with an AI. Ask it for a picture or a short video and it will make one right here.</p>";
         const chips = document.createElement("div"); chips.className = "chips";
         for (const s of [
           "Make a photo of a cozy log cabin in the snow at night",
@@ -3540,6 +3650,7 @@ Only do this for new facts. Never mention or explain this.`;
     function cardSize(m) {
       if (m.kind === "video") return videoSize(st.vq, m.shape) || [832, 480];
       if (st.engine === "local" || st.engine === "comfy") return (LOCAL_Q[localQuality.value] || LOCAL_Q.standard).sizes[m.shape];
+      if (st.engine === "hf") return HF_IMG_SIZES[m.shape];
       return [SHAPES[m.shape].w, SHAPES[m.shape].h];
     }
 
@@ -3812,6 +3923,52 @@ Only do this for new facts. Never mention or explain this.`;
     if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
   })();
 
+  // ---------- PC / Phone mode ----------
+  const deviceMode = (() => {
+    const ALLOWED = {
+      phone: { engine: ["hf", "free", "pollinations", "openai"], vmodel: ["ltx", "wanhf"], ai: ["online"] },
+      pc: { engine: ["local", "comfy", "hf", "free", "pollinations", "openai"], vmodel: ["5b", "14b", "ltx", "wanhf"], ai: ["builtin", "ollama", "online"] },
+    };
+    const DEFAULTS = { phone: { engine: "hf", vmodel: "ltx", ai: "online" } };
+    const looksLikePhone = () => matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820;
+    let mode = ls.get("dd.device", null) || (looksLikePhone() ? "phone" : "pc");
+    function pickEngine() {
+      const want = ls.get("dd.engine." + mode, null);
+      const allowed = ALLOWED[mode].engine;
+      // First time in phone mode: use the HD free engine unless an account engine was chosen
+      const keep = mode === "pc" ? allowed.includes(st.engine) : ["pollinations", "openai"].includes(st.engine);
+      const next = allowed.includes(want) ? want : keep ? st.engine : DEFAULTS.phone.engine;
+      if (next !== st.engine) { const r = document.getElementById("engine-" + next); if (r) { r.checked = true; r.dispatchEvent(new Event("change")); } }
+    }
+    function pickVideo() {
+      const want = ls.get("dd.vmodel." + mode, null), allowed = ALLOWED[mode].vmodel;
+      const next = allowed.includes(want) ? want : allowed.includes(st.vmodel) ? st.vmodel : DEFAULTS.phone.vmodel;
+      rebuildVideoOptions();
+      if (next !== st.vmodel) setVideoModel(next);
+    }
+    function pickAI() {
+      if (!ai) return;
+      const want = ls.get("dd.aiKind." + mode, null), allowed = ALLOWED[mode].ai, cur = ai.kind();
+      const next = allowed.includes(want) ? want : allowed.includes(cur) ? cur : DEFAULTS.phone.ai;
+      if (next !== cur) ai.setKind(next);
+    }
+    function apply() {
+      document.documentElement.dataset.device = mode;
+      $("#tagline").textContent = mode === "phone" ? "Chat, realistic images and video, free online, no PC needed." : "Your private AI: chat, realistic images and video, all on your PC.";
+      document.querySelectorAll("#deviceSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.device === mode)));
+      pickEngine(); pickVideo(); pickAI();
+      updateVideoFields(); updateBadge();
+    }
+    onEngineChosen = (eng) => { if (ALLOWED[mode].engine.includes(eng)) ls.set("dd.engine." + mode, eng); };
+    document.querySelectorAll("#deviceSeg button").forEach((b) => b.addEventListener("click", () => {
+      if (mode === b.dataset.device) return;
+      ls.set("dd.engine." + mode, st.engine); ls.set("dd.vmodel." + mode, st.vmodel); if (ai) ls.set("dd.aiKind." + mode, ai.kind());
+      mode = b.dataset.device; ls.set("dd.device", mode); apply();
+      showMsg(mode === "phone" ? "Phone mode: showing only what works without your PC (free online images, video and chat)." : "PC mode: everything is shown, including what runs on your PC.");
+    }));
+    return { apply, mode: () => mode };
+  })();
+
   // ---------- help panel ----------
   (() => {
     const dlg = $("#helpDialog");
@@ -3864,6 +4021,7 @@ Only do this for new facts. Never mention or explain this.`;
   setMode(["chat", "image", "video", "ideas"].includes(ls.get("dd.mode", "chat")) ? ls.get("dd.mode", "chat") : "chat");
   if (st.engine === "local") local.refreshStatus();
   if (st.engine === "comfy") comfyImgCheck();
+  deviceMode.apply();
 })();
 </script>
 </body>
