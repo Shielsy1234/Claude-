@@ -522,6 +522,23 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
           </div>
         </div>
 
+        <div class="field" id="editField" hidden>
+          <span class="label">Edit a picture (optional) <button type="button" class="help-btn" data-help="help-edit" aria-label="Help: editing pictures" title="Help: editing pictures">?</button></span>
+          <div class="drop" id="editDrop">
+            <img id="editPreview" alt="Picture to edit" hidden>
+            <div class="txt" id="editText"><b>New picture</b>Made from your description. To change a picture instead, press Edit on any saved picture or choose one here.</div>
+            <div class="actions" style="flex-direction:column">
+              <label class="btn small" for="editFile">Choose…</label>
+              <button type="button" class="btn small ghost" id="editClear" hidden>Remove</button>
+            </div>
+            <input type="file" id="editFile" accept="image/*" hidden>
+          </div>
+          <div id="editStrengthRow" hidden style="margin-top:10px">
+            <span class="label" id="editStrengthLabel">How much to change</span>
+            <div class="chips" id="editStrengths" role="radiogroup" aria-labelledby="editStrengthLabel"></div>
+          </div>
+        </div>
+
         <div class="field" id="vmodeField" hidden>
           <span class="label" id="vmodeLabel">Video type <button type="button" class="help-btn" data-help="help-long" aria-label="Help: long videos" title="Help: long videos">?</button></span>
           <div class="chips" id="vmodes" role="radiogroup" aria-labelledby="vmodeLabel"></div>
@@ -753,6 +770,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
       <a class="btn" id="lbDownload" download>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Download</a>
       <button type="button" class="btn" id="lbFav">☆ Favourite</button>
+      <button type="button" class="btn" id="lbEdit">Edit</button>
       <button type="button" class="btn" id="lbAnimate">Animate</button>
       <button type="button" class="btn" id="lbReuse">Use prompt</button>
       <button type="button" class="btn" id="lbClose">Close</button>
@@ -769,6 +787,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
       <button type="button" data-help="help-free-video">Free online / Phone</button>
       <button type="button" data-help="help-speed">Faster videos</button>
       <button type="button" data-help="help-long">Long videos</button>
+      <button type="button" data-help="help-edit">Editing pictures</button>
       <button type="button" data-help="help-image-comfy">ComfyUI images</button>
       <button type="button" data-help="help-thispc">This PC images</button>
       <button type="button" data-help="help-ollama">Ollama chat</button>
@@ -822,6 +841,14 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
           <li><b>Storyboard</b>: the AI plans a shot list from your idea. With <b>Make a picture for each shot first</b>, each shot is drawn first and then animated, for sharper, more consistent results.</li>
           <li><b>Extend</b>: one continuous shot; each clip continues from the last frame of the one before. Details slowly drift over long lengths.</li>
           <li>Progress is saved after every clip. Press Stop any time, even close the app, and press <b>Resume</b> later in the Video tab. Long videos suit an overnight run.</li>
+        </ul>
+      </section>
+      <section class="help-sec" id="help-edit">
+        <h3>Editing pictures</h3>
+        <p>Press <b>Edit</b> on any picture (under a result, or in the viewer when you open a saved one), or choose a photo under <b>Edit a picture</b> in the Image tab. Each edit is saved as a new picture, so the original is kept, and you can keep editing the result.</p>
+        <ul class="checklist">
+          <li><b>Free online</b> (every engine except ComfyUI, and on your phone): uses <a href="https://huggingface.co/spaces/linoyts/Qwen-Image-Edit-2511-Fast" target="_blank" rel="noopener">Qwen Image Edit</a> on Hugging Face's free GPUs. Describe just the change: "make it night", "add a red scarf", "remove the people in the background", "sharper, more detailed skin". Uses the same free daily allowance as Free online HD.</li>
+          <li><b>ComfyUI on your PC</b> (when ComfyUI is your Image engine): redraws the picture with Z-Image, unlimited and private. Describe the whole picture as you want it, and pick how much to change: <b>Small tweak</b> keeps it very close, <b>Big change</b> allows more freedom.</li>
         </ul>
       </section>
       <section class="help-sec" id="help-image-comfy">
@@ -1131,7 +1158,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     $("#ideasView").hidden = m !== "ideas";
     $("#promptLabel").textContent = MODE_TEXT[m].label;
     promptEl.placeholder = MODE_TEXT[m].ph;
-    updateGo(); renderSuggest(); hideMsg(); updateBadge();
+    updateEditUI(); updateGo(); renderSuggest(); hideMsg(); updateBadge();
     if (isVid && !comfyState.checked && !isOnlineVideo(st.vmodel)) comfyCheck(true);
     if (isVid) longVideo.refreshResume();
   }
@@ -1143,7 +1170,8 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
   function updateGo() {
     if (!MODE_TEXT[st.mode]) return;
     const longVid = st.mode === "video" && st.vmode === "long";
-    $("#go").textContent = st.busy ? MODE_TEXT[st.mode].busy : longVid ? "Make long video" : MODE_TEXT[st.mode].go;
+    const editing = st.mode === "image" && !!st.editImage;
+    $("#go").textContent = st.busy ? (editing ? "Editing…" : MODE_TEXT[st.mode].busy) : longVid ? "Make long video" : editing ? "Edit image" : MODE_TEXT[st.mode].go;
     $("#go").disabled = st.busy;
     $("#enhance").disabled = st.busy;
     $("#stop").hidden = !st.busy;
@@ -1226,6 +1254,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     $("#engineSummary").textContent = engineName();
     $("#countNote").hidden = st.engine !== "free";
     if (typeof onEngineChosen === "function") onEngineChosen(st.engine);
+    if (typeof updateEditUI === "function" && st.mode) updateEditUI();
     document.querySelectorAll('input[name="count"]').forEach((r) => { r.disabled = st.engine === "free" && r.value !== "1"; });
     updateBadge();
   }
@@ -2154,6 +2183,45 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     })).blob;
   }
 
+  // ----- Editing: ComfyUI (Z-Image, picture-to-picture) -----
+  async function comfyUpload(blob, signal) {
+    const fd = new FormData();
+    fd.append("image", blob, "daydream-edit." + (/jpe?g/.test(blob.type) ? "jpg" : "png"));
+    fd.append("overwrite", "true");
+    const up = await comfyJson("/upload/image", { method: "POST", body: fd, signal });
+    return up.subfolder ? `${up.subfolder}/${up.name}` : up.name;
+  }
+  async function genComfyEdit({ prompt, image, width, height, denoise, seed, signal, onStatus }) {
+    if (!comfyImgState.ok && !(await comfyImgCheck())) throw new GenError("ComfyUI isn't ready for images yet. Open Image engine below the form, press Check, and follow How to set up.");
+    const q = LOCAL_Q[localQuality.value] || LOCAL_Q.standard;
+    const area = q.sizes.square[0] * q.sizes.square[1], k = Math.sqrt(area / (width * height));
+    const W = Math.max(256, Math.round((width * k) / 16) * 16), H = Math.max(256, Math.round((height * k) / 16) * 16);
+    (onStatus || (() => {}))("Sending your picture to ComfyUI…");
+    const name = await comfyUpload(await shrinkImage(image, 2048), signal);
+    const wf = zImageWorkflow({ prompt, width: W, height: H, steps: q.steps, seed });
+    delete wf["13"];
+    wf["40"] = { class_type: "LoadImage", inputs: { image: name } };
+    wf["41"] = { class_type: "ImageScale", inputs: { image: ["40", 0], upscale_method: "lanczos", width: W, height: H, crop: "center" } };
+    wf["42"] = { class_type: "VAEEncode", inputs: { pixels: ["41", 0], vae: ["29", 0] } };
+    wf["3"].inputs.latent_image = ["42", 0];
+    wf["3"].inputs.denoise = denoise;
+    return (await runComfyJob(wf, {
+      signal, onStatus, steps: q.steps, stepText: "Editing", what: "image", want: /\.(png|jpe?g|webp)$/i,
+      nodeText: { "28": ["Loading the image model (slow the first time)…"], "30": ["Loading the image model (slow the first time)…"], "27": ["Reading your prompt…"], "42": ["Reading your picture…"], "8": ["Finishing the picture…", 0.97], "9": ["Saving…", 0.99] },
+    })).blob;
+  }
+  // Shrinks big photos (phone cameras) before sending them anywhere.
+  async function shrinkImage(blob, max = 1536) {
+    try {
+      const bm = await createImageBitmap(blob);
+      const k = Math.min(1, max / Math.max(bm.width, bm.height));
+      if (k === 1 && /^image\/(png|jpeg|webp)$/.test(blob.type)) { if (bm.close) bm.close(); return blob; }
+      const c = document.createElement("canvas"); c.width = Math.round(bm.width * k); c.height = Math.round(bm.height * k);
+      c.getContext("2d").drawImage(bm, 0, 0, c.width, c.height); if (bm.close) bm.close();
+      return await new Promise((res) => c.toBlob((b) => res(b || blob), "image/jpeg", 0.93));
+    } catch { return blob; }
+  }
+
   // ----- Free online video: Hugging Face ZeroGPU Spaces through their Gradio API -----
   const HF_SPACES = {
     ltx: "https://lightricks-ltx-video-distilled.hf.space",
@@ -2176,10 +2244,10 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     return new GenError(msg ? "The free online service had a problem: " + msg.slice(0, 200) : "The free online service is busy or had a problem. Try again in a minute.");
   }
   async function hfUpload(host, blob, signal) {
-    const fd = new FormData(); fd.append("files", blob, "daydream-start.png");
+    const fd = new FormData(); fd.append("files", blob, /jpe?g/.test(blob.type || "") ? "daydream-start.jpg" : "daydream-start.png");
     let r;
     try { r = await fetch(host + "/gradio_api/upload", { method: "POST", body: fd, headers: hfHeaders(false), signal }); }
-    catch (e) { if (signal && signal.aborted) throw e; throw new GenError("Couldn't reach the free online video service. Check your internet connection."); }
+    catch (e) { if (signal && signal.aborted) throw e; throw new GenError("Couldn't reach the free online service. Check your internet connection."); }
     if (!r.ok) throw hfError(await r.text().catch(() => ""), r.status);
     const paths = await r.json();
     return { path: paths[0], orig_name: "daydream-start.png", meta: { _type: "gradio.FileData" } };
@@ -2187,7 +2255,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
   async function hfCall(host, endpoint, data, signal, onStatus) {
     let r;
     try { r = await fetch(`${host}/gradio_api/call/${endpoint}`, { method: "POST", headers: hfHeaders(true), body: JSON.stringify({ data }), signal }); }
-    catch (e) { if (signal && signal.aborted) throw e; throw new GenError("Couldn't reach the free online video service. Check your internet connection."); }
+    catch (e) { if (signal && signal.aborted) throw e; throw new GenError("Couldn't reach the free online service. Check your internet connection."); }
     if (!r.ok) throw hfError(await r.text().catch(() => ""), r.status);
     const { event_id } = await r.json();
     onStatus("Waiting for a free GPU…");
@@ -2288,6 +2356,48 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     }
   }
 
+  // ----- Editing: free online Qwen Image Edit on Hugging Face (with a second demo as a backup) -----
+  const HF_EDIT = { main: "https://linoyts-qwen-image-edit-2511-fast.hf.space", backup: "https://multimodalart-qwen-image-edit-fast.hf.space" };
+  function findUrl(x) {
+    if (!x || typeof x !== "object") return null;
+    if (typeof x.url === "string" && x.url) return x.url;
+    for (const v of Array.isArray(x) ? x : Object.values(x)) { const u = findUrl(v); if (u) return u; }
+    return null;
+  }
+  async function genHFEdit({ prompt, image, seed, signal, onStatus }) {
+    const status = onStatus || (() => {}), s32 = seed % 2147483647, fix = (t) => status(t.replace("video", "picture"));
+    const img = await shrinkImage(image);
+    const fetchImage = async (url) => {
+      status("Downloading the picture…", 1);
+      const r = await fetch(url, { signal });
+      if (!r.ok) throw new GenError(`Couldn't download the picture (error ${r.status}). Try again.`);
+      const b = await r.blob();
+      return /^image\//.test(b.type) ? b : new Blob([b], { type: "image/webp" });
+    };
+    try {
+      status("Sending your picture…");
+      const file = await hfUpload(HF_EDIT.main, img, signal);
+      const out = await hfCall(HF_EDIT.main, "infer", [[{ image: file, caption: null }], prompt, s32, false, 1, 4, 256, 256, false], signal, fix);
+      const url = findUrl(out);
+      if (!url) throw new GenError("No picture came back.");
+      return await fetchImage(url);
+    } catch (e) {
+      if ((signal && signal.aborted) || /free Hugging Face GPU time|token/.test(e.message || "")) throw e;
+      status("Trying the backup free server…");
+      try {
+        const file = await hfUpload(HF_EDIT.backup, img, signal);
+        const out = await hfCall(HF_EDIT.backup, "infer", [file, prompt, s32, false, 1, 8, false], signal, fix);
+        const url = findUrl(out);
+        if (!url) throw new GenError("No picture came back.");
+        return await fetchImage(url);
+      } catch (e2) {
+        if ((signal && signal.aborted) || /free Hugging Face GPU time|token|internet/.test(e2.message || "")) throw e2;
+        // These demos don't say why they failed; running out of free GPU time is the usual reason.
+        throw new GenError("The free editor couldn't make this edit. Usually that means the free daily GPU time is used up (a free Hugging Face token under Image engine gives more) or the service is busy. Try again later" + (st.engine === "comfy" ? "." : ", or edit with ComfyUI on your PC (choose ComfyUI as the Image engine)."));
+      }
+    }
+  }
+
   // Running video jobs, so the chat can wait for the GPU instead of fighting ComfyUI for it.
   let videoJobs = 0;
   const videoWaiters = [];
@@ -2363,6 +2473,64 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     const f = [...(e.dataTransfer.files || [])].find((x) => x.type.startsWith("image/"));
     if (f) setStartImage(f);
   });
+  // ---------- editing a picture ----------
+  const EDIT_STRENGTH = { small: { label: "Small tweak", d: 0.35 }, medium: { label: "Medium", d: 0.55 }, big: { label: "Big change", d: 0.75 } };
+  st.editImage = null;
+  st.editStrength = EDIT_STRENGTH[ls.get("dd.editStrength", "medium")] ? ls.get("dd.editStrength", "medium") : "medium";
+  radios($("#editStrengths"), "editStrength", EDIT_STRENGTH, st.editStrength, (k) => { st.editStrength = k; ls.set("dd.editStrength", k); });
+  let editUrl = null;
+  function updateEditUI() {
+    const isImg = st.mode === "image", editing = isImg && !!st.editImage, viaComfy = st.engine === "comfy";
+    $("#editField").hidden = !isImg;
+    $("#editStrengthRow").hidden = !(editing && viaComfy);
+    if (isImg) {
+      $("#shapeField").hidden = editing; // the edit keeps the picture's shape
+      $("#lookField").hidden = editing && !viaComfy;
+      $("#realField").hidden = editing && !viaComfy;
+      $("#promptLabel").textContent = editing ? (viaComfy ? "Describe the picture you want" : "Describe the change") : MODE_TEXT.image.label;
+      promptEl.placeholder = editing
+        ? (viaComfy ? "The same scene, now at sunset, with sharper detail" : "Make it sunset, add a red scarf, make it sharper and more detailed")
+        : MODE_TEXT.image.ph;
+    }
+    updateGo();
+  }
+  function setEditImage(blob) {
+    st.editImage = blob || null;
+    if (editUrl) { URL.revokeObjectURL(editUrl); editUrl = null; }
+    const prev = $("#editPreview"), txt = $("#editText");
+    if (blob) {
+      editUrl = URL.createObjectURL(blob); prev.src = editUrl; prev.hidden = false;
+      txt.innerHTML = "<b>Editing this picture</b>Your saved original stays as it is; each edit is saved as a new picture.";
+    } else {
+      prev.hidden = true; prev.removeAttribute("src");
+      txt.innerHTML = "<b>New picture</b>Made from your description. To change a picture instead, press Edit on any saved picture or choose one here.";
+    }
+    $("#editClear").hidden = !blob;
+    updateEditUI();
+  }
+  $("#editFile").addEventListener("change", (e) => { const f = e.target.files && e.target.files[0]; if (f) setEditImage(f); e.target.value = ""; });
+  $("#editClear").addEventListener("click", () => setEditImage(null));
+  (() => {
+    const d = $("#editDrop");
+    d.addEventListener("dragover", (e) => { e.preventDefault(); d.classList.add("over"); });
+    d.addEventListener("dragleave", () => d.classList.remove("over"));
+    d.addEventListener("drop", (e) => {
+      e.preventDefault(); d.classList.remove("over");
+      const f = [...(e.dataTransfer.files || [])].find((x) => x.type.startsWith("image/"));
+      if (f) setEditImage(f);
+    });
+  })();
+  function editItem(item) {
+    setMode("image");
+    setEditImage(item.blob);
+    setPrompt("");
+    showMsg(st.engine === "comfy"
+      ? "Ready to edit. Describe the whole picture as you want it, pick how much to change, and press Edit image."
+      : "Ready to edit. Describe the change (for example \"make it night time\" or \"sharper, more detailed skin and hair\") and press Edit image. You can keep editing the result.");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    promptEl.focus();
+  }
+
   function animate(item) {
     setMode("video");
     setStartImage(item.blob);
@@ -2528,6 +2696,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     $("#lbText").textContent = it.prompt + (it.engine ? `  ·  ${it.engine}` : "");
     $("#lbDownload").href = urlFor(it); $("#lbDownload").download = fileName(it);
     $("#lbAnimate").hidden = it.kind === "video";
+    $("#lbEdit").hidden = it.kind === "video";
     $("#lbFav").textContent = it.fav ? "★ Favourite" : "☆ Favourite";
     $("#lightbox").hidden = false; $("#lbClose").focus();
     document.body.style.overflow = "hidden";
@@ -2538,6 +2707,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#lightbox").hidden) closeLightbox(); });
   $("#lbReuse").addEventListener("click", () => { if (lbItem) { setMode(lbItem.kind === "video" ? "video" : "image"); setPrompt(lbItem.prompt); closeLightbox(); promptEl.focus(); } });
   $("#lbAnimate").addEventListener("click", () => { if (lbItem) { const it = lbItem; closeLightbox(); animate(it); } });
+  $("#lbEdit").addEventListener("click", () => { if (lbItem) { const it = lbItem; closeLightbox(); editItem(it); } });
   $("#lbFav").addEventListener("click", async () => { if (lbItem) { await toggleFav(lbItem); $("#lbFav").textContent = lbItem.fav ? "★ Favourite" : "☆ Favourite"; } });
 
   // ---------- results sheet ----------
@@ -2583,6 +2753,8 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
         view.addEventListener("click", () => openLightbox(item));
         btns.append(view);
         if (item.kind !== "video") {
+          const ed = document.createElement("button"); ed.type = "button"; ed.className = "btn small ghost"; ed.textContent = "Edit";
+          ed.addEventListener("click", () => editItem(item)); btns.append(ed);
           const an = document.createElement("button"); an.type = "button"; an.className = "btn small ghost"; an.textContent = "Animate";
           an.addEventListener("click", () => animate(item)); btns.append(an);
         }
@@ -2608,16 +2780,23 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
   const randSeed = () => Math.floor(Math.random() * 2147483647);
 
   async function makeImages(text) {
-    const shape = st.shape, engine = st.engine;
-    const n = engine === "free" ? 1 : Number(st.count);
-    const full = buildPrompt(text);
-    const gen = ENGINES[engine];
-    const label = engineName();
+    const engine = st.engine, edit = st.editImage || null, comfyEdit = !!edit && engine === "comfy";
+    let shape = st.shape;
+    const n = edit ? Number(st.count) : engine === "free" ? 1 : Number(st.count);
+    const full = edit && !comfyEdit ? text : buildPrompt(text);
+    const label = edit ? (comfyEdit ? "ComfyUI · Z-Image edit" : "Free online · Qwen Image Edit") : engineName();
     st.ctl = new AbortController(); const signal = st.ctl.signal;
     st.busy = true; updateGo(); hideMsg();
     let w = SHAPES[shape].w, h = SHAPES[shape].h;
     if (engine === "local" || engine === "comfy") [w, h] = (LOCAL_Q[localQuality.value] || LOCAL_Q.standard).sizes[shape];
     if (engine === "hf") [w, h] = HF_IMG_SIZES[shape];
+    if (edit) {
+      try { const bm = await createImageBitmap(edit); w = bm.width; h = bm.height; if (bm.close) bm.close(); } catch { w = h = 1024; }
+      shape = w / h > 1.2 ? "wide" : w / h < 0.83 ? "tall" : "square";
+    }
+    const gen = !edit ? ENGINES[engine]
+      : comfyEdit ? (o) => genComfyEdit({ ...o, image: edit, width: w, height: h, denoise: EDIT_STRENGTH[st.editStrength].d })
+      : (o) => genHFEdit({ ...o, image: edit });
     $("#batchTitle").textContent = text;
     $("#batchMeta").textContent = `${label} · ${SHAPES[shape].label}`;
     $("#finalPrompt").hidden = false; $("#finalPrompt").textContent = "Prompt sent: " + full;
@@ -2629,7 +2808,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
       const seed = randSeed();
       try {
         const blob = await gen({ prompt: full, shape, seed, signal, onWait: (left) => cards[i].wait(left), onStatus: (t, f) => cards[i].status(t, f) });
-        const item = { id: newId(), kind: "image", prompt: text, fullPrompt: full, engine: label, shape, seed, blob, ts: Date.now() };
+        const item = { id: newId(), kind: "image", prompt: text, fullPrompt: full, engine: label, shape, seed, blob, ts: Date.now(), ...(edit ? { edited: true } : {}) };
         await DB.put(item); saved.unshift(item); renderGallery();
         cards[i].done(item); ok++;
       } catch (e) {
@@ -2642,9 +2821,10 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     };
     try {
       // The free engine and This PC (one GPU) run one at a time; the others run in parallel.
-      if (engine === "free" || engine === "local" || engine === "hf") { for (let i = 0; i < n; i++) { if (signal.aborted) { cards[i].fail("Stopped."); continue; } await runOne(i); } }
+      if (edit || engine === "free" || engine === "local" || engine === "hf") { for (let i = 0; i < n; i++) { if (signal.aborted) { cards[i].fail("Stopped."); continue; } await runOne(i); } }
       else await Promise.all(cards.map((_, i) => runOne(i)));
       if (firstErr) showMsg(firstErr, true);
+      else if (ok && edit) showMsg("Edited. Press Edit on the result to keep refining it, or Remove the picture above to make new ones.");
       else if (ok && engine === "free") showMsg("Want sharper, more lifelike results with no limits? Open Image engine below the form and choose This PC.");
     } finally { st.busy = false; st.ctl = null; updateGo(); }
   }

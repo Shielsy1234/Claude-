@@ -48,6 +48,13 @@ When a local AI is loaded, **Ideas** and **Improve prompt** use it too instead o
 | Pollinations account | Pollinations | Free daily allowance | Key from [enter.pollinations.ai](https://enter.pollinations.ai) |
 | OpenAI | OpenAI | Paid per image | Key from [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
 
+### Editing pictures
+
+Press **Edit** on any picture (under a result, or in the viewer for saved pictures), or choose a photo under **Edit a picture** in the Image tab. Describe the change and press **Edit image**. Each edit is saved as a new picture, and you can keep editing the result.
+
+- **Free online** (any engine except ComfyUI; works on phones): [Qwen Image Edit 2511](https://huggingface.co/spaces/linoyts/Qwen-Image-Edit-2511-Fast) on Hugging Face's free GPUs, with [another Qwen Image Edit demo](https://huggingface.co/spaces/multimodalart/Qwen-Image-Edit-Fast) as a backup. Follows instructions like "make it night" or "add a red scarf". Shares the free daily allowance.
+- **ComfyUI on your PC**: redraws the picture with Z-Image (picture-to-picture), unlimited. Describe the whole picture and choose **Small tweak**, **Medium** or **Big change**.
+
 ### This PC requirements
 
 - Chrome or Edge (recent version) on Windows, Linux or macOS
