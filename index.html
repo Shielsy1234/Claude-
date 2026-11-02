@@ -3090,6 +3090,10 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     async function unload() {
       if (loading) { try { await loading; } catch {} }
       if (engine) { try { engine.interruptGenerate(); } catch {} try { await engine.unload(); } catch {} engine = null; engineModel = null; }
+      // Ollama keeps its model in graphics memory for a while; ask it to let go now.
+      if (kind === "ollama" && olOk && olModel.value) {
+        try { await fetch(olBase() + "/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: olModel.value, keep_alive: 0 }) }); } catch {}
+      }
       refresh();
     }
 
@@ -3180,11 +3184,19 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
         return false;
       } finally { refresh(); }
     }
+    let olThinkOff = true;
     async function olStream(messages, signal, onDelta) {
       let r;
+      // Answer straight away (no hidden "thinking" pass), and keep the model loaded for 30 minutes between messages.
+      const send = (noThink) => fetch(olBase() + "/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: olModel.value, messages, stream: true, ...(noThink ? { think: false } : {}), keep_alive: "30m", options: { num_ctx: 16384 } }), signal });
       try {
-        r = await fetch(olBase() + "/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: olModel.value, messages, stream: true, options: { num_ctx: 16384 } }), signal });
-      } catch (e) { if (signal && signal.aborted) throw e; olOk = false; throw new GenError(`Can't reach Ollama at ${olBase()}. Is it still running?`); }
+        r = await send(olThinkOff);
+        if (!r.ok && olThinkOff && r.status === 400) {
+          const d = await readError(r);
+          if (!/think/i.test(d || "")) throw new GenError(`Ollama couldn't answer: ${d}.`);
+          olThinkOff = false; r = await send(false); // this model has no thinking switch
+        }
+      } catch (e) { if ((signal && signal.aborted) || (e && e.user)) throw e; olOk = false; throw new GenError(`Can't reach Ollama at ${olBase()}. Is it still running?`); }
       if (!r.ok) { const d = await readError(r); throw new GenError(`Ollama couldn't answer${d ? ": " + d : ` (error ${r.status})`}.`); }
       const reader = r.body.getReader(), dec = new TextDecoder();
       let buf = "", full = "";
@@ -3211,7 +3223,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
       r.addEventListener("change", () => { kind = r.value; ls.set("dd.aiKind", kind); ls.set("dd.aiKind." + (document.documentElement.dataset.device || "pc"), kind); refresh(); if (kind === "ollama" && !olOk) olCheck(); });
     });
     modelEl.addEventListener("change", () => { ls.set("dd.aiModel", modelEl.value); refresh(); });
-    olModel.addEventListener("change", () => { ls.set("dd.olModel", olModel.value); refresh(); });
+    olModel.addEventListener("change", () => { ls.set("dd.olModel", olModel.value); olThinkOff = true; refresh(); });
     olUrl.addEventListener("change", () => { ls.set("dd.olUrl", olUrl.value.trim()); olOk = false; });
     $("#olCheck").addEventListener("click", () => { ls.set("dd.olUrl", olUrl.value.trim()); olCheck(); });
     $("#aiLoad").addEventListener("click", () => ensure().catch((e) => status("bad", e && e.user ? e.message : String(e))));
@@ -3818,8 +3830,8 @@ Only do this for new facts. Never mention or explain this.`;
       stopped.catch(() => {});
       if (lastWork) { think("Finishing the previous reply…"); await Promise.race([lastWork.catch(() => {}), stopped.catch(() => {})]); }
       try {
-        // While ComfyUI makes a video, the built-in AI is unloaded to give it the GPU. Wait for it rather than fight over memory.
-        if (videoJobs > 0 && ai.kind() === "builtin" && $("#freeVram").checked && !ai.isReady()) {
+        // While ComfyUI makes a video, the PC's AI (built in or Ollama) is unloaded to give it the GPU. Wait for it rather than fight over memory.
+        if (videoJobs > 0 && $("#freeVram").checked && ((ai.kind() === "builtin" && !ai.isReady()) || ai.kind() === "ollama")) {
           think("A video is using your graphics card, so I'll reply as soon as it's finished. To chat during videos, untick “Free graphics memory for videos” under AI model (videos then run a bit slower).");
           await Promise.race([videoIdle(), new Promise((_, rej) => signal.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError")), { once: true }))]);
           think("Starting the AI…");
