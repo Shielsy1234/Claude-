@@ -862,7 +862,7 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
         <h3>Memory &amp; characters</h3>
         <p><b>Memory</b>: when you mention something lasting (your name, likes, projects), the AI saves it and uses it in future chats with every character. Manage it under Memory in the Chat sidebar.</p>
         <p><b>Characters</b>: AI personalities with their own avatar, personality, greeting and voice. Create one with <b>+ New</b>; they can send pictures of themselves if they have an appearance.</p>
-        <p><b>Free graphics memory for videos</b>: unloads the chat and image models while ComfyUI makes a video, so it has the whole GPU. A message sent meanwhile waits until the video's done.</p>
+        <p><b>Free graphics memory for videos</b>: lets the chat AI and ComfyUI take turns on the graphics card. The chat and image models are unloaded while ComfyUI makes a video, so it has the whole GPU (a message sent meanwhile waits until the video's done), and an idle ComfyUI is asked to unload its models when you chat with Ollama, so replies run at full speed.</p>
       </section>
     </div>
   </div>
@@ -2054,7 +2054,20 @@ dialog.help-dialog { width: min(720px, calc(100vw - 32px)); }
     return blob;
   }
 
+  // ComfyUI keeps its models in graphics memory after a job. Before the PC's chat AI answers, ask an idle
+  // ComfyUI to let go, so the two take turns on the graphics card instead of squeezing each other.
+  let comfyHolding = true; // unknown at start; set again whenever a job runs
+  async function comfyFreeIfIdle() {
+    if (!comfyHolding || !$("#freeVram").checked || videoJobs > 0 || localStorage.getItem("dd.comfyUrl") === null) return;
+    try {
+      const q = await (await fetch(comfyBase() + "/queue", { signal: AbortSignal.timeout(2500) })).json();
+      if ((q.queue_running || []).length || (q.queue_pending || []).length) return; // ComfyUI is busy: leave it be
+      await fetch(comfyBase() + "/free", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ unload_models: true, free_memory: true }), signal: AbortSignal.timeout(4000) });
+      comfyHolding = false;
+    } catch {}
+  }
   async function runComfyJob(wf, { signal, onStatus, steps, stepText, nodeText, want, what, stepNodes }) {
+    comfyHolding = true;
     stepNodes = stepNodes || { "3": 0 }; // sampler node id -> steps already done before it
     const clientId = "daydream-" + Math.random().toString(36).slice(2);
     let queued;
@@ -3190,6 +3203,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
       // Answer straight away (no hidden "thinking" pass), and keep the model loaded for 30 minutes between messages.
       const send = (noThink) => fetch(olBase() + "/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: olModel.value, messages, stream: true, ...(noThink ? { think: false } : {}), keep_alive: "30m", options: { num_ctx: 16384 } }), signal });
       try {
+        await comfyFreeIfIdle();
         r = await send(olThinkOff);
         if (!r.ok && olThinkOff && r.status === 400) {
           const d = await readError(r);
