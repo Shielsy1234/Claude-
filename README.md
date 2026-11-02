@@ -32,6 +32,7 @@ The **Chat** tab talks to an AI running on your PC. Ask it to make a picture or 
 | Source | Notes |
 | --- | --- |
 | **Free online** | Works anywhere, including phones, with nothing to install. Uses the free [Pollinations](https://pollinations.ai) text service (an open model). Not private: messages go to that service. |
+| **OpenRouter** | Uncensored models in the cloud (Venice Uncensored / Dolphin Mistral 24B, free 50 messages a day; paid about $1 per million words; Hermes 4 405B). Works on phones. Paste a free key from [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys). |
 | **Built in** (default) | Runs in the app on your GPU with [WebLLM](https://github.com/mlc-ai/web-llm). Models: Qwen 3.5 9B (6.4 GB), Qwen 3.5 4B (3.9 GB), Hermes 3 8B (4.9 GB), Llama 3.1 8B (5 GB). One-time download. |
 | **Ollama** | Uses any model installed with [Ollama](https://ollama.com). Run `ollama pull <model>`, then `setx OLLAMA_ORIGINS "*"` and restart Ollama so the app can connect. |
 

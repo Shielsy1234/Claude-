@@ -807,6 +807,23 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
             <label class="engine pc-only"><input type="radio" name="aiKind" value="ollama" id="aiKind-ollama">
               <b>Ollama</b>
               <small>Any model from the Ollama app</small></label>
+            <label class="engine"><input type="radio" name="aiKind" value="openrouter" id="aiKind-openrouter">
+              <b>OpenRouter <span class="tag best">Uncensored</span></b>
+              <small>Uncensored models in the cloud. Works on your phone, no PC needed. Free key; the free model allows 50 messages a day.</small></label>
+          </div>
+          <div class="keybox" id="aiOrBox" hidden>
+            <label class="label" for="orKey">OpenRouter key</label>
+            <div class="keyrow"><input class="input" id="orKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-…"><button type="button" class="btn small" id="orKeyShow">Show</button></div>
+            <label class="label" for="orModel">Model</label>
+            <select id="orModel">
+              <option value="cognitivecomputations/dolphin-mistral-24b-venice-edition:free">Venice Uncensored · free (50 messages a day)</option>
+              <option value="cognitivecomputations/dolphin-mistral-24b-venice-edition">Venice Uncensored · paid, about $1 per million words</option>
+              <option value="nousresearch/hermes-4-405b">Hermes 4 405B · smartest, rarely refuses · paid</option>
+            </select>
+            <label class="toggle"><input type="checkbox" id="orFallback" checked>
+              <span>When the free daily limit runs out, use the paid version<small>Only works with credit on your OpenRouter account.</small></span></label>
+            <div class="status-line" id="orStatus" data-s="idle"><i></i><span id="orStatusText">Paste your key to start.</span></div>
+            <div class="links-row"><button type="button" class="link-btn" data-help="help-openrouter">How to get a free key</button></div>
           </div>
           <div class="keybox" id="aiBuiltinBox">
             <label class="label" for="aiModel">Model</label>
@@ -873,6 +890,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
       <button type="button" data-help="help-image-comfy">ComfyUI images</button>
       <button type="button" data-help="help-thispc">This PC images</button>
       <button type="button" data-help="help-ollama">Ollama chat</button>
+      <button type="button" data-help="help-openrouter">OpenRouter chat</button>
       <button type="button" data-help="help-phone">Use on your phone</button>
       <button type="button" data-help="help-chat">Memory &amp; characters</button>
     </nav>
@@ -965,6 +983,20 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
           <li>Let this app connect: run <code>setx OLLAMA_ORIGINS "*"</code>, then quit Ollama from the system tray and start it again.</li>
           <li>In Chat → AI model → <b>Ollama</b>, press <b>Check</b> and pick your model.</li>
         </ol>
+      </section>
+      <section class="help-sec" id="help-openrouter">
+        <h3>Uncensored chat with OpenRouter (phone or PC)</h3>
+        <p>OpenRouter runs uncensored models in the cloud, so they work on your phone without your PC. <b>Venice Uncensored</b> (Dolphin Mistral 24B) is made to answer without refusing.</p>
+        <ol class="steps">
+          <li>Go to <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a> and sign in (Google or email).</li>
+          <li>Open <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">Keys</a> → <b>Create key</b>, give it any name, and copy it (starts with <code>sk-or-</code>).</li>
+          <li>In Daydream: <b>AI &amp; memory</b> → <b>OpenRouter</b> → paste the key.</li>
+        </ol>
+        <ul class="checklist">
+          <li><b>Free</b>: Venice Uncensored · free allows 50 messages a day (1,000 a day once you've ever bought $10 of credit).</li>
+          <li><b>Paid</b>: the same model costs about $0.20 per million words read and $0.90 per million written, so $5 lasts months. Add credit at openrouter.ai → Credits, and tick "use the paid version" to carry on when the free messages run out.</li>
+          <li>Your key is stored only on this device. Messages go to OpenRouter and the model's host, so they aren't as private as Ollama on your PC.</li>
+        </ul>
       </section>
       <section class="help-sec" id="help-phone">
         <h3>Use on your phone</h3>
@@ -3316,15 +3348,20 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
   ai = (() => {
     const WEBLLM_SRC = "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.86/+esm";
     const modelEl = $("#aiModel"), olUrl = $("#olUrl"), olModel = $("#olModel");
-    let kind = ls.get("dd.aiKind", "builtin"); if (!["builtin", "ollama", "online"].includes(kind)) kind = "builtin";
+    let kind = ls.get("dd.aiKind", "builtin"); if (!["builtin", "ollama", "online", "openrouter"].includes(kind)) kind = "builtin";
+    const orKey = $("#orKey"), orModel = $("#orModel"), orFallback = $("#orFallback");
+    orKey.value = ls.get("dd.orKey", "");
+    orModel.value = ls.get("dd.orModel", "cognitivecomputations/dolphin-mistral-24b-venice-edition:free"); if (!orModel.value) orModel.selectedIndex = 0;
+    orFallback.checked = ls.get("dd.orFallback", true);
+    const orName = () => (orModel.selectedOptions[0] ? orModel.selectedOptions[0].textContent.split(" · ")[0] : "OpenRouter");
     modelEl.value = ls.get("dd.aiModel", "Qwen3.5-9B-q4f16_1-MLC"); if (!modelEl.value) modelEl.value = "Qwen3.5-9B-q4f16_1-MLC";
     olUrl.value = ls.get("dd.olUrl", "http://127.0.0.1:11434");
     let webllm = null, engine = null, engineModel = null, loading = null, olOk = false;
 
     const modelName = () => (modelEl.selectedOptions[0] ? modelEl.selectedOptions[0].textContent.split(" · ")[0] : modelEl.value);
     const sizeOf = () => { const m = (modelEl.selectedOptions[0] || {}).textContent; const g = m && m.match(/([\d.]+ GB)/); return g ? g[1] : "a few GB"; };
-    const label = () => (kind === "online" ? "Free online AI" : kind === "ollama" ? "Ollama · " + (olModel.value || "no model") : modelName());
-    const isReady = () => (kind === "online" ? true : kind === "ollama" ? olOk && !!olModel.value : !!engine && engineModel === modelEl.value);
+    const label = () => (kind === "online" ? "Free online AI" : kind === "openrouter" ? "OpenRouter · " + orName() : kind === "ollama" ? "Ollama · " + (olModel.value || "no model") : modelName());
+    const isReady = () => (kind === "online" ? true : kind === "openrouter" ? !!orKey.value.trim() : kind === "ollama" ? olOk && !!olModel.value : !!engine && engineModel === modelEl.value);
 
     function status(s, t) { $("#aiStatus").dataset.s = s; $("#aiStatusText").textContent = t; }
     function olStatus(s, t) { $("#olStatus").dataset.s = s; $("#olStatusText").textContent = t; }
@@ -3343,7 +3380,13 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
 
     async function refresh() {
       $("#aiBuiltinBox").hidden = kind !== "builtin";
-      if (kind === "online") { $("#aiSummary").textContent = label(); $("#aiOllamaBox").hidden = true; updateBadge(); return; }
+      $("#aiOrBox").hidden = kind !== "openrouter";
+      if (kind === "online" || kind === "openrouter") {
+        $("#aiSummary").textContent = label(); $("#aiOllamaBox").hidden = true; updateBadge();
+        if (kind === "openrouter" && !orKey.value.trim()) orStat("warn", "Paste your OpenRouter key above (see How to get a free key).");
+        else if (kind === "openrouter" && $("#orStatus").dataset.s !== "bad") orStat("ok", "Ready. Your key is stored only on this device.");
+        return;
+      }
       $("#aiOllamaBox").hidden = kind !== "ollama";
       $("#aiSummary").textContent = label();
       updateBadge();
@@ -3363,6 +3406,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
 
     async function ensure(onProgress) {
       if (kind === "online") return;
+      if (kind === "openrouter") { if (!orKey.value.trim()) throw new GenError("Add your OpenRouter key: open AI & memory in the sidebar, choose OpenRouter, and paste it."); return; }
       if (kind === "ollama") {
         if (!olOk && !(await olCheck())) throw new GenError("Ollama isn't connected. Open AI model in the sidebar and follow the Ollama steps.");
         if (!olModel.value) throw new GenError("Pick an Ollama model under AI model in the sidebar.");
@@ -3418,6 +3462,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     }
     async function streamInner(messages, signal, onDelta) {
       if (kind === "online") return onlineStream(messages, signal, onDelta);
+      if (kind === "openrouter") { await ensure(); return orStream(messages, signal, onDelta); }
       if (kind === "ollama") return olStream(messages, signal, onDelta);
       await ensure();
       const extra = /^Qwen3/i.test(engineModel) ? { extra_body: { enable_thinking: false } } : {};
@@ -3437,6 +3482,55 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     async function complete(prompt, signal) {
       const out = await stream([{ role: "user", content: prompt }], signal, () => {});
       return out.replace(/<think>[\s\S]*?<\/think>/gi, "");
+    }
+
+    // Reads an OpenAI-style streamed reply ("data: {...}" lines).
+    async function readSSE(r, onDelta) {
+      const reader = r.body.getReader(), dec = new TextDecoder();
+      let buf = "", full = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let i;
+        while ((i = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+          if (!line.startsWith("data:")) continue;
+          const data = line.slice(5).trim();
+          if (data === "[DONE]") return full;
+          let j; try { j = JSON.parse(data); } catch { continue; }
+          if (j.error) throw new GenError("The AI service had a problem: " + String(j.error.message || j.error).slice(0, 200));
+          const d = j.choices && j.choices[0] && j.choices[0].delta && j.choices[0].delta.content;
+          if (d) { full += d; onDelta(full); }
+        }
+      }
+      return full;
+    }
+
+    // ----- OpenRouter (uncensored and vision models in the cloud; the person's own key) -----
+    function orStat(s, t) { $("#orStatus").dataset.s = s; $("#orStatusText").textContent = t; }
+    async function orStream(messages, signal, onDelta, modelId) {
+      const model = modelId || orModel.value;
+      let r;
+      try {
+        r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST", signal,
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + orKey.value.trim(), "X-Title": "Daydream Studio" },
+          body: JSON.stringify({ model, messages, stream: true, temperature: 0.8, max_tokens: 3000 }),
+        });
+      } catch (e) { if (signal && signal.aborted) throw e; throw new GenError("Couldn't reach OpenRouter. Check your internet connection."); }
+      if (!r.ok) {
+        const d = await readError(r);
+        if (r.status === 401) { orStat("bad", "OpenRouter didn't accept this key. Copy it again from openrouter.ai → Keys."); throw new GenError("OpenRouter didn't accept your key. Check it under AI & memory."); }
+        if (r.status === 429 && /:free$/.test(model)) {
+          if (orFallback.checked && !modelId) { onDelta(""); return orStream(messages, signal, onDelta, model.replace(/:free$/, "")); }
+          throw new GenError("You've used today's free messages for this model (50 a day; 1,000 a day once you've bought $10 of OpenRouter credit). Try again tomorrow, or switch to the paid version under AI & memory.");
+        }
+        if (r.status === 402) throw new GenError("This model needs credit on your OpenRouter account (openrouter.ai → Credits). The free Venice Uncensored model doesn't.");
+        throw new GenError(`OpenRouter had a problem${d ? ": " + d : ` (error ${r.status})`}.`);
+      }
+      orStat("ok", "Ready. Your key is stored only on this device.");
+      return readSSE(r, onDelta);
     }
 
     // ----- Free online (Pollinations' free OpenAI-compatible text service) -----
@@ -3537,6 +3631,10 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     });
     modelEl.addEventListener("change", () => { ls.set("dd.aiModel", modelEl.value); refresh(); });
     olModel.addEventListener("change", () => { ls.set("dd.olModel", olModel.value); olThinkOff = true; refresh(); });
+    orKey.addEventListener("input", () => { ls.set("dd.orKey", orKey.value.trim()); $("#orStatus").dataset.s = "idle"; refresh(); });
+    orModel.addEventListener("change", () => { ls.set("dd.orModel", orModel.value); refresh(); });
+    orFallback.addEventListener("change", () => ls.set("dd.orFallback", orFallback.checked));
+    $("#orKeyShow").addEventListener("click", (e) => { const show = orKey.type === "password"; orKey.type = show ? "text" : "password"; e.currentTarget.textContent = show ? "Hide" : "Show"; });
     olUrl.addEventListener("change", () => { ls.set("dd.olUrl", olUrl.value.trim()); olOk = false; });
     $("#olCheck").addEventListener("click", () => { ls.set("dd.olUrl", olUrl.value.trim()); olCheck(); });
     $("#aiLoad").addEventListener("click", () => ensure().catch((e) => status("bad", e && e.user ? e.message : String(e))));
@@ -4251,8 +4349,8 @@ Only do this for new facts. Never mention or explain this.`;
   // ---------- PC / Phone mode ----------
   const deviceMode = (() => {
     const ALLOWED = {
-      phone: { engine: ["hf", "free", "pollinations", "openai"], vmodel: ["ltx", "wanhf"], ai: ["online"] },
-      pc: { engine: ["local", "comfy", "hf", "free", "pollinations", "openai"], vmodel: ["5b", "14b", "ltx", "wanhf"], ai: ["builtin", "ollama", "online"] },
+      phone: { engine: ["hf", "free", "pollinations", "openai"], vmodel: ["ltx", "wanhf"], ai: ["online", "openrouter"] },
+      pc: { engine: ["local", "comfy", "hf", "free", "pollinations", "openai"], vmodel: ["5b", "14b", "ltx", "wanhf"], ai: ["builtin", "ollama", "online", "openrouter"] },
     };
     const DEFAULTS = { phone: { engine: "hf", vmodel: "ltx", ai: "online" } };
     const looksLikePhone = () => matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820;
