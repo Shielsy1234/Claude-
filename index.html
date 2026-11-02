@@ -301,6 +301,11 @@ details.more .inner { display: flex; flex-direction: column; gap: 16px; margin-t
 .welcome .chips button:hover { background: var(--sunken); border-color: var(--line-strong); }
 .composer { display: flex; gap: 6px; align-items: flex-end; margin: 0 auto 8px; width: min(784px, calc(100% - 32px)); padding: 8px; border: 1px solid var(--line-strong); border-radius: 24px; background: var(--surface); box-shadow: var(--shadow-lg); transition: border-color .15s; }
 .composer:focus-within { border-color: color-mix(in srgb, var(--ink) 45%, var(--line-strong)); }
+.composer { flex-wrap: wrap; }
+.attach-strip { order: -1; flex-basis: 100%; display: flex; align-items: center; gap: 10px; padding: 4px 6px 6px; font-size: 13px; color: var(--muted); }
+.attach-strip img { width: 52px; height: 52px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+.attach-strip span { flex: 1; }
+.user-photo { max-width: min(260px, 70%); max-height: 320px; border-radius: 16px; display: block; object-fit: cover; border: 1px solid var(--line); cursor: zoom-in; }
 .composer textarea { flex: 1; min-width: 0; resize: none; max-height: 220px; padding: 9px 10px; border: 0; background: transparent; font-size: 16px; line-height: 1.45; }
 .composer textarea:focus { outline: none; }
 .composer .icon-btn { border: 0; background: transparent; border-radius: 50%; }
@@ -496,6 +501,9 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
       <form class="composer" id="chatForm">
         <button type="button" class="icon-btn" id="micBtn" hidden title="Talk instead of typing (uses your browser's online speech service)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg></button>
+        <div class="attach-strip" id="attachStrip" hidden><img id="attachImg" alt="Photo to send"><span>Photo attached</span><button type="button" class="icon-btn ghost" id="attachClear" aria-label="Remove photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+        <button type="button" class="icon-btn" id="attachBtn" title="Send a photo for the AI to look at" aria-label="Attach a photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg></button>
+        <input type="file" id="attachFile" accept="image/*" hidden>
         <textarea id="chatInput" rows="1" placeholder="Message Daydream…"></textarea>
         <button type="submit" class="btn accent" id="chatSend" aria-label="Send">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
@@ -3507,6 +3515,26 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
       return full;
     }
 
+    // ----- Seeing photos: an Ollama vision model on the PC, otherwise a vision model on OpenRouter -----
+    const OR_VISION = { free: "nvidia/nemotron-3.5-super-vl:free", paid: "qwen/qwen3.8-flash" };
+    const olVision = () => /(vl|llava|vision|gemma3|gemma-3|minicpm-v|moondream|bakllava|mistral-small3\.[12])/i.test(olModel.value || "");
+    function canSee() { return (kind === "ollama" && olOk && olVision()) || !!orKey.value.trim(); }
+    async function see(messages, imageUrl, signal, onDelta) {
+      const last = messages[messages.length - 1];
+      if (kind === "ollama" && olOk && olVision()) {
+        const msgs = messages.map((m, i) => (i === messages.length - 1 ? { role: m.role, content: m.content, images: [imageUrl.split(",")[1]] } : m));
+        return olStream(msgs, signal, onDelta);
+      }
+      if (!orKey.value.trim()) throw new GenError("To let the AI look at photos, add a free OpenRouter key (AI & memory → OpenRouter). On your PC you can instead use an Ollama vision model such as qwen2.5vl.");
+      const msgs = messages.slice(0, -1).concat([{ role: "user", content: [{ type: "text", text: last.content }, { type: "image_url", image_url: { url: imageUrl } }] }]);
+      try { return await orStream(msgs, signal, onDelta, OR_VISION.free); }
+      catch (e) {
+        if ((signal && signal.aborted) || !/free messages/.test(e.message || "")) throw e;
+        onDelta("");
+        return orStream(msgs, signal, onDelta, OR_VISION.paid);
+      }
+    }
+
     // ----- OpenRouter (uncensored and vision models in the cloud; the person's own key) -----
     function orStat(s, t) { $("#orStatus").dataset.s = s; $("#orStatusText").textContent = t; }
     async function orStream(messages, signal, onDelta, modelId) {
@@ -3649,7 +3677,7 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     });
 
     return {
-      label, isReady, ensure, stream, complete, unload, refresh, kind: () => kind, budget: () => (kind === "builtin" ? 16000 : 40000),
+      label, isReady, ensure, stream, complete, unload, refresh, see, canSee, kind: () => kind, budget: () => (kind === "builtin" ? 16000 : 40000),
       streaming: () => streams > 0, whenIdle: () => new Promise((res) => { if (!streams) res(); else idleWaiters.push(res); }),
       setKind: (k) => { const r = document.getElementById("aiKind-" + k); if (r && kind !== k) { r.checked = true; r.dispatchEvent(new Event("change")); } },
     };
@@ -4110,6 +4138,13 @@ Only do this for new facts. Never mention or explain this.`;
     function msgEl(m) {
       const row = document.createElement("div"); row.className = "msg-row " + (m.role === "user" ? "user" : "ai");
       if (m.role === "user") {
+        if (m.image) {
+          const img = document.createElement("img"); img.className = "user-photo"; img.alt = "Photo you sent";
+          img.src = URL.createObjectURL(m.image);
+          if (!m.pid) m.pid = "photo" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+          img.addEventListener("click", () => openLightbox({ kind: "image", blob: m.image, prompt: "Photo you sent", id: m.pid, shape: "square", ts: Date.now() }));
+          row.append(img);
+        }
         const b = document.createElement("div"); b.className = "bubble"; b.textContent = m.content; row.append(b);
         return row;
       }
@@ -4159,7 +4194,7 @@ Only do this for new facts. Never mention or explain this.`;
       const budget = ai.budget();
       const msgs = cur.messages.filter((m) => m.content && m.content.trim()).map((m) => ({
         role: m.role,
-        content: m.role === "assistant" ? m.content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim() : m.content,
+        content: m.role === "assistant" ? m.content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim() : (m.image ? "[I sent a photo] " : "") + m.content,
       }));
       const out = []; let used = 0;
       for (let i = msgs.length - 1; i >= 0; i--) {
@@ -4217,12 +4252,36 @@ Only do this for new facts. Never mention or explain this.`;
       }
     }
 
+    // ----- photos for the AI to look at -----
+    let attached = null, attachedUrl = null;
+    function setAttached(blob) {
+      attached = blob || null;
+      if (attachedUrl) URL.revokeObjectURL(attachedUrl);
+      attachedUrl = blob ? URL.createObjectURL(blob) : null;
+      $("#attachStrip").hidden = !blob;
+      if (blob) $("#attachImg").src = attachedUrl; else $("#attachImg").removeAttribute("src");
+    }
+    $("#attachBtn").addEventListener("click", () => $("#attachFile").click());
+    let attaching = null;
+    $("#attachFile").addEventListener("change", (e) => {
+      const f = e.target.files && e.target.files[0]; e.target.value = "";
+      if (!f) return;
+      attaching = shrinkImage(f, 1280).then((b) => { setAttached(b); attaching = null; });
+      input.focus();
+    });
+    $("#attachClear").addEventListener("click", () => setAttached(null));
+    const blobToDataUrl = (b) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); });
+
     async function send(text) {
+      if (attaching) await attaching;
       text = String(text || "").trim();
-      if (busy || !text) return;
+      const photo = attached;
+      if (busy || (!text && !photo)) return;
+      if (!text) text = "What do you see in this photo?";
       voice.stop();
-      if (!cur) { cur = { id: "c" + Date.now().toString(36), botId: curBot().id, title: text.slice(0, 60), ts: Date.now(), messages: [] }; convos.unshift(cur); }
-      cur.messages.push({ role: "user", content: text });
+      if (!cur) { cur = { id: "c" + Date.now().toString(36), botId: curBot().id, title: (photo ? "📷 " : "") + text.slice(0, 60), ts: Date.now(), messages: [] }; convos.unshift(cur); }
+      cur.messages.push(photo ? { role: "user", content: text, image: photo } : { role: "user", content: text });
+      setAttached(null);
       const reply = { role: "assistant", content: "" };
       cur.messages.push(reply);
       cur.ts = Date.now();
@@ -4248,15 +4307,17 @@ Only do this for new facts. Never mention or explain this.`;
           think("Starting the AI…");
         }
         const work = (async () => {
-          await ai.ensure(think);
+          if (!photo || !ai.canSee()) await ai.ensure(think);
           if (signal.aborted) return;
           think("Thinking…");
           let queued = false;
-          await ai.stream(buildHistory(), signal, (full) => {
+          const onDelta = (full) => {
             if (signal.aborted) return;
             reply.content = full;
             if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; paint(bubble, reply.content, false); scrollDown(); }); }
-          });
+          };
+          if (photo) { think("Looking at your photo…"); await ai.see(buildHistory(), await blobToDataUrl(photo), signal, onDelta); }
+          else await ai.stream(buildHistory(), signal, onDelta);
         })();
         lastWork = work;
         work.finally(() => { if (lastWork === work) lastWork = null; }).catch(() => {});
