@@ -4,6 +4,10 @@ Your private AI on your own PC: chat with a local AI model, and create realistic
 
 The app is `index.html` plus `manifest.webmanifest`, `sw.js` and `icons/`. Host it with GitHub Pages (recommended) or any static web server. It must be opened from a web address (`https://…` or `http://localhost`), not by double-clicking the file.
 
+## Layout
+
+A sidebar holds the sections (Chat, Image, Video, Ideas), your characters and chats, **AI & memory** settings, Help, the theme switch and the PC / Phone switch. On a phone it's a slide-out menu (the ☰ button at the top left).
+
 ## PC or Phone
 
 The **PC / Phone** switch at the top picks which version you see. It's chosen automatically the first time (phones get Phone) and you can change it any time.

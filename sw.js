@@ -2,7 +2,7 @@
 // App files: network first (so updates arrive), cached copy when offline.
 // Libraries from the CDN and fonts: cached after first use (their URLs are versioned).
 // AI model files are stored by the app itself and are not touched here.
-const APP_CACHE = "daydream-app-v4";
+const APP_CACHE = "daydream-app-v5";
 const CDN_CACHE = "daydream-cdn-v1";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",
   "./vendor/ffmpeg/index.js", "./vendor/ffmpeg/classes.js", "./vendor/ffmpeg/const.js", "./vendor/ffmpeg/errors.js", "./vendor/ffmpeg/types.js", "./vendor/ffmpeg/utils.js", "./vendor/ffmpeg/worker.js"];
