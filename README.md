@@ -44,7 +44,9 @@ The **Chat** tab talks to an AI running on your PC. Ask it to make a picture or 
 
 **Memory**: when you mention something lasting (your name, likes, projects), the AI saves it under **Memory** and uses it in future chats with every character. You can add, remove or clear memories, or turn automatic memory off.
 
-**Voice**: the speaker button reads replies aloud using a voice picked per character; the microphone button lets you talk instead of typing (uses the browser's online speech service).
+**Voice**: the speaker button reads replies aloud using a voice picked per character. **Natural voices** ([Kokoro](https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX), 16 voices) run inside the app on PC and phone after a one-time 90 MB download; the device's own voices are also listed. The microphone button lets you talk instead of typing (uses the browser's online speech service).
+
+**Voice calls**: the phone button in the chat header starts a hands-free call: it listens, the character replies out loud, and it listens again. Tap while they're talking to interrupt; Mute pauses listening.
 
 Conversations are saved on your PC. **Custom instructions** let you set how the AI behaves. With **Free graphics memory for videos** on, the chat and image models are unloaded while ComfyUI makes a video so it gets the whole GPU.
 

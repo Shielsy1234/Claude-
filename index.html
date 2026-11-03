@@ -428,6 +428,26 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
 .help-sec ul.checklist li::before { content: none; }
 @keyframes helpflash { from { background: var(--active); } to { background: transparent; } }
 
+/* Voice call */
+.call { position: fixed; inset: 0; z-index: 60; background: color-mix(in srgb, var(--paper) 94%, transparent); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); display: grid; place-items: center; padding: max(20px, env(safe-area-inset-top, 0px)) 20px max(20px, env(safe-area-inset-bottom, 0px)); }
+.call-inner { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; max-width: 440px; width: 100%; }
+.call-ring { border-radius: 50%; padding: 10px; transition: box-shadow .3s; }
+.call-ring .avatar.lg { width: 132px; height: 132px; font-size: 48px; }
+.call-ring[data-s="listening"] { box-shadow: 0 0 0 6px color-mix(in srgb, var(--good) 35%, transparent); animation: pulse 1.6s ease-in-out infinite; }
+.call-ring[data-s="speaking"] { box-shadow: 0 0 0 6px color-mix(in srgb, var(--brand) 45%, transparent); animation: pulse 1s ease-in-out infinite; }
+.call-ring[data-s="thinking"] { box-shadow: 0 0 0 6px var(--active); }
+@keyframes pulse { 50% { transform: scale(1.04); } }
+.call-name { font: 500 28px var(--f-display); }
+.call-status { margin: 0; color: var(--muted); font-size: 15px; min-height: 1.5em; }
+.call-heard { margin: 0; font-size: 15px; min-height: 3em; color: var(--ink); overflow-wrap: anywhere; max-height: 30vh; overflow: auto; }
+.call-btns { display: flex; gap: 28px; margin-top: 12px; }
+.call-btn { width: 72px; height: 72px; border-radius: 50%; border: 0; background: var(--active); color: var(--ink); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12px; font-weight: 600; }
+.call-btn svg { width: 24px; height: 24px; }
+.call-btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.call-btn.end { background: #D9443A; color: #fff; }
+.call-btn.end svg { transform: rotate(135deg); }
+.call-tip { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
+
 /* Gentle entrance for new content */
 .shot, .idea, .msg-row { animation: rise .28s cubic-bezier(.2,.8,.2,1); }
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -502,6 +522,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
       <div class="chat-head">
         <div class="avatar" id="headAvatar"></div>
         <div class="t"><b id="headName">Daydream</b><small id="headSub"></small></div>
+        <button type="button" class="icon-btn" id="callBtn" title="Voice call (hands-free)" aria-label="Start a voice call"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/></svg></button>
         <button type="button" class="icon-btn" id="voiceToggle" aria-pressed="true" title="Read replies aloud">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></button>
         <button type="button" class="icon-btn" id="chatGear" title="AI &amp; memory settings" aria-label="AI and memory settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
@@ -810,6 +831,20 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
   </div>
 </div>
 
+<div class="call" id="callView" hidden role="dialog" aria-modal="true" aria-label="Voice call">
+  <div class="call-inner">
+    <div class="call-ring" id="callRing"><div class="avatar lg" id="callAvatar"></div></div>
+    <b class="call-name" id="callName"></b>
+    <p class="call-status" id="callStatus">Starting…</p>
+    <p class="call-heard" id="callHeard"></p>
+    <div class="call-btns">
+      <button type="button" class="call-btn" id="callMute" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></svg><span>Mute</span></button>
+      <button type="button" class="call-btn end" id="callEnd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/></svg><span>End</span></button>
+    </div>
+    <p class="call-tip">Tap anywhere while they're talking to interrupt.</p>
+  </div>
+</div>
+
 <dialog class="sheet-dialog" id="chatSettingsDlg" aria-labelledby="chatSettingsTitle">
   <div class="dlg">
     <div class="help-head"><h2 id="chatSettingsTitle">AI &amp; memory</h2><button type="button" class="btn small" id="chatSettingsClose">Done</button></div>
@@ -1080,7 +1115,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
     <div class="field">
       <label class="label" for="botVoice">Voice</label>
       <div class="keyrow"><select id="botVoice"></select><button type="button" class="btn small" id="botVoiceTest">Test</button></div>
-      <p class="hint">Voices come from Windows and your browser. Ones marked "Online" sound more natural but are processed by Microsoft or Google.</p>
+      <p class="hint" id="botVoiceHint">Natural voices run inside the app, privately, on PC and phone. They download once (about 90 MB) the first time you test or hear one.</p>
     </div>
     <label class="toggle"><input type="checkbox" id="botMedia" checked><span>Can make pictures and videos<small>Lets this character create images and videos in the chat, including pictures of themselves.</small></span></label>
     <div class="actions" style="justify-content:space-between">
@@ -3793,18 +3828,95 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     function plain(text) {
       return String(text || "").replace(/```[\s\S]*?```/g, " ").replace(/`([^`]*)`/g, "$1").replace(/[*_#>]+/g, "").replace(/\[\[[\s\S]*?\]\]/g, "").replace(/\s+/g, " ").trim();
     }
-    function speak(text, voiceName) {
-      if (!synth || !voiceName) return;
-      const v = voices.find((x) => x.name === voiceName);
-      if (!v) return;
-      synth.cancel();
-      const t = plain(text).slice(0, 2500);
-      for (const chunk of t.match(/[^.!?]+[.!?]*\s*/g) || [t]) {
-        if (!chunk.trim()) continue;
-        const u = new SpeechSynthesisUtterance(chunk.trim()); u.voice = v; u.lang = v.lang; synth.speak(u);
+    // ----- natural voices: Kokoro, a small speech model that runs inside the app (downloaded once, about 90 MB) -----
+    const KOKORO_SRC = "https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js", KOKORO_MODEL = "onnx-community/Kokoro-82M-v1.0-ONNX";
+    let ttsP = null, token = 0, onLoadStatus = null;
+    // One reused audio element, unlocked by the first tap, so iPhones let replies speak on their own later.
+    const audioEl = new Audio(); audioEl.preload = "auto";
+    const SILENT = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=";
+    const unlock = () => { audioEl.src = SILENT; audioEl.play().then(() => audioEl.pause()).catch(() => {}); };
+    document.addEventListener("pointerdown", unlock, { once: true, capture: true });
+    function loadTTS() {
+      if (!ttsP) ttsP = (async () => {
+        const { KokoroTTS } = await import(KOKORO_SRC);
+        const progress_callback = (p) => { if (onLoadStatus && p.status === "progress" && /onnx/.test(p.file || "")) onLoadStatus(`Downloading the voice (one time)… ${Math.round(p.progress || 0)}%`); };
+        const gpu = !!navigator.gpu && document.documentElement.dataset.device !== "phone";
+        if (gpu) { try { return await KokoroTTS.from_pretrained(KOKORO_MODEL, { dtype: "fp32", device: "webgpu", progress_callback }); } catch {} }
+        return await KokoroTTS.from_pretrained(KOKORO_MODEL, { dtype: "q8", device: "wasm", progress_callback });
+      })();
+      ttsP.catch(() => { ttsP = null; });
+      return ttsP;
+    }
+    function chunks(t) {
+      const out = []; let curr = "";
+      for (const s_ of t.match(/[^.!?…]+[.!?…]*["')\]]*\s*/g) || [t]) {
+        if ((curr + s_).length > 220 && curr) { out.push(curr.trim()); curr = ""; }
+        curr += s_;
+      }
+      if (curr.trim()) out.push(curr.trim());
+      return out;
+    }
+    function play(blob, my) {
+      return new Promise((res) => {
+        if (my !== token) return res();
+        const url = URL.createObjectURL(blob);
+        const done = () => { URL.revokeObjectURL(url); audioEl.onended = audioEl.onerror = null; res(); };
+        audioEl.onended = done; audioEl.onerror = done;
+        audioEl.src = url;
+        audioEl.play().catch(done);
+      });
+    }
+    async function speakNatural(text, name, my) {
+      const parts = chunks(plain(text).slice(0, 3000));
+      if (!parts.length) return;
+      let tts;
+      try { tts = await loadTTS(); } catch (e) { console.warn("natural voice unavailable", e); return; }
+      const make = (t) => tts.generate(t, { voice: name }).then((a) => a.toBlob());
+      let next = make(parts[0]);
+      for (let i = 0; i < parts.length; i++) {
+        let blob; try { blob = await next; } catch (e) { console.warn(e); return; }
+        if (my !== token) return;
+        if (i + 1 < parts.length) next = make(parts[i + 1]);
+        await play(blob, my);
+        if (my !== token) return;
       }
     }
-    return { list: () => voices, speak, stop: () => { if (synth) synth.cancel(); }, supported: !!synth, onChange: (f) => listeners.push(f) };
+    function speakDevice(text, voiceName, my) {
+      return new Promise((res) => {
+        if (!synth) return res();
+        const v = voices.find((x) => x.name === voiceName);
+        if (!v) return res();
+        synth.cancel();
+        const t = plain(text).slice(0, 2500), list = (t.match(/[^.!?]+[.!?]*\s*/g) || [t]).filter((c) => c.trim());
+        if (!list.length) return res();
+        list.forEach((chunk, i) => {
+          const u = new SpeechSynthesisUtterance(chunk.trim()); u.voice = v; u.lang = v.lang;
+          if (i === list.length - 1) { u.onend = res; u.onerror = res; }
+          synth.speak(u);
+        });
+        const poll = setInterval(() => { if (my !== token) { clearInterval(poll); res(); } }, 300);
+      });
+    }
+    // Speaks text; resolves when it's finished (or stopped).
+    function speak(text, voiceName) {
+      stop();
+      const my = ++token;
+      if (!voiceName) return Promise.resolve();
+      if (voiceName.startsWith("kokoro:")) return speakNatural(text, voiceName.slice(7), my);
+      return speakDevice(text, voiceName, my);
+    }
+    function stop() { token++; try { audioEl.pause(); } catch {} if (synth) synth.cancel(); }
+    const NATURAL = [
+      ["af_heart", "Heart · warm American woman"], ["af_bella", "Bella · bright American woman"], ["af_nicole", "Nicole · soft, breathy"],
+      ["af_kore", "Kore · calm woman"], ["af_sarah", "Sarah · friendly woman"], ["af_nova", "Nova · young woman"], ["af_sky", "Sky · light, airy"],
+      ["bf_emma", "Emma · British woman"], ["bf_isabella", "Isabella · British woman"],
+      ["am_michael", "Michael · American man"], ["am_fenrir", "Fenrir · deep American man"], ["am_puck", "Puck · playful man"], ["am_adam", "Adam · American man"],
+      ["bm_george", "George · British man"], ["bm_fable", "Fable · British man"], ["bm_lewis", "Lewis · British man"],
+    ];
+    return {
+      list: () => voices, natural: () => NATURAL, speak, stop, supported: true, onChange: (f) => listeners.push(f),
+      loadNatural: (onStatus) => { onLoadStatus = onStatus; return loadTTS(); },
+    };
   })();
 
   // ---------- Characters ----------
@@ -3865,9 +3977,16 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     let editing = null, draftAvatar = null, genCtl = null;
     function fillVoices(selected) {
       const sel = $("#botVoice"); sel.innerHTML = "";
-      const none = document.createElement("option"); none.value = ""; none.textContent = voice.supported ? "No voice" : "Voices aren't available in this browser"; sel.append(none);
-      for (const v of voice.list()) { const o = document.createElement("option"); o.value = v.name; o.textContent = `${v.name} (${v.lang})`; sel.append(o); }
-      sel.value = voice.list().some((v) => v.name === selected) ? selected : "";
+      const none = document.createElement("option"); none.value = ""; none.textContent = "No voice"; sel.append(none);
+      const g1 = document.createElement("optgroup"); g1.label = "Natural voices (download once, about 90 MB)";
+      for (const [id, label] of voice.natural()) { const o = document.createElement("option"); o.value = "kokoro:" + id; o.textContent = label; g1.append(o); }
+      sel.append(g1);
+      if (voice.list().length) {
+        const g2 = document.createElement("optgroup"); g2.label = "This device's voices";
+        for (const v of voice.list()) { const o = document.createElement("option"); o.value = v.name; o.textContent = `${v.name} (${v.lang})`; g2.append(o); }
+        sel.append(g2);
+      }
+      sel.value = [...sel.options].some((o) => o.value === selected) ? selected : "";
     }
     voice.onChange(() => { if (dlg.open) fillVoices($("#botVoice").value || (editing && editing.voice)); });
     function showAvatar() {
@@ -3915,6 +4034,16 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     $("#botVoiceTest").addEventListener("click", () => {
       const v = $("#botVoice").value;
       if (!v) return;
+      const hint = $("#botVoiceHint"), btn = $("#botVoiceTest");
+      if (v.startsWith("kokoro:")) {
+        btn.disabled = true; hint.textContent = "Getting the voice ready…";
+        voice.loadNatural((t) => { hint.textContent = t; })
+          .then(() => { hint.textContent = "Playing…"; return voice.speak($("#botGreeting").value.trim() || `Hi, I'm ${$("#botName").value.trim() || "your new character"}. This is how I sound.`, v); })
+          .then(() => { hint.textContent = "Natural voices run inside the app, privately, on PC and phone."; })
+          .catch(() => { hint.textContent = "Couldn't load the natural voice. Check your internet connection (it's needed the first time)."; })
+          .finally(() => { btn.disabled = false; });
+        return;
+      }
       voice.speak($("#botGreeting").value.trim() || `Hi, I'm ${$("#botName").value.trim() || "your new character"}.`, v);
     });
     const closeDlg = () => { if (genCtl) genCtl.abort(); voice.stop(); dlg.close(); };
@@ -4383,7 +4512,7 @@ Don't describe your face or hair in it; your look is added automatically.`;
     $("#attachClear").addEventListener("click", () => setAttached(null));
     const blobToDataUrl = (b) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); });
 
-    async function send(text) {
+    async function send(text, opts = {}) {
       if (attaching) await attaching;
       text = String(text || "").trim();
       const photo = attached;
@@ -4447,13 +4576,14 @@ Don't describe your face or hair in it; your look is added automatically.`;
       const fresh = msgEl(reply); row.replaceWith(fresh); scrollDown();
       save(); renderList(); updateBadge();
       const bot = curBot();
-      if (!signal.aborted && !reply.error && voiceOn && bot.voice) voice.speak(visible(reply.content), bot.voice);
+      if (!opts.fromCall && !signal.aborted && !reply.error && voiceOn && bot.voice) voice.speak(visible(reply.content), bot.voice);
       const convo = cur;
       await save(convo);
       setBusy(false); ctl = null;
       input.focus();
       // Pictures and videos carry on in the background, so you can keep chatting.
       if (tags.media.some((m) => m.status === "pending")) runMedia(reply, convo);
+      return reply;
     }
 
     function autosize() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 200) + "px"; }
@@ -4487,6 +4617,79 @@ Don't describe your face or hair in it; your look is added automatically.`;
         try { rec.start(); } catch { mic.classList.remove("rec"); rec = null; }
       });
     }
+
+    // ----- hands-free voice call -----
+    const call = (() => {
+      const view = $("#callView"), ring = $("#callRing");
+      let on = false, muted = false, rec = null, speaking = false, unmute = null;
+      const status = (t, s_) => { $("#callStatus").textContent = t; ring.dataset.s = s_ || ""; };
+      const heard = (t) => { $("#callHeard").textContent = t || ""; };
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      function listenOnce() {
+        return new Promise((res) => {
+          let final = "", failed = null;
+          try { rec = new SR(); } catch { return res({ text: "", error: "unsupported" }); }
+          rec.lang = navigator.language || "en-GB"; rec.interimResults = true; rec.continuous = false;
+          rec.onresult = (e) => {
+            let fin = "", interim = "";
+            for (const r of e.results) { if (r.isFinal) fin += r[0].transcript; else interim += r[0].transcript; }
+            final = fin; heard((fin + interim).trim());
+          };
+          rec.onerror = (e) => { failed = e.error; };
+          rec.onend = () => { rec = null; res({ text: final.trim(), error: failed }); };
+          try { rec.start(); } catch { rec = null; res({ text: "", error: "start" }); }
+        });
+      }
+      async function loop() {
+        const bot = curBot(), v = bot.voice || "kokoro:af_heart";
+        if (v.startsWith("kokoro:")) { status("Getting the voice ready…", "thinking"); try { await voice.loadNatural((t) => status(t, "thinking")); } catch {} }
+        if (!on) return;
+        if (bot.greeting && (!cur || !cur.messages.length)) { speaking = true; status("Speaking…", "speaking"); await voice.speak(bot.greeting, v); speaking = false; }
+        let quiet = 0;
+        while (on) {
+          if (muted) { status("Muted. Tap Mute again to talk.", ""); await new Promise((r) => { unmute = r; }); unmute = null; continue; }
+          heard(""); status("Listening…", "listening");
+          const { text, error } = await listenOnce();
+          if (!on) break;
+          if (error === "not-allowed" || error === "service-not-allowed") { status("Microphone blocked. Allow it in your browser's site settings, then call again.", ""); return; }
+          if (!text) { if (++quiet >= 6) { status("Still there? Tap Mute to pause, or End to hang up.", ""); await sleep(1200); quiet = 0; } else await sleep(250); continue; }
+          quiet = 0; heard("“" + text + "”"); status("Thinking…", "thinking");
+          const reply = await send(text, { fromCall: true });
+          if (!on) break;
+          if (!reply) { await sleep(500); continue; }
+          if (reply.error) { status(reply.error, ""); await sleep(2500); continue; }
+          speaking = true; status("Speaking…", "speaking"); heard("");
+          await voice.speak(visible(reply.content), v);
+          speaking = false;
+        }
+      }
+      function start() {
+        if (!SR) { showNote("Voice calls need speech recognition, which this browser doesn't have. Use Chrome or Edge on a PC, or Safari on iPhone."); return; }
+        if (on) return;
+        const bot = curBot();
+        on = true; muted = false; $("#callMute").setAttribute("aria-pressed", "false");
+        const av = $("#callAvatar"); av.replaceWith(Object.assign(bots.avatarEl(bot, "lg"), { id: "callAvatar" }));
+        $("#callName").textContent = bot.name; heard(""); status("Starting…", "");
+        view.hidden = false; document.body.style.overflow = "hidden";
+        loop().catch((e) => { console.error(e); status("The call stopped: " + (e && e.message ? e.message : e), ""); });
+      }
+      function end() {
+        on = false; speaking = false;
+        try { if (rec) rec.abort(); } catch {}
+        voice.stop(); if (unmute) unmute();
+        view.hidden = true; document.body.style.overflow = "";
+      }
+      $("#callBtn").addEventListener("click", start);
+      $("#callEnd").addEventListener("click", (e) => { e.stopPropagation(); end(); });
+      $("#callMute").addEventListener("click", (e) => {
+        e.stopPropagation(); muted = !muted; $("#callMute").setAttribute("aria-pressed", String(muted));
+        if (muted) { try { if (rec) rec.abort(); } catch {} } else if (unmute) unmute();
+      });
+      view.addEventListener("click", () => { if (speaking) voice.stop(); });
+      document.addEventListener("keydown", (e) => { if (on && e.key === "Escape") end(); });
+      return { start, end, active: () => on };
+    })();
+    function showNote(t) { const n = document.createElement("div"); n.className = "note-card"; n.textContent = t; box.append(n); scrollDown(); }
 
     async function show() {
       if (!loaded) {
