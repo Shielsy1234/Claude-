@@ -153,6 +153,12 @@ You can also ask a character in Chat for a long video ("make me a 2 minute video
 
 ## Other features
 
+- **Privacy lock**: a PIN (and optionally Face ID / fingerprint via the device's passkey support) when opening the app; it hides the app when you switch away and locks again after a chosen time. It stops casual snooping; it doesn't encrypt anything.
+- **Upscale**: one tap makes a picture twice the size with sharper detail ([Finegrain image enhancer](https://huggingface.co/spaces/finegrain/finegrain-image-enhancer), free online).
+- **Add sound**: AI sound effects that match a video ([MMAudio](https://huggingface.co/spaces/hkchengrex/MMAudio), free online, clips up to about 10 seconds).
+- **My saved prompts**: save a prompt with its look and shape, and reuse it in one tap.
+- **Chat tools**: copy, read aloud, regenerate the last reply, edit and resend your last message, and search your chats.
+
 - **Help**: setup guides and tips live in one Help panel (header button, or the small **?** next to a setting opens the matching section)
 
 - **Light, dark or auto theme**: the button in the header switches between Auto (follows Windows), Light and Dark

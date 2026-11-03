@@ -12,6 +12,8 @@
 <script>
   // Apply the saved theme before the page paints, to avoid a flash.
   try { const t = JSON.parse(localStorage.getItem("dd.theme") || '"auto"'); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+  // Privacy lock: blur everything from the very first paint until the PIN screen appears.
+  try { if (JSON.parse(localStorage.getItem("dd.lock") || "null")) document.documentElement.classList.add("locked"); } catch (e) {}
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -444,6 +446,17 @@ details.lib .lib-inner { display: flex; flex-direction: column; gap: 8px; margin
 .lib-list li button.x { border: 0; background: transparent; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; color: var(--muted); flex: none; }
 .lib-list li button.x:hover { background: var(--active); color: var(--ink); }
 
+/* Privacy lock */
+.lock { position: fixed; inset: 0; z-index: 80; background: var(--paper); display: grid; place-items: center; padding: 24px; }
+.lock-inner { display: flex; flex-direction: column; align-items: center; gap: 12px; width: min(320px, 100%); text-align: center; }
+.lock-inner h2 { margin: 6px 0 4px; font: 500 24px var(--f-display); }
+.logo-lg { width: 56px; height: 56px; border-radius: 16px; background: var(--brand); color: #fff; display: grid; place-items: center; }
+.logo-lg svg { width: 32px; height: 32px; }
+.lock-pin { text-align: center; font-size: 22px; letter-spacing: .4em; }
+.lock-err { margin: 0; min-height: 1.3em; color: var(--danger); font-size: 13.5px; }
+html.locked body > :not(#lockView) { filter: blur(24px); }
+html.privacy-blur body > :not(#lockView) { filter: blur(24px); }
+
 /* Voice call */
 .call { position: fixed; inset: 0; z-index: 60; background: color-mix(in srgb, var(--paper) 94%, transparent); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); display: grid; place-items: center; padding: max(20px, env(safe-area-inset-top, 0px)) 20px max(20px, env(safe-area-inset-bottom, 0px)); }
 .call-inner { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; max-width: 440px; width: 100%; }
@@ -507,6 +520,7 @@ details.lib .lib-inner { display: flex; flex-direction: column; gap: 8px; margin
     </div>
     <div class="sb-foot">
       <button type="button" class="sb-item" id="chatSettingsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>AI &amp; memory</button>
+      <button type="button" class="sb-item" id="lockBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Privacy lock</button>
       <button type="button" class="sb-item" id="helpBtn" data-help="" title="Help and setup guides"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01"/></svg>Help</button>
       <button type="button" class="sb-item" id="themeBtn" title="Switch between light and dark mode"></button>
       <button type="button" class="sb-item pc-only" data-help="help-launcher" title="Start Ollama, ComfyUI and Daydream with one click"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l14 9-14 9V3Z"/></svg>One-click PC start</button>
@@ -857,6 +871,43 @@ details.lib .lib-inner { display: flex; flex-direction: column; gap: 8px; margin
     </div>
   </div>
 </div>
+
+<div class="lock" id="lockView" hidden role="dialog" aria-modal="true" aria-label="Daydream is locked">
+  <form class="lock-inner" id="lockForm">
+    <span class="logo-lg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c.4 3.9 2.1 5.6 6 6-3.9.4-5.6 2.1-6 6-.4-3.9-2.1-5.6-6-6 3.9-.4 5.6-2.1 6-6Z" fill="currentColor" stroke="none"/><path d="M19 15c.2 1.6.9 2.3 2.5 2.5-1.6.2-2.3.9-2.5 2.5-.2-1.6-.9-2.3-2.5-2.5 1.6-.2 2.3-.9 2.5-2.5Z" fill="currentColor" stroke="none"/></svg></span>
+    <h2>Daydream is locked</h2>
+    <input class="input lock-pin" id="lockPin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="PIN" aria-label="PIN">
+    <p class="lock-err" id="lockErr" aria-live="polite"></p>
+    <button type="submit" class="btn primary" style="flex:none;width:100%">Unlock</button>
+    <button type="button" class="btn" id="lockBio" hidden style="width:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 11c0 3-1 6-3 8M8 6a6 6 0 0 1 10 4c0 2 0 4-1 6M6 9a8 8 0 0 0-1 4M12 11a2 2 0 0 0-2 2c0 2-.5 4-1.5 5.5M16 13c0 2-.5 4-1.5 6"/></svg>Use Face ID / fingerprint</button>
+    <button type="button" class="link-btn" id="lockForgot">Forgot your PIN?</button>
+    <p class="hint" id="lockForgotText" hidden>The lock can only be removed with the PIN (or Face ID / fingerprint if you turned it on). Otherwise, clear this website's data in your browser settings: that removes the lock and also deletes the pictures, videos and chats saved on this device.</p>
+  </form>
+</div>
+
+<dialog class="sheet-dialog" id="lockDlg" aria-labelledby="lockDlgTitle">
+  <div class="dlg">
+    <div class="help-head"><h2 id="lockDlgTitle">Privacy lock</h2><button type="button" class="btn small" id="lockDlgClose">Done</button></div>
+    <p class="hint">Asks for a PIN (or Face ID / fingerprint) when you open Daydream on this device, and hides it when you switch away. It stops people casually looking; it doesn't encrypt your files.</p>
+    <div id="lockOff">
+      <label class="label" for="lockNew">Choose a PIN (4–8 numbers)</label>
+      <div class="keyrow" style="margin-top:8px"><input class="input" id="lockNew" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="New PIN"><input class="input" id="lockNew2" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="Again"></div>
+      <button type="button" class="btn accent" id="lockEnable" style="margin-top:10px">Turn on the lock</button>
+    </div>
+    <div id="lockOn" hidden>
+      <div class="status-line" data-s="ok"><i></i><span>The lock is on.</span></div>
+      <label class="label" for="lockAfter" style="margin-top:12px">Lock again after leaving the app for</label>
+      <select id="lockAfter" style="margin-top:8px"><option value="0">Straight away</option><option value="60">1 minute</option><option value="300">5 minutes</option><option value="900">15 minutes</option></select>
+      <div class="actions" style="margin-top:12px">
+        <button type="button" class="btn" id="lockBioSet">Also unlock with Face ID / fingerprint</button>
+        <button type="button" class="btn" id="lockNow">Lock now</button>
+        <button type="button" class="btn ghost danger" id="lockDisable">Turn off</button>
+      </div>
+      <p class="hint" id="lockBioState"></p>
+    </div>
+    <p class="lock-err" id="lockDlgMsg" aria-live="polite"></p>
+  </div>
+</dialog>
 
 <div class="call" id="callView" hidden role="dialog" aria-modal="true" aria-label="Voice call">
   <div class="call-inner">
@@ -4947,6 +4998,85 @@ Don't describe your face or hair in it; your look is added automatically.`;
       showMsg(mode === "phone" ? "Phone mode: showing only what works without your PC (free online images, video and chat)." : "PC mode: everything is shown, including what runs on your PC.");
     }));
     return { apply, mode: () => mode };
+  })();
+
+  // ---------- privacy lock ----------
+  (() => {
+    const view = $("#lockView"), dlg = $("#lockDlg");
+    const cfg = () => ls.get("dd.lock", null); // { salt, hash, after, cred }
+    const save = (c) => ls.set("dd.lock", c);
+    const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+    const unb64 = (s_) => Uint8Array.from(atob(s_), (c) => c.charCodeAt(0));
+    async function hashPin(pin, salt) { return b64(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(salt + ":" + pin))); }
+    const bioOk = () => !!(window.PublicKeyCredential && navigator.credentials);
+    let hiddenAt = 0, tries = 0;
+    function lock() {
+      if (!cfg()) return;
+      document.documentElement.classList.add("locked");
+      view.hidden = false; $("#lockPin").value = ""; $("#lockErr").textContent = ""; $("#lockForgotText").hidden = true;
+      $("#lockBio").hidden = !(cfg().cred && bioOk());
+      try { voice.stop(); } catch {}
+      setTimeout(() => $("#lockPin").focus(), 50);
+    }
+    function unlock() { document.documentElement.classList.remove("locked"); view.hidden = true; tries = 0; }
+    $("#lockForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const c = cfg(); if (!c) return unlock();
+      if (tries >= 5) { $("#lockErr").textContent = "Too many tries. Wait 30 seconds."; return; }
+      if ((await hashPin($("#lockPin").value.trim(), c.salt)) === c.hash) unlock();
+      else { tries++; $("#lockErr").textContent = "Wrong PIN."; $("#lockPin").value = ""; if (tries >= 5) setTimeout(() => { tries = 0; $("#lockErr").textContent = ""; }, 30000); }
+    });
+    async function bioCheck() {
+      const c = cfg(); if (!c || !c.cred) return false;
+      try {
+        await navigator.credentials.get({ publicKey: { challenge: crypto.getRandomValues(new Uint8Array(32)), allowCredentials: [{ type: "public-key", id: unb64(c.cred) }], userVerification: "required", timeout: 60000 } });
+        return true;
+      } catch { return false; }
+    }
+    $("#lockBio").addEventListener("click", async () => { if (await bioCheck()) unlock(); else $("#lockErr").textContent = "Face ID / fingerprint didn't work. Use your PIN."; });
+    $("#lockForgot").addEventListener("click", () => { $("#lockForgotText").hidden = false; });
+    // Hide the app when switching away; lock again after the chosen time.
+    document.addEventListener("visibilitychange", () => {
+      const c = cfg(); if (!c) return;
+      if (document.hidden) { hiddenAt = Date.now(); if (!Number(c.after)) lock(); else document.documentElement.classList.add("privacy-blur"); }
+      else { document.documentElement.classList.remove("privacy-blur"); if (Date.now() - hiddenAt >= Number(c.after || 0) * 1000) lock(); }
+    });
+    // ----- settings dialog -----
+    function renderDlg() {
+      const c = cfg();
+      $("#lockOff").hidden = !!c; $("#lockOn").hidden = !c; $("#lockDlgMsg").textContent = "";
+      if (c) { $("#lockAfter").value = String(c.after || 0); $("#lockBioSet").hidden = !bioOk(); $("#lockBioState").textContent = c.cred ? "Face ID / fingerprint unlock is on." : ""; }
+    }
+    $("#lockBtn").addEventListener("click", () => { closeMenu(); renderDlg(); dlg.showModal(); });
+    $("#lockDlgClose").addEventListener("click", () => dlg.close());
+    dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+    $("#lockEnable").addEventListener("click", async () => {
+      const a = $("#lockNew").value.trim(), b = $("#lockNew2").value.trim();
+      if (!/^\d{4,8}$/.test(a)) { $("#lockDlgMsg").textContent = "Use 4 to 8 numbers."; return; }
+      if (a !== b) { $("#lockDlgMsg").textContent = "The two PINs don't match."; return; }
+      const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
+      save({ salt, hash: await hashPin(a, salt), after: 60, cred: null });
+      $("#lockNew").value = $("#lockNew2").value = "";
+      renderDlg(); $("#lockDlgMsg").textContent = "";
+    });
+    $("#lockAfter").addEventListener("change", () => { const c = cfg(); if (c) { c.after = Number($("#lockAfter").value); save(c); } });
+    $("#lockBioSet").addEventListener("click", async () => {
+      const c = cfg(); if (!c) return;
+      try {
+        const cred = await navigator.credentials.create({ publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rp: { name: "Daydream Studio" },
+          user: { id: crypto.getRandomValues(new Uint8Array(16)), name: "daydream-lock", displayName: "Daydream lock" },
+          pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+          authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged" },
+          timeout: 60000,
+        } });
+        c.cred = b64(cred.rawId); save(c); renderDlg();
+      } catch { $("#lockDlgMsg").textContent = "Couldn't set up Face ID / fingerprint on this device. The PIN still works."; }
+    });
+    $("#lockNow").addEventListener("click", () => { dlg.close(); lock(); });
+    $("#lockDisable").addEventListener("click", () => { ls.set("dd.lock", null); renderDlg(); });
+    if (cfg()) lock();
   })();
 
   // ---------- help panel ----------
