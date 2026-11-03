@@ -110,6 +110,19 @@ Under **Video model → Free online** there are two models that run on Hugging F
 
 No free video service is truly unlimited: free online video always runs on someone's shared GPUs with a daily allowance. The only unlimited option is your own PC (ComfyUI). There's a free daily GPU allowance (shared with Free online HD images, which use very little): small without an account, more with a free [Hugging Face token](https://huggingface.co/settings/tokens) (Read access) pasted under **Video engine**. These are public demos, so they can be busy or change.
 
+### Cloud GPU (PC off)
+
+`cloud/modal_comfyui.py` runs the same ComfyUI setup (Wan 2.2 14B, Wan 2.2 5B, Z-Image) on a [Modal](https://modal.com) GPU that starts on demand and shuts down when idle (billed per second; Modal's free plan includes monthly credit). `cloud/daydream_proxy.py` guards it with a password: Daydream's address is `https://<workspace>--daydream-comfy.modal.run/k/<password>`.
+
+Set up from a phone, no computer needed:
+
+1. Create a Modal account and an API token (Settings → API Tokens).
+2. Add repository secrets `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET` and `DAYDREAM_KEY` (a password of 12+ letters/numbers).
+3. Run **Actions → Cloud GPU (Modal)**. The first run builds ComfyUI and downloads the models (about 85 GB) into the `daydream-models` volume.
+4. Paste the address from the run's summary (plus `/k/<password>`) into Daydream's ComfyUI address. On a phone, the ComfyUI options appear once a cloud address is set.
+
+Run the workflow with **stop and delete** to shut it down (the models stay stored).
+
 ### Use from your phone
 
 Your phone can make videos (and ComfyUI images) using your PC's GPU, at home or away, through [Tailscale](https://tailscale.com/download) (free):

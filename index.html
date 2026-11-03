@@ -396,6 +396,7 @@ dialog.sheet-dialog::backdrop { background: rgba(10,10,9,.45); -webkit-backdrop-
 .seg button svg { width: 15px; height: 15px; }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); font-weight: 600; }
 :root[data-device="phone"] .pc-only { display: none !important; }
+:root[data-device="phone"][data-remote="1"] .engine.remote-ok { display: block !important; }
 
 /* Help */
 .help-btn { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--line-strong); background: transparent; color: var(--muted); font: 600 10.5px/1 var(--f-body); cursor: pointer; display: inline-grid; place-items: center; padding: 0; margin-left: 6px; flex: none; text-transform: none; letter-spacing: 0; }
@@ -633,7 +634,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
             <label class="engine pc-only"><input type="radio" name="engine" value="local" id="engine-local">
               <b>This PC <span class="tag best">Private · unlimited</span></b>
               <small>Your GPU, inside the app (Chrome/Edge)</small></label>
-            <label class="engine pc-only"><input type="radio" name="engine" value="comfy" id="engine-comfy">
+            <label class="engine pc-only remote-ok"><input type="radio" name="engine" value="comfy" id="engine-comfy">
               <b>ComfyUI on this PC <span class="tag">Any browser</span></b>
               <small>Your GPU, via ComfyUI. Fastest</small></label>
             <label class="engine"><input type="radio" name="engine" value="hf" id="engine-hf">
@@ -740,6 +741,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
           <div class="links-row">
             <button type="button" class="link-btn" data-help="help-comfy">Set up ComfyUI</button>
             <button type="button" class="link-btn" data-help="help-video-models">Model files</button>
+            <button type="button" class="link-btn" data-help="help-cloud">Use a cloud GPU (PC off)</button>
             <button type="button" class="link-btn" data-help="help-phone">Use on your phone</button>
           </div>
           </div>
@@ -899,6 +901,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
       <button type="button" data-help="help-thispc">This PC images</button>
       <button type="button" data-help="help-ollama">Ollama chat</button>
       <button type="button" data-help="help-openrouter">OpenRouter chat</button>
+      <button type="button" data-help="help-cloud">Cloud GPU (no PC)</button>
       <button type="button" data-help="help-phone">Use on your phone</button>
       <button type="button" data-help="help-chat">Memory &amp; characters</button>
     </nav>
@@ -1004,6 +1007,24 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
           <li><b>Free</b>: Venice Uncensored · free allows 50 messages a day (1,000 a day once you've ever bought $10 of credit).</li>
           <li><b>Paid</b>: the same model costs about $0.20 per million words read and $0.90 per million written, so $5 lasts months. Add credit at openrouter.ai → Credits, and tick "use the paid version" to carry on when the free messages run out.</li>
           <li>Your key is stored only on this device. Messages go to OpenRouter and the model's host, so they aren't as private as Ollama on your PC.</li>
+        </ul>
+      </section>
+      <section class="help-sec" id="help-cloud">
+        <h3>Your own cloud GPU (PC off, from your phone)</h3>
+        <p>Runs the same ComfyUI setup as your PC (Wan 2.2 14B video and Z-Image pictures) on a rented graphics card at <a href="https://modal.com" target="_blank" rel="noopener">Modal</a>. It wakes up when Daydream sends a job and shuts down after a few idle minutes; you're billed by the second only while it runs, and Modal's free plan includes monthly credit (see <a href="https://modal.com/pricing" target="_blank" rel="noopener">modal.com/pricing</a>). Everything below can be done on your phone.</p>
+        <ol class="steps">
+          <li><b>Modal account</b>: sign up at <a href="https://modal.com/signup" target="_blank" rel="noopener">modal.com</a> (Sign in with GitHub is easiest).</li>
+          <li><b>Modal key</b>: in Modal, open <a href="https://modal.com/settings/tokens" target="_blank" rel="noopener">Settings → API Tokens</a> → <b>New token</b>. Keep the page open: you need the <b>Token ID</b> (starts <code>ak-</code>) and <b>Token Secret</b> (starts <code>as-</code>).</li>
+          <li><b>Three secrets in GitHub</b>: open <a href="https://github.com/Shielsy1234/Claude-/settings/secrets/actions" target="_blank" rel="noopener">your repository → Settings → Secrets and variables → Actions</a> and press <b>New repository secret</b> three times:
+            <code>MODAL_TOKEN_ID</code> (the Token ID), <code>MODAL_TOKEN_SECRET</code> (the Token Secret), and <code>DAYDREAM_KEY</code>: a password you make up, at least 12 letters or numbers. It protects your GPU so nobody else can use your credit.</li>
+          <li><b>Start it</b>: open <a href="https://github.com/Shielsy1234/Claude-/actions/workflows/cloud-gpu.yml" target="_blank" rel="noopener">Actions → Cloud GPU (Modal)</a> → <b>Run workflow</b> → keep the defaults → <b>Run workflow</b>. The first time takes about 20–40 minutes (it sets up ComfyUI and downloads about 85 GB of models into your Modal storage). It also works from the GitHub app.</li>
+          <li><b>Connect Daydream</b>: when the run finishes, open it: the summary shows your address. Add <code>/k/</code> and your password to the end, like <code>https://you--daydream-comfy.modal.run/k/YOUR-PASSWORD</code>, and paste it into <b>Video tab → Video engine → ComfyUI address</b>, then press <b>Check</b>. Pick <b>Wan 2.2 14B</b> as the Video model, and <b>ComfyUI</b> as the Image engine for unlimited Z-Image pictures and edits.</li>
+        </ol>
+        <ul class="checklist">
+          <li><b>Waking up</b>: the first job after a break waits 1–2 minutes while the GPU starts; after that it's quick until it's been idle for 5 minutes.</li>
+          <li><b>Cost</b>: you pay only while it's running (the default L40S card is roughly $2 an hour; a 5-second video takes a few minutes). Check your usage at <a href="https://modal.com/usage" target="_blank" rel="noopener">modal.com/usage</a>.</li>
+          <li><b>Stop it for good</b>: run the same workflow with <b>stop and delete</b>. Your models stay stored, so starting again is quick.</li>
+          <li><b>Back on your PC</b>: change the ComfyUI address back to <code>http://127.0.0.1:8000</code>.</li>
         </ul>
       </section>
       <section class="help-sec" id="help-phone">
@@ -1966,7 +1987,12 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
     ls.set("dd.comfyUrl", v);
     comfyState.checked = comfyState.ok = false; comfyState.models = {};
     comfyImgState.checked = comfyImgState.ok = false;
+    if (onComfyUrlChanged) onComfyUrlChanged();
   }
+  // A ComfyUI reached over https from outside the home network: the Modal cloud GPU, or the PC through Tailscale.
+  const comfyIsRemote = () => /^https:\/\//i.test(ls.get("dd.comfyUrl", "")) && !/^https:\/\/(127\.|localhost|10\.|192\.168\.)/i.test(ls.get("dd.comfyUrl", ""));
+  const comfyIsCloud = () => /\.modal\.run(\/|$)/i.test(ls.get("dd.comfyUrl", ""));
+  let onComfyUrlChanged = null;
   comfyUrlEl.addEventListener("change", () => setComfyUrl(comfyUrlEl.value));
   comfyUrlImgEl.addEventListener("change", () => setComfyUrl(comfyUrlImgEl.value));
   function comfyBase() {
@@ -1992,8 +2018,20 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
   async function comfyJson(path, opts = {}) {
     let r;
     if (insecureRemote(comfyBase())) throw new GenError(INSECURE_HINT);
-    try { r = await fetch(comfyBase() + path, opts); }
-    catch { throw new GenError(`Can't reach ComfyUI at ${comfyBase()}. Check that ComfyUI is running, the address is right, and the CORS setting from the setup steps is turned on.`); }
+    // A cloud GPU that's been idle takes a minute or two to wake up: keep trying for up to about 4 minutes.
+    // Sending a job is only retried when it surely didn't arrive (502/503), so nothing gets queued twice.
+    const tries = comfyIsRemote() ? 4 : 1, isGet = !opts.method || opts.method === "GET";
+    for (let i = 0; i < tries; i++) {
+      try { r = await fetch(comfyBase() + path, opts); }
+      catch (e) {
+        if (opts.signal && opts.signal.aborted) throw e;
+        if (i < tries - 1 && isGet) { await new Promise((res) => setTimeout(res, 8000)); continue; }
+        throw new GenError(comfyIsCloud() ? "Couldn't reach your cloud GPU. It may still be waking up (up to 2 minutes the first time): try again shortly. If it keeps failing, check the address ends with /k/ and your password." : `Can't reach ComfyUI at ${comfyBase()}. Check that ComfyUI is running, the address is right, and the CORS setting from the setup steps is turned on.`);
+      }
+      if ((r.status === 503 || r.status === 502 || (isGet && r.status === 504)) && i < tries - 1) { await new Promise((res) => setTimeout(res, 5000)); continue; }
+      break;
+    }
+    if (r.status === 404 && comfyIsCloud() && path === "/system_stats") throw new GenError("Your cloud GPU didn't accept this address. Check it ends with /k/ followed by your exact DAYDREAM_KEY password.");
     if (!r.ok) {
       let detail = ""; try { detail = JSON.stringify(await r.json()); } catch {}
       const e = new GenError(`ComfyUI returned error ${r.status}.`); e.status = r.status; e.detail = detail; throw e;
@@ -2082,8 +2120,9 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
     rebuildVideoOptions = () => {
       sel.innerHTML = "";
       const phone = document.documentElement.dataset.device === "phone";
-      for (const [label, online] of [["On your PC (ComfyUI)", false], ["Free online (no PC needed)", true]]) {
-        if (phone && !online) continue;
+      const remote = comfyIsRemote();
+      for (const [label, online] of [[comfyIsCloud() ? "Your cloud GPU (ComfyUI)" : remote ? "Your PC, from anywhere (ComfyUI)" : "On your PC (ComfyUI)", false], ["Free online (no PC needed)", true]]) {
+        if (phone && !online && !remote) continue;
         const g = document.createElement("optgroup"); g.label = label;
         for (const [id, m] of Object.entries(VIDEO_MODELS)) if (!!m.online === online) { const o = document.createElement("option"); o.value = id; o.textContent = m.label; g.append(o); }
         sel.append(g);
@@ -4416,16 +4455,22 @@ Only do this for new facts. Never mention or explain this.`;
     const DEFAULTS = { phone: { engine: "hf", vmodel: "ltx", ai: "online" } };
     const looksLikePhone = () => matchMedia("(pointer: coarse)").matches && Math.min(screen.width, screen.height) < 820;
     let mode = ls.get("dd.device", null) || (looksLikePhone() ? "phone" : "pc");
+    // On a phone, ComfyUI choices appear once a cloud (or Tailscale) address is set.
+    const allowedFor = (what) => {
+      const a = ALLOWED[mode][what].slice();
+      if (mode === "phone" && comfyIsRemote()) { if (what === "engine") a.push("comfy"); if (what === "vmodel") a.push("5b", "14b"); }
+      return a;
+    };
     function pickEngine() {
       const want = ls.get("dd.engine." + mode, null);
-      const allowed = ALLOWED[mode].engine;
+      const allowed = allowedFor("engine");
       // First time in phone mode: use the HD free engine unless an account engine was chosen
       const keep = mode === "pc" ? allowed.includes(st.engine) : ["pollinations", "openai"].includes(st.engine);
       const next = allowed.includes(want) ? want : keep ? st.engine : DEFAULTS.phone.engine;
       if (next !== st.engine) { const r = document.getElementById("engine-" + next); if (r) { r.checked = true; r.dispatchEvent(new Event("change")); } }
     }
     function pickVideo() {
-      const want = ls.get("dd.vmodel." + mode, null), allowed = ALLOWED[mode].vmodel;
+      const want = ls.get("dd.vmodel." + mode, null), allowed = allowedFor("vmodel");
       const next = allowed.includes(want) ? want : allowed.includes(st.vmodel) ? st.vmodel : DEFAULTS.phone.vmodel;
       rebuildVideoOptions();
       if (next !== st.vmodel) setVideoModel(next);
@@ -4438,12 +4483,14 @@ Only do this for new facts. Never mention or explain this.`;
     }
     function apply() {
       document.documentElement.dataset.device = mode;
+      document.documentElement.dataset.remote = comfyIsRemote() ? "1" : "";
       $("#tagline").textContent = mode === "phone" ? "Chat, realistic images and video, free online, no PC needed." : "Your private AI: chat, realistic images and video, all on your PC.";
       document.querySelectorAll("#deviceSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.device === mode)));
       pickEngine(); pickVideo(); pickAI();
       updateVideoFields(); updateBadge();
     }
-    onEngineChosen = (eng) => { if (ALLOWED[mode].engine.includes(eng)) ls.set("dd.engine." + mode, eng); };
+    onEngineChosen = (eng) => { if (allowedFor("engine").includes(eng)) ls.set("dd.engine." + mode, eng); };
+    onComfyUrlChanged = () => { document.documentElement.dataset.remote = comfyIsRemote() ? "1" : ""; rebuildVideoOptions(); };
     document.querySelectorAll("#deviceSeg button").forEach((b) => b.addEventListener("click", () => {
       if (mode === b.dataset.device) return;
       ls.set("dd.engine." + mode, st.engine); ls.set("dd.vmodel." + mode, st.vmodel); if (ai) ls.set("dd.aiKind." + mode, ai.kind());

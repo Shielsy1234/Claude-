@@ -1,0 +1,111 @@
+# Sets up (or stops) your Daydream cloud GPU on Modal. Run it from your phone:
+# GitHub -> this repository -> Actions -> "Cloud GPU (Modal)" -> Run workflow.
+# Needs three repository secrets (Settings -> Secrets and variables -> Actions):
+#   MODAL_TOKEN_ID, MODAL_TOKEN_SECRET  (from modal.com -> Settings -> API Tokens)
+#   DAYDREAM_KEY                        (a password you make up; it goes at the end of your Daydream address)
+name: Cloud GPU (Modal)
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to do"
+        type: choice
+        options: [set up or update, stop and delete]
+        default: set up or update
+      models:
+        description: "Models to download (only the first time, or to add more)"
+        type: choice
+        options:
+          - "images,video14b"
+          - "images"
+          - "images,video14b,video5b"
+          - "none"
+        default: "images,video14b"
+      gpu:
+        description: "Cloud graphics card (faster costs more per hour)"
+        type: choice
+        options: [L40S, A10G, L4, A100-80GB, H100]
+        default: L40S
+      idle_minutes:
+        description: "Shut down after this many idle minutes"
+        type: choice
+        options: ["3", "5", "10", "20"]
+        default: "5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloud-gpu
+  cancel-in-progress: false
+
+jobs:
+  cloud:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      DAYDREAM_KEY: ${{ secrets.DAYDREAM_KEY }}
+      ACTION: ${{ inputs.action }}
+      MODELS: ${{ inputs.models }}
+      DAYDREAM_GPU: ${{ inputs.gpu }}
+      DAYDREAM_IDLE_MINUTES: ${{ inputs.idle_minutes }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Modal
+        run: pip install --quiet "modal==1.6.3"
+
+      - name: Check your secrets
+        run: |
+          missing=""
+          [ -n "$MODAL_TOKEN_ID" ] || missing="$missing MODAL_TOKEN_ID"
+          [ -n "$MODAL_TOKEN_SECRET" ] || missing="$missing MODAL_TOKEN_SECRET"
+          [ -n "$DAYDREAM_KEY" ] || missing="$missing DAYDREAM_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Add these repository secrets first (Settings -> Secrets and variables -> Actions):$missing"
+            exit 1
+          fi
+          if ! printf '%s' "$DAYDREAM_KEY" | grep -Eq '^[A-Za-z0-9_-]{12,}$'; then
+            echo "::error::DAYDREAM_KEY must be at least 12 characters, using only letters, numbers, - and _ (it becomes part of a web address)."
+            exit 1
+          fi
+
+      - name: Stop and delete the cloud GPU
+        if: inputs.action == 'stop and delete'
+        run: |
+          modal app stop daydream || true
+          echo "### Cloud GPU stopped" >> "$GITHUB_STEP_SUMMARY"
+          echo "Your downloaded models are kept (Modal Volume \`daydream-models\`). Run *set up or update* to start again." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save your Daydream password in Modal
+        if: inputs.action == 'set up or update'
+        run: modal secret create daydream-key "DAYDREAM_KEY=$DAYDREAM_KEY" --force > /dev/null
+
+      - name: Deploy the cloud GPU
+        if: inputs.action == 'set up or update'
+        run: modal deploy cloud/modal_comfyui.py 2>&1 | tee deploy.log
+
+      - name: Download the models (first time takes a while)
+        if: inputs.action == 'set up or update' && inputs.models != 'none'
+        run: modal run cloud/modal_comfyui.py::download_models --sets "$MODELS"
+
+      - name: Your Daydream address
+        if: inputs.action == 'set up or update'
+        run: |
+          url=$(grep -Eo 'https://[A-Za-z0-9._-]+daydream-comfy[A-Za-z0-9._-]*\.modal\.run' deploy.log | head -1)
+          {
+            echo "### Your cloud GPU is ready"
+            echo ""
+            echo "In Daydream, put this in **Video engine → ComfyUI address** (and Image engine → ComfyUI), replacing YOUR-PASSWORD with your DAYDREAM_KEY:"
+            echo ""
+            echo "\`${url:-https://<your-workspace>--daydream-comfy.modal.run}/k/YOUR-PASSWORD\`"
+            echo ""
+            echo "It starts by itself when Daydream sends a job (the first one after a break waits 1-2 minutes) and shuts down after $DAYDREAM_IDLE_MINUTES idle minutes."
+          } >> "$GITHUB_STEP_SUMMARY"
