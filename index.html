@@ -2562,7 +2562,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
     for (const v of Array.isArray(x) ? x : Object.values(x)) { const u = findUrl(v); if (u) return u; }
     return null;
   }
-  async function genHFEdit({ prompt, image, seed, signal, onStatus }) {
+  async function genHFEdit({ prompt, image, seed, signal, onStatus, outW = 256, outH = 256 }) {
     const status = onStatus || (() => {}), s32 = seed % 2147483647, fix = (t) => status(t.replace("video", "picture"));
     const img = await shrinkImage(image);
     const fetchImage = async (url) => {
@@ -2575,7 +2575,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
     try {
       status("Sending your picture…");
       const file = await hfUpload(HF_EDIT.main, img, signal);
-      const out = await hfCall(HF_EDIT.main, "infer", [[{ image: file, caption: null }], prompt, s32, false, 1, 4, 256, 256, false], signal, fix);
+      const out = await hfCall(HF_EDIT.main, "infer", [[{ image: file, caption: null }], prompt, s32, false, 1, 4, outH, outW, false], signal, fix);
       const url = findUrl(out);
       if (!url) throw new GenError("No picture came back.");
       return await fetchImage(url);
@@ -3844,8 +3844,8 @@ Reply with only a JSON array of ${n} strings. No markdown, no numbering.`;
     async function shrink(blob) {
       try {
         const bmp = await createImageBitmap(blob);
-        const side = Math.min(bmp.width, bmp.height), c = document.createElement("canvas"); c.width = c.height = 320;
-        c.getContext("2d").drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, 320, 320);
+        const side = Math.min(bmp.width, bmp.height), c = document.createElement("canvas"); c.width = c.height = Math.min(768, side);
+        c.getContext("2d").drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, c.width, c.height);
         return await new Promise((res) => c.toBlob((b) => res(b || blob), "image/jpeg", 0.9));
       } catch { return blob; }
     }
@@ -3958,7 +3958,10 @@ Write descriptions in English, rich in concrete detail (subject, setting, lighti
     const MEMORY_RULES = `When the user tells you something lasting about themselves that would be useful in future chats (their name, likes and dislikes, projects, people or pets in their life), add on its own line:
 [[remember: a short fact about the user, written in the third person]]
 Only do this for new facts. Never mention or explain this.`;
-    const TAG_RE = /\[\[\s*(image|video|longvideo|remember)\s*:\s*([\s\S]*?)\]\]/gi;
+    const SELFIE_RULES = `You have a face that stays the same in every picture. When the user asks for a picture of you (a selfie, a photo of you doing something, wearing something or somewhere), use this tag instead of the image tag, on its own line:
+[[selfie: what you're doing, wearing, your expression, where you are, the lighting and camera framing]]
+Don't describe your face or hair in it; your look is added automatically.`;
+    const TAG_RE = /\[\[\s*(image|selfie|video|longvideo|remember)\s*:\s*([\s\S]*?)\]\]/gi;
 
     const curBot = () => bots.get(cur ? cur.botId || "daydream" : botId);
     function systemPrompt(bot) {
@@ -3969,6 +3972,7 @@ Only do this for new facts. Never mention or explain this.`;
       if (bot.appearance) parts.push(`Your appearance: ${bot.appearance}`);
       if (bot.greeting) parts.push(`You opened this conversation by saying: "${bot.greeting}"`);
       if (bot.media !== false) parts.push(MEDIA_RULES + (bot.appearance ? "\nIf the user asks for a picture or video of you, include your appearance in the description." : ""));
+      if (bot.media !== false && bot.avatar) parts.push(SELFIE_RULES);
       if (memory.auto()) parts.push(MEMORY_RULES);
       const mem = memory.block(); if (mem) parts.push(mem);
       const extra = persona.value.trim(); if (extra) parts.push(`The user's custom instructions:\n${extra}`);
@@ -4000,10 +4004,11 @@ Only do this for new facts. Never mention or explain this.`;
         const parts = m[2].split("|").map((s) => s.trim()).filter(Boolean);
         const prompt = parts.shift() || "";
         const opts = parts.join(" ").toLowerCase();
-        const shape = /\bwide\b/.test(opts) ? "wide" : /\btall\b/.test(opts) ? "tall" : /\bsquare\b/.test(opts) ? "square" : kind === "image" ? "square" : "wide";
+        const shape = /\bwide\b/.test(opts) ? "wide" : /\btall\b/.test(opts) ? "tall" : /\bsquare\b/.test(opts) ? "square" : kind === "image" || kind === "selfie" ? (kind === "selfie" ? "tall" : "square") : "wide";
         if (!prompt) continue;
         const mid = "md" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
         if (kind === "longvideo") media.push({ mid, kind, prompt, shape, total: String(nearestTotal(opts)), status: "offer" });
+        else if (kind === "selfie") media.push({ mid, kind: "image", selfie: true, prompt, shape, status: "pending" });
         else media.push({ mid, kind, prompt, shape, animate: kind === "video" && /\banimate\b/.test(opts), status: "pending" });
       }
       return { media: media.slice(0, 4), remember: remember.slice(0, 5) };
@@ -4267,8 +4272,29 @@ Only do this for new facts. Never mention or explain this.`;
           let item;
           if (m.kind === "image") {
             if (card()) card().status("Developing your image…");
-            const blob = await ENGINES[st.engine]({ prompt: m.prompt, shape: m.shape, seed, signal, onWait: (l) => card() && card().wait(l), onStatus: (t, f) => card() && card().status(t, f) });
-            item = { id: newId(), kind: "image", prompt: m.prompt, engine: engineName(), shape: m.shape, seed, blob, ts: Date.now() };
+            const bot = bots.get(convo.botId || "daydream");
+            const onStatus = (t, f) => card() && card().status(t, f), onWait = (l) => card() && card().wait(l);
+            let blob = null, engineLabel = engineName();
+            if (m.selfie && bot.avatar) {
+              // Same face every time: the character's avatar is the reference for the free online editor.
+              try {
+                const [ow, oh] = HF_IMG_SIZES[m.shape] || HF_IMG_SIZES.square;
+                blob = await genHFEdit({
+                  prompt: `A new realistic photo of this exact same person: ${m.prompt}. Keep their face, facial features, skin tone and hair identical to the reference. Natural candid photograph, sharp focus.`,
+                  image: bot.avatar, seed, signal, onStatus, outW: ow, outH: oh,
+                });
+                engineLabel = "Same face · Qwen Image Edit";
+              } catch (e) {
+                if (signal.aborted) throw e;
+                console.warn("selfie via reference failed, making a normal picture", e);
+                onStatus("Same-face mode is busy; making a normal picture…");
+              }
+            }
+            if (!blob) {
+              const prompt = m.selfie ? `${bot.appearance ? bot.appearance + ", " : ""}${m.prompt}` : m.prompt;
+              blob = await ENGINES[st.engine]({ prompt, shape: m.shape, seed, signal, onWait, onStatus });
+            }
+            item = { id: newId(), kind: "image", prompt: m.prompt, engine: engineLabel, shape: m.shape, seed, blob, ts: Date.now(), ...(m.selfie ? { selfieOf: bot.name } : {}) };
           } else {
             const startImage = m.animate ? lastImageBlob(convo) : null;
             if (card()) card().status("Connecting to ComfyUI…");

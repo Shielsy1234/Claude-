@@ -38,6 +38,10 @@ The **Chat** tab talks to an AI running on your PC. Ask it to make a picture or 
 
 **Characters**: chat with different AI personalities, like companions. Each has a name, an avatar (upload one or generate it from their appearance), a personality, a greeting and an optional voice that reads replies aloud. They can send pictures of themselves. Four starters are included (Daydream, Nova, Sage, Rook); create as many as you like with **+ New**.
 
+**Same face**: characters with an avatar send selfies that keep their face. The avatar is used as the reference for the free online editor (Qwen Image Edit), so "send me a picture of you at the beach" shows the same person every time.
+
+**Photos**: the picture button in the chat box sends a photo for the AI to look at (an Ollama vision model on the PC, or a free vision model through OpenRouter).
+
 **Memory**: when you mention something lasting (your name, likes, projects), the AI saves it under **Memory** and uses it in future chats with every character. You can add, remove or clear memories, or turn automatic memory off.
 
 **Voice**: the speaker button reads replies aloud using a voice picked per character; the microphone button lets you talk instead of typing (uses the browser's online speech service).
