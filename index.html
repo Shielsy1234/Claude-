@@ -428,6 +428,22 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
 .help-sec ul.checklist li::before { content: none; }
 @keyframes helpflash { from { background: var(--active); } to { background: transparent; } }
 
+/* Saved prompts */
+details.lib { margin-top: -10px; }
+details.lib summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--muted); padding: 2px 0; }
+details.lib summary::-webkit-details-marker { display: none; }
+details.lib summary:hover { color: var(--ink); }
+details.lib summary svg { width: 15px; height: 15px; }
+details.lib .lib-inner { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; align-items: flex-start; }
+.lib-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; width: 100%; max-height: 260px; overflow: auto; }
+.lib-list li { display: flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.lib-list li button.use { flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; padding: 8px 10px; cursor: pointer; font-size: 13.5px; display: flex; flex-direction: column; gap: 1px; }
+.lib-list li button.use span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-list li button.use small { color: var(--muted); font-size: 11.5px; }
+.lib-list li button.use:hover { background: var(--sunken); border-radius: 10px; }
+.lib-list li button.x { border: 0; background: transparent; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; color: var(--muted); flex: none; }
+.lib-list li button.x:hover { background: var(--active); color: var(--ink); }
+
 /* Voice call */
 .call { position: fixed; inset: 0; z-index: 60; background: color-mix(in srgb, var(--paper) 94%, transparent); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); display: grid; place-items: center; padding: max(20px, env(safe-area-inset-top, 0px)) 20px max(20px, env(safe-area-inset-bottom, 0px)); }
 .call-inner { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; max-width: 440px; width: 100%; }
@@ -571,6 +587,15 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
             <input type="file" id="startFile" accept="image/*" hidden>
           </div>
         </div>
+
+        <details class="lib" id="libDetails">
+          <summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"/></svg>My saved prompts <span class="sum" id="libCount"></span></summary>
+          <div class="lib-inner">
+            <button type="button" class="btn small" id="libSave">Save this prompt and look</button>
+            <ul class="lib-list" id="libList"></ul>
+            <p class="hint" id="libEmpty">Save prompts you like, with their look and shape, to reuse them in one tap.</p>
+          </div>
+        </details>
 
         <div class="field" id="editField" hidden>
           <span class="label">Edit a picture (optional) <button type="button" class="help-btn" data-help="help-edit" aria-label="Help: editing pictures" title="Help: editing pictures">?</button></span>
@@ -1282,6 +1307,45 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
     }
   }
   radios($("#looks"), "look", LOOKS, st.look, (k) => { st.look = k; ls.set("dd.look", k); });
+  // ---------- saved prompts ----------
+  const lib = (() => {
+    let items = ls.get("dd.library", []); if (!Array.isArray(items)) items = [];
+    const persist = () => ls.set("dd.library", items);
+    const pick = (name, k) => { const r = document.getElementById(name + "-" + k); if (r && !r.checked) { r.checked = true; r.dispatchEvent(new Event("change")); } };
+    function render() {
+      const ul = $("#libList"); ul.innerHTML = "";
+      $("#libEmpty").hidden = items.length > 0;
+      $("#libCount").textContent = items.length ? `(${items.length})` : "";
+      for (const it of items) {
+        const li = document.createElement("li");
+        const use = document.createElement("button"); use.type = "button"; use.className = "use"; use.title = it.text;
+        const t = document.createElement("span"); t.textContent = it.text;
+        const sm = document.createElement("small"); sm.textContent = [it.mode === "video" ? "Video" : "Image", LOOKS[it.look] ? LOOKS[it.look].label : "", SHAPES[it.shape] ? SHAPES[it.shape].label : ""].filter(Boolean).join(" · ");
+        use.append(t, sm);
+        use.addEventListener("click", () => {
+          if (it.mode && it.mode !== st.mode && (it.mode === "image" || it.mode === "video")) setMode(it.mode);
+          setPrompt(it.text);
+          if (it.look) pick("look", it.look);
+          if (it.shape) pick("shape", it.shape);
+          if (typeof it.real === "boolean") { realEl.checked = it.real; ls.set("dd.real", it.real); }
+          $("#libDetails").open = false; promptEl.focus();
+        });
+        const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.setAttribute("aria-label", "Delete saved prompt"); x.textContent = "✕";
+        x.addEventListener("click", () => { items = items.filter((v) => v !== it); persist(); render(); });
+        li.append(use, x); ul.append(li);
+      }
+    }
+    $("#libSave").addEventListener("click", () => {
+      const text = promptEl.value.trim();
+      if (!text) { showMsg("Type a prompt first, then save it."); promptEl.focus(); return; }
+      items = items.filter((v) => v.text !== text);
+      items.unshift({ text, mode: st.mode, look: st.look, shape: st.shape, real: realEl.checked, ts: Date.now() });
+      items = items.slice(0, 100); persist(); render();
+      showMsg("Saved. Find it under My saved prompts.");
+    });
+    render();
+    return { render };
+  })();
   radios($("#shapes"), "shape", SHAPES, st.shape, (k) => { st.shape = k; ls.set("dd.shape", k); });
   radios($("#counts"), "count", COUNTS, st.count, (k) => { st.count = k; ls.set("dd.count", k); });
   radios($("#lengths"), "vlen", LENGTHS, st.vlen, (k) => { st.vlen = k; ls.set("dd.vlen", k); });
@@ -1377,6 +1441,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
     $("#countField").hidden = !isImg;
     $("#shapeField").hidden = !(isImg || isVid);
     $("#enhance").hidden = m === "ideas";
+    $("#libDetails").hidden = m === "ideas";
     updateVideoFields();
     $("#engineDetails").hidden = !isImg;
     $("#videoDetails").hidden = !isVid;
