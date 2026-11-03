@@ -826,6 +826,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
       <button type="button" class="btn" id="lbEdit">Edit</button>
       <button type="button" class="btn" id="lbUpscale" title="Twice the size, sharper detail (free online)">Upscale</button>
       <button type="button" class="btn" id="lbAnimate">Animate</button>
+      <button type="button" class="btn" id="lbSound" title="AI sound effects that match the video (free online)">Add sound</button>
       <button type="button" class="btn" id="lbReuse">Use prompt</button>
       <button type="button" class="btn" id="lbClose">Close</button>
     </div>
@@ -2488,13 +2489,14 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
     return new GenError(msg ? "The free online service had a problem: " + msg.slice(0, 200) : "The free online service is busy or had a problem. Try again in a minute.");
   }
   async function hfUpload(host, blob, signal) {
-    const fd = new FormData(); fd.append("files", blob, /jpe?g/.test(blob.type || "") ? "daydream-start.jpg" : "daydream-start.png");
+    const t = blob.type || "", ext = /jpe?g/.test(t) ? "jpg" : /webp/.test(t) ? "webp" : /mp4/.test(t) ? "mp4" : /webm/.test(t) ? "webm" : /quicktime/.test(t) ? "mov" : "png";
+    const fd = new FormData(); fd.append("files", blob, "daydream-start." + ext);
     let r;
     try { r = await fetch(host + "/gradio_api/upload", { method: "POST", body: fd, headers: hfHeaders(false), signal }); }
     catch (e) { if (signal && signal.aborted) throw e; throw new GenError("Couldn't reach the free online service. Check your internet connection."); }
     if (!r.ok) throw hfError(await r.text().catch(() => ""), r.status);
     const paths = await r.json();
-    return { path: paths[0], orig_name: "daydream-start.png", meta: { _type: "gradio.FileData" } };
+    return { path: paths[0], orig_name: "daydream-start." + ext, meta: { _type: "gradio.FileData" } };
   }
   async function hfCall(host, endpoint, data, signal, onStatus) {
     let r;
@@ -2662,6 +2664,35 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
     return /^image\//.test(b.type) ? b : new Blob([b], { type: "image/png" });
   }
 
+  // ----- Sound for videos: MMAudio on Hugging Face watches the clip and makes matching sound -----
+  const HF_SOUND = "https://hkchengrex-mmaudio.hf.space";
+  function videoDuration(blob) {
+    return new Promise((res) => {
+      const v = document.createElement("video"), url = URL.createObjectURL(blob);
+      const done = (d) => { URL.revokeObjectURL(url); res(d); };
+      v.preload = "metadata"; v.muted = true;
+      v.onloadedmetadata = () => done(isFinite(v.duration) ? v.duration : 5);
+      v.onerror = () => done(5);
+      setTimeout(() => done(5), 8000);
+      v.src = url;
+    });
+  }
+  async function genSound({ video, prompt, seed, signal, onStatus }) {
+    const status = onStatus || (() => {});
+    const secs = await videoDuration(video);
+    if (secs > 12) throw new GenError("Sound works on clips up to about 10 seconds. For a long video, add sound to its separate clips.");
+    status("Sending your video…");
+    const file = await hfUpload(HF_SOUND, video, signal);
+    const out = await hfCall(HF_SOUND, "video_to_audio", [file, (prompt || "").slice(0, 300), "music", seed % 2147483647, 25, 4.5, Math.max(1, Math.min(10, Math.round(secs * 10) / 10))], signal, (t) => status(t.replace("Making", "Making the sound").replace("video", "sound")));
+    const url = findUrl(out) || (typeof (out && out[0]) === "string" ? out[0] : null);
+    if (!url) throw new GenError("The free sound service didn't return anything. Try again in a minute.");
+    status("Downloading…", 1);
+    const r = await fetch(url, { signal });
+    if (!r.ok) throw new GenError(`Couldn't download the result (error ${r.status}). Try again.`);
+    const b = await r.blob();
+    return /^video\//.test(b.type) ? b : new Blob([b], { type: "video/mp4" });
+  }
+
   // Running video jobs, so the chat can wait for the GPU instead of fighting ComfyUI for it.
   let videoJobs = 0;
   const videoWaiters = [];
@@ -2815,6 +2846,30 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
       await DB.put(up); saved.unshift(up); renderGallery();
       card.done(up);
       showMsg("Upscaled to twice the size with sharper detail. Your original is kept too.");
+    } catch (e) {
+      card.fail(signal.aborted ? "Stopped." : e && e.user ? e.message : "Something went wrong: " + (e && e.message ? e.message : e));
+    } finally { st.busy = false; st.ctl = null; updateGo(); }
+  }
+
+  async function soundItem(item) {
+    if (st.busy) { showMsg("Wait for the current job to finish first."); return; }
+    setMode("video");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    st.ctl = new AbortController(); const signal = st.ctl.signal;
+    st.busy = true; updateGo(); hideMsg();
+    $("#batchTitle").textContent = item.prompt || "Video with sound";
+    $("#batchMeta").textContent = "Adding sound · MMAudio";
+    $("#finalPrompt").hidden = true;
+    const sheet = $("#sheet"); sheet.className = "sheet one"; sheet.innerHTML = "";
+    const [w, h] = item.shape === "tall" ? [9, 16] : item.shape === "square" ? [1, 1] : [16, 9];
+    const card = makeCard(w * 60, h * 60); sheet.append(card.el); card.status("Listening to the scene and making sound…");
+    try {
+      const seed = randSeed();
+      const blob = await genSound({ video: item.blob, prompt: item.prompt, seed, signal, onStatus: (t, f) => card.status(t, f) });
+      const out = { id: newId(), kind: "video", prompt: item.prompt, engine: (item.engine ? item.engine + " · " : "") + "sound by MMAudio", shape: item.shape, seed, blob, ts: Date.now(), withSound: true };
+      await DB.put(out); saved.unshift(out); renderGallery();
+      card.done(out);
+      showMsg("Sound added. The silent original is kept too.");
     } catch (e) {
       card.fail(signal.aborted ? "Stopped." : e && e.user ? e.message : "Something went wrong: " + (e && e.message ? e.message : e));
     } finally { st.busy = false; st.ctl = null; updateGo(); }
@@ -2987,6 +3042,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
     $("#lbAnimate").hidden = it.kind === "video";
     $("#lbEdit").hidden = it.kind === "video";
     $("#lbUpscale").hidden = it.kind === "video" || !!it.upscaled;
+    $("#lbSound").hidden = it.kind !== "video" || !!it.withSound;
     $("#lbFav").textContent = it.fav ? "★ Favourite" : "☆ Favourite";
     $("#lightbox").hidden = false; $("#lbClose").focus();
     document.body.style.overflow = "hidden";
@@ -2999,6 +3055,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
   $("#lbAnimate").addEventListener("click", () => { if (lbItem) { const it = lbItem; closeLightbox(); animate(it); } });
   $("#lbEdit").addEventListener("click", () => { if (lbItem) { const it = lbItem; closeLightbox(); editItem(it); } });
   $("#lbUpscale").addEventListener("click", () => { if (lbItem) { const it = lbItem; closeLightbox(); upscaleItem(it); } });
+  $("#lbSound").addEventListener("click", () => { if (lbItem) { const it = lbItem; closeLightbox(); soundItem(it); } });
   $("#lbFav").addEventListener("click", async () => { if (lbItem) { await toggleFav(lbItem); $("#lbFav").textContent = lbItem.fav ? "★ Favourite" : "☆ Favourite"; } });
 
   // ---------- results sheet ----------
@@ -3049,6 +3106,9 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
           if (!item.upscaled) { const upb = document.createElement("button"); upb.type = "button"; upb.className = "btn small ghost"; upb.textContent = "Upscale"; upb.title = "Twice the size, sharper detail (free online)"; upb.addEventListener("click", () => upscaleItem(item)); btns.append(upb); }
           const an = document.createElement("button"); an.type = "button"; an.className = "btn small ghost"; an.textContent = "Animate";
           an.addEventListener("click", () => animate(item)); btns.append(an);
+        } else if (!item.withSound) {
+          const snd = document.createElement("button"); snd.type = "button"; snd.className = "btn small ghost"; snd.textContent = "Add sound"; snd.title = "AI sound effects that match the video (free online)";
+          snd.addEventListener("click", () => soundItem(item)); btns.append(snd);
         }
         const dl = document.createElement("a"); dl.className = "btn small"; dl.href = urlFor(item); dl.download = fileName(item);
         dl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Download';
