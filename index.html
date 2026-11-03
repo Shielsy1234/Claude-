@@ -824,6 +824,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>Download</a>
       <button type="button" class="btn" id="lbFav">☆ Favourite</button>
       <button type="button" class="btn" id="lbEdit">Edit</button>
+      <button type="button" class="btn" id="lbUpscale" title="Twice the size, sharper detail (free online)">Upscale</button>
       <button type="button" class="btn" id="lbAnimate">Animate</button>
       <button type="button" class="btn" id="lbReuse">Use prompt</button>
       <button type="button" class="btn" id="lbClose">Close</button>
@@ -2641,6 +2642,26 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
     }
   }
 
+  // ----- Upscale and sharpen: Finegrain's free image enhancer on Hugging Face (2x, redraws fine detail) -----
+  const HF_UPSCALE = "https://finegrain-finegrain-image-enhancer.hf.space";
+  async function genUpscale({ image, prompt, seed, signal, onStatus }) {
+    const status = onStatus || (() => {}), fix = (t) => status(t.replace("video", "picture"));
+    const img = await shrinkImage(image, 1024);
+    status("Sending your picture…");
+    const file = await hfUpload(HF_UPSCALE, img, signal);
+    const pos = `masterpiece, best quality, highres, sharp focus, fine detail${prompt ? ", " + prompt.slice(0, 300) : ""}`;
+    const out = await hfCall(HF_UPSCALE, "process", [file, pos, "worst quality, low quality, normal quality, blurry", seed % 2147483647, 2, 0.6, 1, 6, 112, 144, 0.35, 18, "DDIM"], signal, fix);
+    const files = Array.isArray(out) ? out.flat(2) : [out];
+    const last = [...files].reverse().find((f) => f && (f.url || (f.image && f.image.url)));
+    const url = last && (last.url || last.image.url);
+    if (!url) throw new GenError("The free upscaler didn't return a picture. Try again in a minute.");
+    status("Downloading the sharper picture…", 1);
+    const r = await fetch(url, { signal });
+    if (!r.ok) throw new GenError(`Couldn't download the picture (error ${r.status}). Try again.`);
+    const b = await r.blob();
+    return /^image\//.test(b.type) ? b : new Blob([b], { type: "image/png" });
+  }
+
   // Running video jobs, so the chat can wait for the GPU instead of fighting ComfyUI for it.
   let videoJobs = 0;
   const videoWaiters = [];
@@ -2772,6 +2793,31 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
       : "Ready to edit. Describe the change (for example \"make it night time\" or \"sharper, more detailed skin and hair\") and press Edit image. You can keep editing the result.");
     window.scrollTo({ top: 0, behavior: "smooth" });
     promptEl.focus();
+  }
+
+  async function upscaleItem(item) {
+    if (st.busy) { showMsg("Wait for the current picture to finish first."); return; }
+    setMode("image");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    st.ctl = new AbortController(); const signal = st.ctl.signal;
+    st.busy = true; updateGo(); hideMsg();
+    let w = 1024, h = 1024;
+    try { const bm = await createImageBitmap(item.blob); w = bm.width; h = bm.height; if (bm.close) bm.close(); } catch {}
+    $("#batchTitle").textContent = item.prompt || "Upscaled picture";
+    $("#batchMeta").textContent = "Upscale 2× · Finegrain enhancer";
+    $("#finalPrompt").hidden = true;
+    const sheet = $("#sheet"); sheet.className = "sheet one"; sheet.innerHTML = "";
+    const card = makeCard(w, h); sheet.append(card.el); card.status("Sharpening and upscaling…");
+    try {
+      const seed = randSeed();
+      const blob = await genUpscale({ image: item.blob, prompt: item.fullPrompt || item.prompt, seed, signal, onStatus: (t, f) => card.status(t, f) });
+      const up = { id: newId(), kind: "image", prompt: item.prompt, fullPrompt: item.fullPrompt, engine: "Upscaled 2× · Finegrain", shape: item.shape, seed, blob, ts: Date.now(), upscaled: true };
+      await DB.put(up); saved.unshift(up); renderGallery();
+      card.done(up);
+      showMsg("Upscaled to twice the size with sharper detail. Your original is kept too.");
+    } catch (e) {
+      card.fail(signal.aborted ? "Stopped." : e && e.user ? e.message : "Something went wrong: " + (e && e.message ? e.message : e));
+    } finally { st.busy = false; st.ctl = null; updateGo(); }
   }
 
   function animate(item) {
@@ -2940,6 +2986,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
     $("#lbDownload").href = urlFor(it); $("#lbDownload").download = fileName(it);
     $("#lbAnimate").hidden = it.kind === "video";
     $("#lbEdit").hidden = it.kind === "video";
+    $("#lbUpscale").hidden = it.kind === "video" || !!it.upscaled;
     $("#lbFav").textContent = it.fav ? "★ Favourite" : "☆ Favourite";
     $("#lightbox").hidden = false; $("#lbClose").focus();
     document.body.style.overflow = "hidden";
@@ -2951,6 +2998,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
   $("#lbReuse").addEventListener("click", () => { if (lbItem) { setMode(lbItem.kind === "video" ? "video" : "image"); setPrompt(lbItem.prompt); closeLightbox(); promptEl.focus(); } });
   $("#lbAnimate").addEventListener("click", () => { if (lbItem) { const it = lbItem; closeLightbox(); animate(it); } });
   $("#lbEdit").addEventListener("click", () => { if (lbItem) { const it = lbItem; closeLightbox(); editItem(it); } });
+  $("#lbUpscale").addEventListener("click", () => { if (lbItem) { const it = lbItem; closeLightbox(); upscaleItem(it); } });
   $("#lbFav").addEventListener("click", async () => { if (lbItem) { await toggleFav(lbItem); $("#lbFav").textContent = lbItem.fav ? "★ Favourite" : "☆ Favourite"; } });
 
   // ---------- results sheet ----------
@@ -2998,6 +3046,7 @@ dialog.help-dialog { width: min(760px, calc(100vw - 32px)); }
         if (item.kind !== "video") {
           const ed = document.createElement("button"); ed.type = "button"; ed.className = "btn small ghost"; ed.textContent = "Edit";
           ed.addEventListener("click", () => editItem(item)); btns.append(ed);
+          if (!item.upscaled) { const upb = document.createElement("button"); upb.type = "button"; upb.className = "btn small ghost"; upb.textContent = "Upscale"; upb.title = "Twice the size, sharper detail (free online)"; upb.addEventListener("click", () => upscaleItem(item)); btns.append(upb); }
           const an = document.createElement("button"); an.type = "button"; an.className = "btn small ghost"; an.textContent = "Animate";
           an.addEventListener("click", () => animate(item)); btns.append(an);
         }
